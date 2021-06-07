@@ -12,19 +12,6 @@ index aa1ebcd4e2..9e6b5701a9 100644
  	}
  
  	// Unused callbacks
-diff --git a/backends/platform/libretro/build/Makefile b/backends/platform/libretro/build/Makefile
-index cbd0fac4a6..1df9527cbb 100755
---- a/backends/platform/libretro/build/Makefile
-+++ b/backends/platform/libretro/build/Makefile
-@@ -409,7 +409,7 @@ else ifeq ($(platform),genode)
- else ifneq (,$(findstring msvc,$(platform)))
-    DEFINES += -O2
- else
--   DEFINES += -O3
-+   DEFINES += -O2
- endif
- 
- ifeq ($(TARGET_64BIT), 1)
 diff --git a/engines/cine/main_loop.cpp b/engines/cine/main_loop.cpp
 index 09c64c4814..f9d2c59417 100644
 --- a/engines/cine/main_loop.cpp
