@@ -1,0 +1,13 @@
+diff --git a/engines/ags/engine/script/cc_instance.cpp b/engines/ags/engine/script/cc_instance.cpp
+index 00d2f1b50f..9a86afe130 100644
+--- a/engines/ags/engine/script/cc_instance.cpp
++++ b/engines/ags/engine/script/cc_instance.cpp
+@@ -394,7 +394,7 @@ int ccInstance::CallScriptFunction(const char *funcname, int32_t numargs, const
+ 	_G(currentline) = line_number
+ 
+ #define MAXNEST 50  // number of recursive function calls allowed
+-int ccInstance::Run(int32_t curpc) {
++int ccInstance::Run(int32_t curpc) __attribute__ ((optnone)) {
+ 	pc = curpc;
+ 	returnValue = -1;
+ 
