@@ -1,0 +1,66 @@
+diff --git a/audio/softsynth/mt32.cpp b/audio/softsynth/mt32.cpp
+index aa1ebcd4e2..9e6b5701a9 100644
+--- a/audio/softsynth/mt32.cpp
++++ b/audio/softsynth/mt32.cpp
+@@ -77,7 +77,8 @@ public:
+ 		error("MT32emu: Init Error - Missing PCM ROM image");
+ 	}
+ 	void showLCDMessage(const char *message) {
+-		Common::OSDMessageQueue::instance().addMessage(Common::U32String(message));
++		return;
++//		Common::OSDMessageQueue::instance().addMessage(Common::U32String(message));
+ 	}
+ 
+ 	// Unused callbacks
+diff --git a/backends/platform/libretro/build/Makefile b/backends/platform/libretro/build/Makefile
+index cbd0fac4a6..1df9527cbb 100755
+--- a/backends/platform/libretro/build/Makefile
++++ b/backends/platform/libretro/build/Makefile
+@@ -409,7 +409,7 @@ else ifeq ($(platform),genode)
+ else ifneq (,$(findstring msvc,$(platform)))
+    DEFINES += -O2
+ else
+-   DEFINES += -O3
++   DEFINES += -O2
+ endif
+ 
+ ifeq ($(TARGET_64BIT), 1)
+diff --git a/engines/cine/main_loop.cpp b/engines/cine/main_loop.cpp
+index 09c64c4814..f9d2c59417 100644
+--- a/engines/cine/main_loop.cpp
++++ b/engines/cine/main_loop.cpp
+@@ -449,7 +449,7 @@ void CineEngine::mainLoop(int bootScriptIdx) {
+ 		if (g_cine->getGameType() == Cine::GType_OS) {
+ 			g_cine->_globalVars[VAR_MOUSE_X_POS_2ND] = 0;
+ 			g_cine->_globalVars[VAR_MOUSE_Y_POS_2ND] = 0;
+-			g_cine->_globalVars[VAR_BYPASS_PROTECTION] = 0; // set to 1 to bypass the copy protection
++			g_cine->_globalVars[VAR_BYPASS_PROTECTION] = 1; // set to 1 to bypass the copy protection
+ 			g_cine->_globalVars[VAR_LOW_MEMORY] = 0; // set to 1 to disable some animations, sounds etc.
+ 		}
+ 
+diff --git a/engines/engine.cpp b/engines/engine.cpp
+index a279734dce..7d672f89d4 100644
+--- a/engines/engine.cpp
++++ b/engines/engine.cpp
+@@ -237,6 +237,8 @@ void splashScreen() {
+ 	}
+ 
+ 	g_system->showOverlay();
++	g_system->hideOverlay();
++	return;
+ 
+ 	// Fill with orange
+ 	Graphics::Surface screen;
+diff --git a/engines/mads/nebular/game_nebular.cpp b/engines/mads/nebular/game_nebular.cpp
+index a08c8091f3..fcd8c3719a 100644
+--- a/engines/mads/nebular/game_nebular.cpp
++++ b/engines/mads/nebular/game_nebular.cpp
+@@ -46,7 +46,7 @@ GameNebular::GameNebular(MADSEngine *vm)
+ 
+ ProtectionResult GameNebular::checkCopyProtection() {
+ 	// Only show copy protection dialog if explicitly wanted
+-	if (!ConfMan.getBool("copy_protection"))
++	// if (!ConfMan.getBool("copy_protection"))
+ 		return PROTECTION_SUCCEED;
+ 
+ 	CopyProtectionDialog *dlg;
