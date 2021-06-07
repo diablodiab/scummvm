@@ -114,15 +114,25 @@ bool Sprite::respondsToMouse() {
 }
 
 bool Sprite::isActive() {
-	return _movie->getScriptContext(kScoreScript, _scriptId) != nullptr;
+	return _movie->getScriptContext(kScoreScript, _scriptId) != nullptr
+			|| _movie->getScriptContext(kCastScript, _castId) != nullptr;
 }
 
 bool Sprite::shouldHilite() {
-	if ((_cast && _cast->_autoHilite) || (isQDShape() && _ink == kInkTypeMatte))
-		if (g_director->getVersion() < 400 && !_moveable)
-			if (_movie->getScriptContext(kScoreScript, _scriptId) ||
-					_movie->getScriptContext(kCastScript, _castId))
-				return true;
+	if (!isActive())
+		return false;
+
+	if (_moveable)
+		return false;
+
+	if (g_director->getVersion() < 400 && _ink == kInkTypeMatte)
+		return true;
+
+	if (_cast) {
+		CastMemberInfo *castInfo = _cast->getInfo();
+		if (castInfo)
+			return castInfo->autoHilite;
+	}
 
 	return false;
 }

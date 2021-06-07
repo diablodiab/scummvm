@@ -333,7 +333,6 @@ void GameState::processFoundItem(InventoryItems item) {
 	const int32 itemZ = (_engine->_scene->sceneHero->pos.z + BRICK_HEIGHT) / BRICK_SIZE;
 
 	_engine->_grid->drawOverModelActor(itemX, itemY, itemZ);
-	_engine->flip();
 
 	_engine->_renderer->projectPositionOnScreen(bodyX, bodyY, bodyZ);
 	_engine->_renderer->projPos.y -= 150;
@@ -370,8 +369,7 @@ void GameState::processFoundItem(InventoryItems item) {
 
 	ScopedKeyMap uiKeyMap(_engine, uiKeyMapId);
 	for (;;) {
-		FrameMarker frame;
-		ScopedFPS fps(66);
+		FrameMarker frame(_engine, 66);
 		_engine->_interface->resetClip();
 		_engine->_redraw->currNumOfRedrawBox = 0;
 		_engine->_redraw->blitBackgroundAreas();
@@ -431,8 +429,7 @@ void GameState::processFoundItem(InventoryItems item) {
 	}
 
 	while (_engine->_text->playVoxSimple(_engine->_text->currDialTextEntry)) {
-		FrameMarker frame;
-		ScopedFPS scopedFps;
+		FrameMarker frame(_engine);
 		_engine->readKeys();
 		if (_engine->shouldQuit() || _engine->_input->toggleAbortAction()) {
 			break;
@@ -466,8 +463,7 @@ void GameState::processGameChoices(TextId choiceIdx) {
 	// get right VOX entry index
 	if (_engine->_text->initVoxToPlayTextId(choiceAnswer)) {
 		while (_engine->_text->playVoxSimple(_engine->_text->currDialTextEntry)) {
-			FrameMarker frame;
-			ScopedFPS scopedFps;
+			FrameMarker frame(_engine);
 			if (_engine->shouldQuit()) {
 				break;
 			}
@@ -490,7 +486,6 @@ void GameState::processGameoverAnimation() {
 
 	// TODO: inSceneryView
 	_engine->setPalette(_engine->_screens->paletteRGBA);
-	_engine->flip();
 	_engine->_screens->copyScreen(_engine->frontVideoBuffer, _engine->workVideoBuffer);
 	BodyData gameOverPtr;
 	if (!gameOverPtr.loadFromHQR(Resources::HQR_RESS_FILE, RESSHQR_GAMEOVERMDL)) {
@@ -505,8 +500,7 @@ void GameState::processGameoverAnimation() {
 	_engine->_interface->setClip(rect);
 
 	while (!_engine->_input->toggleAbortAction() && (_engine->lbaTime - startLbaTime) <= 500) {
-		FrameMarker frame;
-		ScopedFPS scopedFps(66);
+		FrameMarker frame(_engine, 66);
 		_engine->readKeys();
 		if (_engine->shouldQuit()) {
 			return;
@@ -533,7 +527,6 @@ void GameState::processGameoverAnimation() {
 
 	_engine->_interface->resetClip();
 	_engine->_screens->copyScreen(_engine->workVideoBuffer, _engine->frontVideoBuffer);
-	_engine->flip();
 	initEngineProjections();
 
 	_engine->lbaTime = tmpLbaTime;

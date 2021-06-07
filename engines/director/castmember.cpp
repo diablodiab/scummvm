@@ -25,6 +25,7 @@
 #include "video/qt_decoder.h"
 
 #include "director/director.h"
+#include "director/cast.h"
 #include "director/castmember.h"
 #include "director/cursor.h"
 #include "director/channel.h"
@@ -40,7 +41,6 @@ CastMember::CastMember(Cast *cast, uint16 castId, Common::SeekableReadStreamEndi
 	_cast = cast;
 	_castId = castId;
 	_hilite = false;
-	_autoHilite = false;
 	_purgePriority = 3;
 	_size = stream.size();
 	_flags1 = 0;
@@ -48,6 +48,10 @@ CastMember::CastMember(Cast *cast, uint16 castId, Common::SeekableReadStreamEndi
 	_modified = true;
 
 	_objType = kCastMemberObj;
+}
+
+CastMemberInfo *CastMember::getInfo() {
+	return _cast->getCastMemberInfo(_castId);
 }
 
 
@@ -70,8 +74,6 @@ BitmapCastMember::BitmapCastMember(Cast *cast, uint16 castId, Common::SeekableRe
 
 	if (version < 400) {
 		_flags1 = flags1;	// region: 0 - auto, 1 - matte, 2 - disabled, 8 - no auto
-		if (_flags1 >> 4 == 0x0)
-			_autoHilite = true;
 
 		_bytes = stream.readUint16();
 		_initialRect = Movie::readRect(stream);
@@ -122,8 +124,6 @@ BitmapCastMember::BitmapCastMember(Cast *cast, uint16 castId, Common::SeekableRe
 
 		if (_bitsPerPixel == 1)
 			_pitch *= 8;
-
-		_autoHilite = (_flags2 % 4 != 0);
 
 		int tail = 0;
 		byte buf[256];
@@ -346,6 +346,11 @@ bool DigitalVideoCastMember::isModified() {
 void DigitalVideoCastMember::startVideo(Channel *channel) {
 	_channel = channel;
 
+	if (!_video || !_video->isVideoLoaded()) {
+		warning("DigitalVideoCastMember::startVideo: No video decoder");
+		return;
+	}
+
 	if (_pausedAtStart) {
 		_getFirstFrame = true;
 	} else {
@@ -364,6 +369,17 @@ void DigitalVideoCastMember::startVideo(Channel *channel) {
 		_channel->_stopTime = getMovieTotalTime();
 
 	_duration = getMovieTotalTime();
+}
+
+void DigitalVideoCastMember::stopVideo(Channel *channel) {
+	if (!_video || !_video->isVideoLoaded()) {
+		warning("DigitalVideoCastMember::stopVideo: No video decoder");
+		return;
+	}
+
+	_video->stop();
+
+	debugC(2, kDebugImages, "STOPPING VIDEO %s", _filename.c_str());
 }
 
 Graphics::MacWidget *DigitalVideoCastMember::createWidget(Common::Rect &bbox, Channel *channel) {

@@ -291,7 +291,6 @@ void Holomap::drawHolomapTrajectory(int32 trajectoryIndex) {
 	const Location &loc = _locations[data->locationIdx];
 	renderHolomapModel(_engine->_resources->holomapPointModelPtr, loc.angle.x, loc.angle.y, 0);
 
-	_engine->flip();
 	ActorMoveStruct move;
 	AnimTimerDataStruct animTimerData;
 	AnimData animData;
@@ -306,7 +305,7 @@ void Holomap::drawHolomapTrajectory(int32 trajectoryIndex) {
 	bool fadeInPalette = true;
 	_engine->_input->enableKeyMap(holomapKeyMapId);
 	for (;;) {
-		ScopedFPS scopedFps;
+		FrameMarker frame(_engine);
 		_engine->readKeys();
 		if (_engine->shouldQuit() || _engine->_input->toggleAbortAction()) {
 			break;
@@ -483,7 +482,6 @@ void Holomap::processHolomap() {
 
 	int32 currentLocation = _engine->_scene->currentSceneIdx;
 	_engine->_text->drawHolomapLocation(_locations[currentLocation].textIndex);
-	_engine->flip();
 
 	int32 time = _engine->lbaTime;
 	int32 xRot = ClampAngle(_locations[currentLocation].angle.x);
@@ -494,8 +492,7 @@ void Holomap::processHolomap() {
 	bool fadeInPalette = true;
 	_engine->_input->enableKeyMap(holomapKeyMapId);
 	for (;;) {
-		FrameMarker frame;
-		ScopedFPS scopedFps;
+		FrameMarker frame(_engine);
 		_engine->_input->readKeys();
 		if (_engine->shouldQuit() || _engine->_input->toggleAbortAction()) {
 			break;
@@ -589,7 +586,6 @@ void Holomap::processHolomap() {
 		// pos 0x140,0x19?
 
 		//_engine->_screens->copyScreen(_engine->workVideoBuffer, _engine->frontVideoBuffer);
-		//_engine->flip();
 		if (fadeInPalette) {
 			fadeInPalette = false;
 			// TODO: this does a flip - which puts stuff onto the screen that shouldn't be there

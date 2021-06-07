@@ -190,6 +190,8 @@ public:
 
 private:
 	void appendText_(const Common::U32String &strWithFont, uint oldLen);
+	void deletePreviousCharInternal(int *row, int *col);
+	void insertTextFromClipboard();
 
 public:
 	void appendTextDefault(const Common::U32String &str, bool skipAdd = false);
@@ -203,6 +205,7 @@ public:
 	int getLineHeight(int line);
 	int getTextMaxWidth() { return _textMaxWidth; }
 
+	void deleteSelection();
 	void deletePreviousChar(int *row, int *col);
 	void addNewLine(int *row, int *col);
 	void insertChar(byte c, int *row, int *col);
@@ -252,7 +255,7 @@ private:
 
 	void scroll(int delta);
 
-	void drawSelection();
+	void drawSelection(int xoff, int yoff);
 	void updateCursorPos();
 
 	void startMarking(int x, int y);

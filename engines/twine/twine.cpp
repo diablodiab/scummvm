@@ -93,27 +93,41 @@ ScopedCursor::~ScopedCursor() {
 	_engine->popMouseCursorVisible();
 }
 
-ScopedFPS::ScopedFPS(uint32 fps) : _fps(fps) {
+FrameMarker::FrameMarker(TwinEEngine *engine, uint32 fps) : _engine(engine), _fps(fps) {
 	_start = g_system->getMillis();
+	++_engine->frameCounter;
 }
 
-ScopedFPS::~ScopedFPS() {
+FrameMarker::~FrameMarker() {
+	_engine->frontVideoBuffer.update();
+	if (_fps == 0) {
+		return;
+	}
 	const uint32 end = g_system->getMillis();
 	const uint32 frameTime = end - _start;
 	const uint32 maxDelay = 1000 / _fps;
 	if (frameTime > maxDelay) {
+		debug("Frame took longer than the max allowed time: %u (max is %u)", frameTime, maxDelay);
 		return;
 	}
 	const uint32 waitMillis = maxDelay - frameTime;
 	g_system->delayMillis(waitMillis);
 }
 
-FrameMarker::~FrameMarker() {
-	g_system->updateScreen();
+TwineScreen::TwineScreen(TwinEEngine *engine) : _engine(engine) {
+}
+
+void TwineScreen::update() {
+	static int lastFrame = 0;
+	if (lastFrame == _engine->frameCounter) {
+		return;
+	}
+	lastFrame = _engine->frameCounter;
+	Super::update();
 }
 
 TwinEEngine::TwinEEngine(OSystem *system, Common::Language language, uint32 flags, TwineGameType gameType)
-	: Engine(system), _gameType(gameType), _gameLang(language), _gameFlags(flags), _rnd("twine") {
+	: Engine(system), _gameType(gameType), _gameLang(language), frontVideoBuffer(this), _gameFlags(flags), _rnd("twine") {
 	// Add default file directories
 	const Common::FSNode gameDataDir(ConfMan.get("path"));
 	SearchMan.addSubDirectoryMatching(gameDataDir, "fla");
@@ -226,6 +240,9 @@ Common::Error TwinEEngine::run() {
 
 	ConfMan.registerDefault("usehighres", false);
 	ConfMan.registerDefault("wallcollision", false);
+
+	Common::String gameTarget = ConfMan.getActiveDomainName();
+	AchMan.setActiveDomain(getMetaEngine()->getAchievementsInfo(gameTarget));
 
 	syncSoundSettings();
 	int32 w = ORIGINAL_WIDTH;
@@ -573,7 +590,6 @@ void TwinEEngine::processBookOfBu() {
 	_screens->fadeToBlack(_screens->paletteRGBACustom);
 	_screens->clearScreen();
 	setPalette(_screens->paletteRGBA);
-	flip();
 	_screens->lockPalette = true;
 }
 
@@ -688,7 +704,7 @@ void TwinEEngine::processOptionsMenu() {
 }
 
 int32 TwinEEngine::runGameEngine() { // mainLoopInteration
-	FrameMarker frame;
+	FrameMarker frame(this, 0);
 	_input->enableKeyMap(mainKeyMapId);
 
 	readKeys();
@@ -823,8 +839,7 @@ int32 TwinEEngine::runGameEngine() { // mainLoopInteration
 				copyBlockPhys(5, bottom, 5 + width, bottom + _text->lineHeight);
 			}
 			do {
-				FrameMarker frameWait;
-				ScopedFPS scopedFps;
+				FrameMarker frameWait(this);
 				readKeys();
 				if (shouldQuit()) {
 					break;
@@ -1028,8 +1043,7 @@ bool TwinEEngine::delaySkip(uint32 time) {
 	uint32 startTicks = _system->getMillis();
 	uint32 stopTicks = 0;
 	do {
-		FrameMarker frame;
-		ScopedFPS scopedFps;
+		FrameMarker frame(this);
 		readKeys();
 		if (_input->toggleAbortAction()) {
 			return true;
@@ -1058,19 +1072,14 @@ void TwinEEngine::setPalette(const uint32 *palette) {
 }
 
 void TwinEEngine::setPalette(uint startColor, uint numColors, const byte *palette) {
-	g_system->getPaletteManager()->setPalette(palette, startColor, numColors);
+	frontVideoBuffer.setPalette(palette, startColor, numColors);
 }
 
-void TwinEEngine::flip() {
-	g_system->copyRectToScreen(frontVideoBuffer.getPixels(), frontVideoBuffer.pitch, 0, 0, frontVideoBuffer.w, frontVideoBuffer.h);
-	g_system->updateScreen();
+void TwinEEngine::copyBlockPhys(const Common::Rect &rect) {
+	copyBlockPhys(rect.left, rect.top, rect.right, rect.bottom);
 }
 
-void TwinEEngine::copyBlockPhys(const Common::Rect &rect, bool updateScreen) {
-	copyBlockPhys(rect.left, rect.top, rect.right, rect.bottom, updateScreen);
-}
-
-void TwinEEngine::copyBlockPhys(int32 left, int32 top, int32 right, int32 bottom, bool updateScreen) {
+void TwinEEngine::copyBlockPhys(int32 left, int32 top, int32 right, int32 bottom) {
 	assert(left <= right);
 	assert(top <= bottom);
 	int32 width = right - left + 1;
@@ -1084,10 +1093,7 @@ void TwinEEngine::copyBlockPhys(int32 left, int32 top, int32 right, int32 bottom
 	if (width <= 0 || height <= 0) {
 		return;
 	}
-	g_system->copyRectToScreen(frontVideoBuffer.getBasePtr(left, top), frontVideoBuffer.pitch, left, top, width, height);
-	if (updateScreen) {
-		g_system->updateScreen();
-	}
+	frontVideoBuffer.addDirtyRect(Common::Rect(left, top, right, bottom));
 }
 
 void TwinEEngine::crossFade(const Graphics::ManagedSurface &buffer, const uint32 *palette) {
@@ -1111,12 +1117,10 @@ void TwinEEngine::crossFade(const Graphics::ManagedSurface &buffer, const uint32
 		surfaceTable.blitFrom(backupSurface);
 		surfaceTable.transBlitFrom(newSurface, 0, false, 0, i * NUMOFCOLORS / 8);
 		frontVideoBuffer.blitFrom(surfaceTable);
-		flip();
 		delaySkip(50);
 	}
 
 	frontVideoBuffer.blitFrom(newSurface);
-	flip();
 
 	backupSurface.free();
 	newSurface.free();
@@ -1148,18 +1152,7 @@ const char *TwinEEngine::getGameId() const {
 }
 
 bool TwinEEngine::unlockAchievement(const Common::String &id) {
-	const MetaEngine *meta = getMetaEngine();
-	const Common::AchievementsInfo &achievementsInfo = meta->getAchievementsInfo(ConfMan.getActiveDomainName());
-
-	Common::String msg = id;
-	for (uint32 i = 0; i < achievementsInfo.descriptions.size(); i++) {
-		if (id == achievementsInfo.descriptions[i].id) {
-			msg = achievementsInfo.descriptions[i].title;
-			break;
-		}
-	}
-
-	return AchMan.setAchievement(id, msg);
+	return AchMan.setAchievement(id);
 }
 
 Common::Rect TwinEEngine::centerOnScreen(int32 w, int32 h) const {

@@ -376,16 +376,28 @@ void KIASectionCrimes::populateVisibleClues() {
 	if (_crimeSelected != -1) {
 		for (int i = 0; i < kClueCount; ++i) {
 			int clueId = i;
-			if (_vm->_crimesDatabase->getAssetType(clueId) != -1
+			if (_vm->_crimesDatabase->getAssetType(clueId) != kClueTypeIntangible
 			 && _vm->_crimesDatabase->getCrime(clueId) == _crimeSelected
 			 && _clues->isAcquired(clueId)
 			) {
 				int flags = 0x30;
+#if BLADERUNNER_ORIGINAL_BUGS
 				if (_clues->isPrivate(clueId)) {
 					flags = 0x08;
 				} else if (_clues->isViewed(clueId)) {
 					flags = 0x10;
 				}
+#else
+				if (_clues->isPrivate(clueId)) {
+					flags |= 0x08;
+				}
+				if (_clues->isViewed(clueId)) {
+					flags &= ~0x20;
+				}
+				if (_vm->_cutContent && _clues->isSharedWithMainframe(clueId)) {
+					flags |= 0x40;
+				}
+#endif // BLADERUNNER_ORIGINAL_BUGS
 				_cluesScrollBox->addLine(_vm->_crimesDatabase->getClueText(clueId), clueId, flags);
 			}
 		}

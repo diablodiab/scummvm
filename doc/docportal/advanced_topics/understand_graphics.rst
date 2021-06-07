@@ -135,12 +135,16 @@ Stretch modes
 ----------------------
 
 
-There are five stretch modes:
+There are six stretch modes:
 
 - Center: centers the image in the window.
 - Pixel-perfect scaling: scales the image to the highest multiple of the game resolution that fits the window, or that fits the screen if in fullscreen mode. Any empty space is filled with black bars.
 
     - For example, a game with an original resolution of 320x200 with aspect ratio correction applied (320x240) and a 3x graphics mode, will be stretched to a multiple of 900x720 pixels: 1800x1440, 2700x2160 and so on.
+
+- Even pixels scaling: scales the image to the highest multiple of the original game width and height. Any empty space is filled with black bars. When aspect ratio is enabled, it may be different from pixel-perfect as it will use a height that is a multiple of the original game height at the cost of not respecting exactly the aspect ratio. This ensure we get even pixels. This stretch mode is only available in OpenGL graphics mode.
+
+    - For example, with a screen resolution of 1920x1080, a game with an original resolution of 320x200 with aspect ratio correction applied (320x240) will be stretched to 1280x1000 (original width of 320 x 4 and original height of 200 x 5) which is a ratio of 320x250 and not 320x240. For comparison the pixel-perfect mode would stretch to 1280x960 (320x240 scaled by a factor 4, which means a scaling of x4.8 on the original height that would introduce some artifacts).
 
 - Fit to window: fits the image to the window, but maintains the aspect ratio and does not stretch it to fill the window.
 - Stretch: stretches the image to fill the window

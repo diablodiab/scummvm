@@ -767,7 +767,7 @@ void Menu::updateLoadGame() {
 			if (index + _startIndex >= 25)
 				break;
 
-			snprintf((char *)&text, sizeof(text), "%d. %s ", index + _startIndex + 1, getSaveLoad()->getName((uint32)(index + _startIndex)).c_str());
+			snprintf((char *)&text, sizeof(text), "%d. %s", index + _startIndex + 1, getSaveLoad()->getName((uint32)(index + _startIndex)).c_str());
 
 			if (cursor.x < 30 || cursor.x > (30 + getText()->getWidth((char *)&text))
 			 || cursor.y < y  || cursor.y > (y + 24))
@@ -787,7 +787,7 @@ void Menu::updateLoadGame() {
 			if (index + _startIndex >= 25)
 				break;
 
-			snprintf((char *)&text, sizeof(text), "%d. %s ", index + _startIndex + 1, getSaveLoad()->getName((uint32)(index + _startIndex)).c_str());
+			snprintf((char *)&text, sizeof(text), "%d. %s", index + _startIndex + 1, getSaveLoad()->getName((uint32)(index + _startIndex)).c_str());
 
 			if (cursor.x < 350 || cursor.x > (350 + getText()->getWidth((char *)&text))
 				|| cursor.y < y   || cursor.y > (y + 24))
@@ -890,7 +890,7 @@ void Menu::updateSaveGame() {
 			if (index + _startIndex >= 25)
 				break;
 
-			snprintf((char *)&text, sizeof(text), "%d. %s ", index + _startIndex + 1, getSaveLoad()->getName((uint32)(index + _startIndex)).c_str());
+			snprintf((char *)&text, sizeof(text), "%d. %s", index + _startIndex + 1, getSaveLoad()->getName((uint32)(index + _startIndex)).c_str());
 
 			if (!_isEditingSavegameName) {
 				if (cursor.x < 30 || cursor.x > (30 + getText()->getWidth((char *)&text))
@@ -927,7 +927,7 @@ void Menu::updateSaveGame() {
 			if (index + _startIndex >= 25)
 				break;
 
-			snprintf((char *)&text, sizeof(text), "%d. %s ", index + _startIndex + 1, getSaveLoad()->getName((uint32)(index + _startIndex)).c_str());
+			snprintf((char *)&text, sizeof(text), "%d. %s", index + _startIndex + 1, getSaveLoad()->getName((uint32)(index + _startIndex)).c_str());
 
 			if (!_isEditingSavegameName) {
 				if (cursor.x < 350 || cursor.x > (350 + getText()->getWidth((char *)&text))
@@ -1038,7 +1038,7 @@ void Menu::updateDeleteGame() {
 		if (index + _startIndex >= 25)
 			break;
 
-		snprintf((char *)&text, sizeof(text), "%d. %s ", index + _startIndex + 1, getSaveLoad()->getName((uint32)(index + _startIndex)).c_str());
+		snprintf((char *)&text, sizeof(text), "%d. %s", index + _startIndex + 1, getSaveLoad()->getName((uint32)(index + _startIndex)).c_str());
 
 		if (cursor.x < 30 || cursor.x > (30 + getText()->getWidth((char *)&text))
 		 || cursor.y < y  || cursor.y > (y + 24))
@@ -1058,7 +1058,7 @@ void Menu::updateDeleteGame() {
 		if (index + _startIndex >= 25)
 			break;
 
-		snprintf((char *)&text, sizeof(text), "%d. %s ", index + _startIndex + 1, getSaveLoad()->getName((uint32)(index + _startIndex)).c_str());
+		snprintf((char *)&text, sizeof(text), "%d. %s", index + _startIndex + 1, getSaveLoad()->getName((uint32)(index + _startIndex)).c_str());
 
 		if (cursor.x < 350 || cursor.x > (350 + getText()->getWidth((char *)&text))
 		 || cursor.y < y   || cursor.y > (y + 24))
@@ -1125,7 +1125,7 @@ void Menu::updateViewMovies() {
 				break;
 
 			if (_movieList[index] != -1) {
-				snprintf((char *)&text, sizeof(text), "%d. %s ", index + 1, getText()->get(MAKE_RESOURCE(kResourcePackText, 1359 + _movieList[index])));
+				snprintf((char *)&text, sizeof(text), "%d. %s", index + 1, getText()->get(MAKE_RESOURCE(kResourcePackText, 1359 + _movieList[index])));
 				snprintf((char *)&text2, sizeof(text2), getText()->get(MAKE_RESOURCE(kResourcePackText, 1356)), moviesCd[_movieList[index]]);
 				strcat((char *)&text, (char *)&text2);
 
@@ -1150,7 +1150,7 @@ void Menu::updateViewMovies() {
 				break;
 
 			if (_movieList[index] != -1) {
-				snprintf((char *)&text, sizeof(text), "%d. %s ", index + 1, getText()->get(MAKE_RESOURCE(kResourcePackText, 1359 + _movieList[index])));
+				snprintf((char *)&text, sizeof(text), "%d. %s", index + 1, getText()->get(MAKE_RESOURCE(kResourcePackText, 1359 + _movieList[index])));
 				snprintf((char *)&text2, sizeof(text2), getText()->get(MAKE_RESOURCE(kResourcePackText, 1356)), moviesCd[_movieList[index]]);
 				strcat((char *)&text, (char *)&text2);
 
@@ -1639,7 +1639,10 @@ void Menu::clickLoadGame() {
 	int32 index = 0;
 	for (int32 y = 150; y < 324; y += 29) {
 		if (cursor.x >= 350) {
-			snprintf((char *)&text, sizeof(text), "%d. %s ", index + _startIndex + 7, getSaveLoad()->getName((uint32)(index + _startIndex + 6)).c_str());
+			if (index + _startIndex + 6 > 24)
+				break;
+
+			snprintf((char *)&text, sizeof(text), "%d. %s", index + _startIndex + 7, getSaveLoad()->getName((uint32)(index + _startIndex + 6)).c_str());
 
 			if (cursor.x <= (350 + getText()->getWidth((char *)&text))
 			 && cursor.y >= y
@@ -1654,7 +1657,10 @@ void Menu::clickLoadGame() {
 				break;
 			}
 		} else if (cursor.x >= 30) {
-			snprintf((char *)&text, sizeof(text), "%d. %s ", index + _startIndex + 1, getSaveLoad()->getName((uint32)(index + _startIndex)).c_str());
+			if (index + _startIndex > 24)
+				break;
+
+			snprintf((char *)&text, sizeof(text), "%d. %s", index + _startIndex + 1, getSaveLoad()->getName((uint32)(index + _startIndex)).c_str());
 
 			if (cursor.x <= (30 + getText()->getWidth((char *)&text))
 			 && cursor.y >= y
@@ -1735,7 +1741,10 @@ void Menu::clickSaveGame() {
 	int32 index = 0;
 	for (int16 y = 150; y < 324; y += 29) {
 		if (cursor.x >= 350) {
-			snprintf((char *)&text, sizeof(text), "%d. %s ", index + _startIndex + 7, getSaveLoad()->getName((uint32)(index + _startIndex + 6)).c_str());
+			if (index + _startIndex + 6 > 24)
+				break;
+
+			snprintf((char *)&text, sizeof(text), "%d. %s", index + _startIndex + 7, getSaveLoad()->getName((uint32)(index + _startIndex + 6)).c_str());
 
 			if (cursor.x <= (350 + getText()->getWidth((char *)&text))
 			 && cursor.y >= y
@@ -1758,7 +1767,10 @@ void Menu::clickSaveGame() {
 				break;
 			}
 		} else if (cursor.x >= 30) {
-			snprintf((char *)&text, sizeof(text), "%d. %s ", index + _startIndex + 1, getSaveLoad()->getName((uint32)(index + _startIndex)).c_str());
+			if (index + _startIndex > 24)
+				break;
+
+			snprintf((char *)&text, sizeof(text), "%d. %s", index + _startIndex + 1, getSaveLoad()->getName((uint32)(index + _startIndex)).c_str());
 
 			if (cursor.x <= (30 + getText()->getWidth((char *)&text))
 			 && cursor.y >= y
@@ -1843,7 +1855,10 @@ void Menu::clickDeleteGame() {
 	int32 index = 0;
 	for (int16 y = 150; y < 324; y += 29) {
 		if (cursor.x >= 350) {
-			snprintf((char *)&text, sizeof(text), "%d. %s ", index + _startIndex + 7, getSaveLoad()->getName((uint32)(index + _startIndex + 6)).c_str());
+			if (index + _startIndex + 6 > 24)
+				break;
+
+			snprintf((char *)&text, sizeof(text), "%d. %s", index + _startIndex + 7, getSaveLoad()->getName((uint32)(index + _startIndex + 6)).c_str());
 
 			if (cursor.x <= (350 + getText()->getWidth((char *)&text))
 			 && cursor.y >= y
@@ -1858,7 +1873,10 @@ void Menu::clickDeleteGame() {
 				break;
 			}
 		} else if (cursor.x >= 30) {
-			snprintf((char *)&text, sizeof(text), "%d. %s ", index + _startIndex + 1, getSaveLoad()->getName((uint32)(index + _startIndex)).c_str());
+			if (index + _startIndex > 24)
+				break;
+
+			snprintf((char *)&text, sizeof(text), "%d. %s", index + _startIndex + 1, getSaveLoad()->getName((uint32)(index + _startIndex)).c_str());
 
 			if (cursor.x <= (30 + getText()->getWidth((char *)&text))
 			 && cursor.y >= y
@@ -1929,7 +1947,7 @@ void Menu::clickViewMovies() {
 			if (_movieList[index + _startIndex + 6] == -1)
 				break;
 
-			snprintf((char *)&text, sizeof(text), "%d. %s ", index + 1, getText()->get(MAKE_RESOURCE(kResourcePackText, 1359 + _movieList[index])));
+			snprintf((char *)&text, sizeof(text), "%d. %s", index + 1, getText()->get(MAKE_RESOURCE(kResourcePackText, 1359 + _movieList[index])));
 			snprintf((char *)&text2, sizeof(text2), getText()->get(MAKE_RESOURCE(kResourcePackText, 1356)), moviesCd[_movieList[index]]);
 			strcat((char *)&text, (char *)&text2);
 
@@ -1954,7 +1972,7 @@ void Menu::clickViewMovies() {
 			if (_movieList[index + _startIndex] == -1)
 				break;
 
-			snprintf((char *)&text, sizeof(text), "%d. %s ", index + 1, getText()->get(MAKE_RESOURCE(kResourcePackText, 1359 + _movieList[index])));
+			snprintf((char *)&text, sizeof(text), "%d. %s", index + 1, getText()->get(MAKE_RESOURCE(kResourcePackText, 1359 + _movieList[index])));
 			snprintf((char *)&text2, sizeof(text2), getText()->get(MAKE_RESOURCE(kResourcePackText, 1356)), moviesCd[_movieList[index]]);
 			strcat((char *)&text, (char *)&text2);
 
@@ -2288,7 +2306,7 @@ void Menu::keySaveGame(const AsylumEvent &evt) {
 
 	switch (evt.kbd.keycode) {
 	default:
-		if (evt.kbd.ascii > 255 || !Common::isAlnum(evt.kbd.ascii))
+		if (evt.kbd.ascii > 255 || !Common::isPrint(evt.kbd.ascii))
 			break;
 
 		if (getSaveLoad()->getName()->size() < 44) {

@@ -26,8 +26,8 @@
 
 #include "engines/advancedDetector.h"
 
+#include "testbed/achievements.h"
 #include "testbed/testbed.h"
-#include "testbed/testsuite.h"
 
 class TestbedMetaEngine : public AdvancedMetaEngine {
 public:
@@ -41,21 +41,7 @@ public:
 	}
 
 	const Common::AchievementsInfo getAchievementsInfo(const Common::String &target) const override {
-		Common::AchievementsInfo result;
-		result.platform = Common::UNK_ACHIEVEMENTS;
-		result.appId = "testbed";
-		Common::AchievementDescription testSuiteFinalAchievement = {"EVERYTHINGWORKS", true, "Everything works!", "Completed all available testsuites"};
-		result.descriptions.push_back(testSuiteFinalAchievement);
-
-		Common::Array<Testbed::Testsuite *> testsuiteList;
-		Testbed::TestbedEngine::pushTestsuites(testsuiteList);
-		for (Common::Array<Testbed::Testsuite *>::const_iterator i = testsuiteList.begin(); i != testsuiteList.end(); ++i) {
-			Common::AchievementDescription it = {(*i)->getName(), false, (*i)->getDescription(), 0};
-			result.descriptions.push_back(it);
-			delete (*i);
-		}
-
-		return result;
+		return Testbed::getAchievementsInfo(target);
 	}
 
 	bool hasFeature(MetaEngineFeature f) const override {

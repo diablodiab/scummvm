@@ -31,6 +31,7 @@
 
 #include "engines/metaengine.h"
 #include "graphics/managed_surface.h"
+#include "graphics/screen.h"
 #include "graphics/pixelformat.h"
 #include "graphics/surface.h"
 #include "twine/detection.h"
@@ -166,18 +167,25 @@ struct ScopedCursor {
 	~ScopedCursor();
 };
 
-class ScopedFPS {
+class FrameMarker {
 private:
+	TwinEEngine *_engine;
 	uint32 _fps;
 	uint32 _start;
 public:
-	ScopedFPS(uint32 fps = DEFAULT_FRAMES_PER_SECOND);
-	~ScopedFPS();
+	FrameMarker(TwinEEngine *engine, uint32 fps = DEFAULT_FRAMES_PER_SECOND);
+	~FrameMarker();
 };
 
-class FrameMarker {
+class TwineScreen : public Graphics::Screen {
+private:
+	using Super = Graphics::Screen;
+	TwinEEngine *_engine;
+
 public:
-	~FrameMarker();
+	TwineScreen(TwinEEngine *engine);
+
+	void update() override;
 };
 
 class TwinEEngine : public Engine {
@@ -271,6 +279,8 @@ public:
 	 * Contains all the data used in the engine to configurated the game in particulary ways. */
 	ConfigFile cfgfile;
 
+	int32 frameCounter = 0;
+
 	int width() const;
 	int height() const;
 	Common::Rect rect() const;
@@ -292,7 +302,7 @@ public:
 	/** Work video buffer */
 	Graphics::ManagedSurface workVideoBuffer;
 	/** Main game video buffer */
-	Graphics::ManagedSurface frontVideoBuffer;
+	TwineScreen frontVideoBuffer;
 
 	int32 loopInventoryItem = 0;
 	int32 loopActorStep = 0;
@@ -331,19 +341,15 @@ public:
 	 */
 	void setPalette(uint startColor, uint numColors, const byte *palette);
 
-	/** Blit surface in the screen */
-	void flip();
-
 	/**
 	 * Blit surface in the screen in a determinate area
 	 * @param left left position to start copy
 	 * @param top top position to start copy
 	 * @param right right position to start copy
 	 * @param bottom bottom position to start copy
-	 * @param updateScreen Perform blitting to screen if @c true, otherwise just prepare the blit
 	 */
-	void copyBlockPhys(int32 left, int32 top, int32 right, int32 bottom, bool updateScreen = false);
-	void copyBlockPhys(const Common::Rect &rect, bool updateScreen = false);
+	void copyBlockPhys(int32 left, int32 top, int32 right, int32 bottom);
+	void copyBlockPhys(const Common::Rect &rect);
 
 	/** Cross fade feature
 	 * @param buffer screen buffer

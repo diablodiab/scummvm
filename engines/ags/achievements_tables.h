@@ -29,6 +29,7 @@ struct AchievementDescriptionList {
 	const char *gameId;
 	Common::AchievementsPlatform platform;
 	const char *appId;
+	const Common::StatDescription stats[64];
 	const Common::AchievementDescription descriptions[64];
 };
 
@@ -37,11 +38,224 @@ struct AchievementDescriptionList {
 #define ACHIEVEMENT_HIDDEN_ENTRY(id, title) {id, true, title, ""}
 #define ACHIEVEMENTS_LISTEND {0,0,0,0}
 
+#define STATS_SIMPLE_ENTRY(id, comment, default) {id, comment, default}
+#define STATS_NODESC_ENTRY(id, default) {id, "", default}
+#define STATS_LISTEND {0,0,0}
+#define NOSTATS {STATS_LISTEND}
+
 static const AchievementDescriptionList achievementDescriptionList[] = {
+	{
+		"detectivegallo",
+		Common::GALAXY_ACHIEVEMENTS,
+		"1745746005",
+		NOSTATS,
+		{
+			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_01", "Vigilante", "That taxi driver picked up his last fare\xe2\x80\xa6"),
+			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_02", "Alcoholic", "Cocktails go to my head."),
+			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_03", "Romantic Detective", "A real badass always know when to be sweet."),
+			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_04", "Role Player", "Ridicolous little green men\xe2\x80\xa6"),
+			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_05", "Heroic Deed", "There's only his stench left\xe2\x80\xa6"),
+			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_06", "Good Morning", "When you are a heavy sleeper\xe2\x80\xa6"),
+			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_07", "Cold-Blooded Detective", "I like counting on my best friend."),
+			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_08", "Smuggler", "What's a smuggler without a business card?"),
+			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_09", "Green Thumb", "Now I figured out what Latin is good for."),
+			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_10", "Space Invader", "It's always fun to threaten Earth\xe2\x80\xa6"),
+			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_11", "Baby Sitter", "Maybe as a side job\xe2\x80\xa6"),
+			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_12", "Infallible Nose", "What's a detective without his instincts?"),
+			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_13", "Interference", "Who was that, Mario?"),
+			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_14", "Animal Activist", "The animals must respect other animals."),
+			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_15", "Timed Trial", "Speed is my middle name."),
+			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_16", "Old School", "There's nothing like the old school."),
+			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_17", "Sprinter", "Never stop. Never."),
+			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_18", "Devoted", "Assistants are born, not made."),
+			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_19", "Chronically Indecisive", "Doubt is the source of wisdom."),
+			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_20", "Supplier", "Cutlery smuggling."),
+			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_21", "Connoisseur", "Got the cocktail in one."),
+			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_22", "Cameo", "Those game designers are crazy\xe2\x80\xa6"),
+			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_23", "Briber", "Here's the proper use of the money."),
+			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_24", "Time to Get Serious", "When the going gets rough..."),
+			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_25", "The Curtains Falls", "Applause, please."),
+			ACHIEVEMENTS_LISTEND
+		}
+	},
+
+	{
+		"guardduty",
+		Common::GALAXY_ACHIEVEMENTS,
+		"1455980545",
+		NOSTATS,
+		{
+			ACHIEVEMENT_SIMPLE_ENTRY("ACH_KICKED_OUT", "Airborne", "Get kicked out of the Castle"),
+			ACHIEVEMENT_SIMPLE_ENTRY("ACH_FROG_KISS", "Pucker Up", "Girtrude finds a new friend"),
+			ACHIEVEMENT_HIDDEN_ENTRY("ACH_GIVE_COIN", "Assassin's Greed"),
+			ACHIEVEMENT_SIMPLE_ENTRY("ACH_GET_DRESSED", "Suited And Booted", "Find a quiet place to get dressed"),
+			ACHIEVEMENT_SIMPLE_ENTRY("ACH_ACT_ONE", "Royal Blood", "Deliver the news to King Theodore"),
+			ACHIEVEMENT_SIMPLE_ENTRY("ACH_GET_BOOK", "Wicked Words", "A book bound with flesh"),
+			ACHIEVEMENT_SIMPLE_ENTRY("ACH_TRANS_BOOK", "Speak In Tongues", "Translate the creepy book"),
+			ACHIEVEMENT_SIMPLE_ENTRY("ACH_GET_PHOTO", "Photo Op", "Successfully snap a photo"),
+			ACHIEVEMENT_SIMPLE_ENTRY("ACH_GET_DLC", "Papers, Please", "Get the Wildlands DLC"),
+			ACHIEVEMENT_SIMPLE_ENTRY("ACH_BREAK_CATAPULT", "Mind The Gap", "Fail to make it across the Elder Scar"),
+			ACHIEVEMENT_SIMPLE_ENTRY("ACH_KILL_SPIDER", "Two Birds", "Deal with the Spider"),
+			ACHIEVEMENT_HIDDEN_ENTRY("ACH_RETURN_PAINT", "Special Delivery"),
+			ACHIEVEMENT_SIMPLE_ENTRY("ACH_LANDING_SPOT", "New Lands", "Venture North, beyond the Scar"),
+			ACHIEVEMENT_SIMPLE_ENTRY("ACH_BURIAL_DOOR", "Open Sesame", "Find a way to open the door"),
+			ACHIEVEMENT_HIDDEN_ENTRY("ACH_ACT_THREE", "Guardian Duty"),
+			ACHIEVEMENT_SIMPLE_ENTRY("ACH_CUT_ARM", "Armed And Dangerous", "Insult to injury"),
+			ACHIEVEMENT_SIMPLE_ENTRY("ACH_NEW_HAVEN", "Against All Odds", "Never give up"),
+			ACHIEVEMENT_SIMPLE_ENTRY("ACH_VOID_OF_SPACE", "???", "Something amiss"),
+			ACHIEVEMENT_HIDDEN_ENTRY("ACH_MEET_TONDBERT", "Two Of A Kind"),
+			ACHIEVEMENT_HIDDEN_ENTRY("ACH_KILL_MAGE", "Turn Up The Heat"),
+			ACHIEVEMENTS_LISTEND
+		}
+	},
+
+	{
+		"kathyrain",
+		Common::GALAXY_ACHIEVEMENTS,
+		"1460710709",
+		NOSTATS,
+		{
+			ACHIEVEMENT_SIMPLE_ENTRY("FinishDayOne", "Get on the Katmobile", "Finished day one"),
+			ACHIEVEMENT_SIMPLE_ENTRY("FinishDayTwo", "Wow, they're hypnotic...", "Finished day two"),
+			ACHIEVEMENT_SIMPLE_ENTRY("FinishDayThree", "We've met before, haven't we?", "Finished day three"),
+			ACHIEVEMENT_SIMPLE_ENTRY("FinishDayFour", "Down the rabbit hole", "Finished day four"),
+			ACHIEVEMENT_SIMPLE_ENTRY("FinishGame", "Been there, done that", "Finished the game"),
+			ACHIEVEMENT_HIDDEN_ENTRY("Procrastinator", "Procrastinator"),
+			ACHIEVEMENT_HIDDEN_ENTRY("EnjoyingTheScenery", "Enjoying the scenery"),
+			ACHIEVEMENT_HIDDEN_ENTRY("Hotwheels", "Hotwheels"),
+			ACHIEVEMENT_HIDDEN_ENTRY("Aww", "Aaw!"),
+			ACHIEVEMENT_HIDDEN_ENTRY("Undateable", "Undateable"),
+			ACHIEVEMENT_HIDDEN_ENTRY("MrBear", "Mr. Bear, reporting for duty!"),
+			ACHIEVEMENT_HIDDEN_ENTRY("Nocturnal", "Nocturnal"),
+			ACHIEVEMENT_HIDDEN_ENTRY("HowYouDoing", "How YOU doing?"),
+			ACHIEVEMENT_HIDDEN_ENTRY("RestingScowlyFace", "Resting scowly face"),
+			ACHIEVEMENT_HIDDEN_ENTRY("Pyromaniac", "Pyromaniac"),
+			ACHIEVEMENT_HIDDEN_ENTRY("PassiveSmoking", "Passive smoking"),
+			ACHIEVEMENT_HIDDEN_ENTRY("FilmBuff", "Film buff"),
+			ACHIEVEMENT_HIDDEN_ENTRY("Heretic", "Heretic"),
+			ACHIEVEMENT_HIDDEN_ENTRY("TriggerHappy", "Trigger happy"),
+			ACHIEVEMENT_HIDDEN_ENTRY("HookedOnCorleys", "Hooked on Corleys"),
+			ACHIEVEMENTS_LISTEND
+		}
+	},
+
+	{
+		"mage",
+		Common::GALAXY_ACHIEVEMENTS,
+		"1469845437",
+		NOSTATS,
+		{
+			ACHIEVEMENT_SIMPLE_ENTRY("DABBLING", "Dabbling", "Earn your first spells from the Sphere of Knowledge."),
+			ACHIEVEMENT_SIMPLE_ENTRY("BACK_OFF_BACKERS", "Back Off Backers", "Beat both Mage sparring partners."),
+			ACHIEVEMENT_SIMPLE_ENTRY("YOU_KNOW_YOUR_LIQUOR", "You Know Your Liquor", "Acquire one of each drink type at the tavern."),
+			ACHIEVEMENT_SIMPLE_ENTRY("WHAT_RIVER_CARD", "What River Card?", "Win a hand of Demon's Deal."),
+			ACHIEVEMENT_SIMPLE_ENTRY("CARD_SHARK", "Card Shark", "Win the maximum number of Demon's Deal rounds."),
+			ACHIEVEMENT_SIMPLE_ENTRY("LOVE_THOSE_SHROOMS", "Love Those 'Shrooms", "Pick all mushroom clusters in the forest."),
+			ACHIEVEMENT_SIMPLE_ENTRY("MERCY_TRUMPS_MURDER", "Mercy Trumps Murder", "Spare a tainted life."),
+			ACHIEVEMENT_SIMPLE_ENTRY("YOURE_NO_MARMON", "You're No Marmon", "Complete the first trial."),
+			ACHIEVEMENT_SIMPLE_ENTRY("BACK_FOR_MORE", "Back For More", "Earn your second spells from the Sphere of Knowledge."),
+			ACHIEVEMENT_SIMPLE_ENTRY("I_GET_AROUND", "I Get Around", "Ele'port to each pillar stone location."),
+			ACHIEVEMENT_SIMPLE_ENTRY("GHOST_STORY", "Ghost Story", "Optimally complete the Fire side quest."),
+			ACHIEVEMENT_SIMPLE_ENTRY("THE_HEIST", "The Heist", "Optimally complete the Water side quest."),
+			ACHIEVEMENT_SIMPLE_ENTRY("GREEN_FIEND", "Green Fiend", "Optimally complete the Earth side quest."),
+			ACHIEVEMENT_SIMPLE_ENTRY("THE_AIR_UP_THERE", "The Air Up There", "Optimally complete the Air side quest."),
+			ACHIEVEMENT_SIMPLE_ENTRY("NO_STONE_UNTURNED", "No Stone Unturned", "Complete all class-based side quests with optimal outcomes."),
+			ACHIEVEMENT_SIMPLE_ENTRY("HONORABLE", "Honorable", "Return a borrowed item."),
+			ACHIEVEMENT_SIMPLE_ENTRY("HANDLED_WITH_CARE", "Handled With Care", "No sacred avian was harmed."),
+			ACHIEVEMENT_SIMPLE_ENTRY("CLIMBED_EVERY_MOUNTAIN", "Climbed Every Mountain", "Complete the second trial."),
+			ACHIEVEMENT_SIMPLE_ENTRY("NOW_YOURE_TALKING", "Now You're Talking", "Earn your third spells from the Sphere of Knowledge."),
+			ACHIEVEMENT_SIMPLE_ENTRY("DETECTIVE_DARC", "Detective D'arc", "Complete the severed circle story branch."),
+			ACHIEVEMENT_SIMPLE_ENTRY("DIVERSIFIED", "Diversified", "Kill one of each monster type."),
+			ACHIEVEMENT_SIMPLE_ENTRY("WELL_READ", "Well Read", "Find and read all books and notes."),
+			ACHIEVEMENT_SIMPLE_ENTRY("COLLECTOR", "Collector", "Find all three \"Tear\" class brooches."),
+			ACHIEVEMENT_SIMPLE_ENTRY("WHO_PUT_DA_LIGHTS_OUT", "Who Put Da Lights Out?", "Extinguish the Redcaps' camp fire."),
+			ACHIEVEMENT_SIMPLE_ENTRY("THANKS_BUT_NO_THANKS", "Thanks, But No Thanks", "Reject a dark deal."),
+			ACHIEVEMENT_SIMPLE_ENTRY("ITS_NOT_EASY_BEING_GREEN", "It's Not Easy Being Green", "Make a red delivery to the Greencaps."),
+			ACHIEVEMENT_SIMPLE_ENTRY("IF_I_EVER_SEE_ANOTHER_GOBLIN", "If I Ever See Another Goblin...", "Complete the third trial."),
+			ACHIEVEMENT_SIMPLE_ENTRY("FRIEND_IN_NEED", "Friend in Need", "An ally survives."),
+			ACHIEVEMENT_SIMPLE_ENTRY("ONE_MAN_BOMB_SQUAD", "One Man Bomb Squad", "Both allies survive."),
+			ACHIEVEMENT_SIMPLE_ENTRY("SHOWDOWN", "Showdown", "Defeat the Big Bad."),
+			ACHIEVEMENT_SIMPLE_ENTRY("MAXED_OUT", "Maxed Out", "Max out all your stats."),
+			ACHIEVEMENT_SIMPLE_ENTRY("YOU_MADE_YOUR_POINTS", "You Made Your Points", "Finish the game with max XP / score."),
+			ACHIEVEMENT_SIMPLE_ENTRY("INITIATED", "Initiated", "Complete the game."),
+			ACHIEVEMENT_SIMPLE_ENTRY("STAY_CLASSY", "Stay Classy", "Finish the game with all 4 classes."),
+			ACHIEVEMENT_SIMPLE_ENTRY("PACIFIST", "Pacifist", "Kill only the bosses (no regular monsters)."),
+			ACHIEVEMENT_SIMPLE_ENTRY("PYRO", "Pyro", "Earn all Fire class Bonus points."),
+			ACHIEVEMENT_SIMPLE_ENTRY("FLOOD_READY", "Flood Ready", "Earn all Water class Bonus points."),
+			ACHIEVEMENT_SIMPLE_ENTRY("GROUNDED", "Grounded", "Earn all Earth class Bonus points."),
+			ACHIEVEMENT_SIMPLE_ENTRY("UP_UP_AND_AWAY", "Up, Up, and Away", "Earn all Air class Bonus points."),
+			ACHIEVEMENT_SIMPLE_ENTRY("WHOS_COUNTING", "Who's Counting?", "Kill 50 enemies."),
+			ACHIEVEMENT_SIMPLE_ENTRY("DEDICATED", "Dedicated", "Kill 100 enemies."),
+			ACHIEVEMENT_SIMPLE_ENTRY("INSATIABLE", "Insatiable", "Kill 500 enemies."),
+			ACHIEVEMENT_SIMPLE_ENTRY("APOCALYPTIC", "Apocalyptic", "Kill 1,000 enemies."),
+			ACHIEVEMENT_SIMPLE_ENTRY("DONT_NEED_NO_STINKIN_BUFFS", "Don't Need No Stinkin' Buffs", "Beat the game without equipping any extra gems or items (after the initial tutorial)."),
+			ACHIEVEMENTS_LISTEND
+		}
+	},
+
+	{
+		"oott",
+		Common::GALAXY_ACHIEVEMENTS,
+		"1444830704",
+		NOSTATS,
+		{
+			ACHIEVEMENT_SIMPLE_ENTRY("tkc_TwoGirls", "He is Gnomor'", "The girls, Snow and Red, tried to save the gnome but alas, they failed."),
+			ACHIEVEMENT_SIMPLE_ENTRY("tkc_HighPriest", "High Priest", "The high priest hightailed it out of the Faerie Realm."),
+			ACHIEVEMENT_SIMPLE_ENTRY("tkc_Knight", "A Knight to Remember", "You've discovered Sir Gauen searching the swamp."),
+			ACHIEVEMENT_SIMPLE_ENTRY("tkc_Chucker", "Chucked It In", "Chucker has given up on his search for the Queen."),
+			ACHIEVEMENT_SIMPLE_ENTRY("tkc_Faolan", "Faolan's Story", "You now know the full story behind Faolan's defeat of Lord Sinister."),
+			ACHIEVEMENT_SIMPLE_ENTRY("tkc_Musical", "Musical Genius", "You've learned and played every song on hard mode."),
+			ACHIEVEMENT_SIMPLE_ENTRY("tkc_Honorable", "Honors Student", "You've read every memorial stone on the Isle of the Honored."),
+			ACHIEVEMENT_SIMPLE_ENTRY("tkc_PerfectMatch", "Perfect Match", "You brought Glenda and Ted together. True love."),
+			ACHIEVEMENT_SIMPLE_ENTRY("tkc_Troll", "Paid the Troll Toll", "Always pay off a troll with a treasure chest of gold!"),
+			ACHIEVEMENT_SIMPLE_ENTRY("tkc_Berry", "Drops of Juniper", "You found a way past the angry tree and got yourself some Firienne berries."),
+			ACHIEVEMENT_SIMPLE_ENTRY("tkc_Swamped", "Swamped", "You've navigated the treacherous swamp and retrieved the pixies harp."),
+			ACHIEVEMENT_SIMPLE_ENTRY("tkc_Seer", "Seered to Perfection", "The Seer has revealed her secrets to you thanks to your unusual solution."),
+			ACHIEVEMENT_SIMPLE_ENTRY("tkc_Hello", "A Worthy Challenger", "You rescued the Queen and cast the spell in the final confrontation."),
+			ACHIEVEMENTS_LISTEND
+		}
+	},
+	
+	{
+		"whispersofamachine",
+		Common::GALAXY_ACHIEVEMENTS,
+		"1845001352",
+		NOSTATS,
+		{
+			ACHIEVEMENT_SIMPLE_ENTRY("CaseClosed", "Case Closed", "Finished the game"),
+			ACHIEVEMENT_SIMPLE_ENTRY("PathOfTyr", "Path of Tyr", "Finished the game assertively"),
+			ACHIEVEMENT_SIMPLE_ENTRY("PathOfFrigg", "Path of Frigg", "Finished the game analytically"),
+			ACHIEVEMENT_SIMPLE_ENTRY("PathOfBaldr", "Path of Baldr", "Finished the game empathically"),
+			ACHIEVEMENT_SIMPLE_ENTRY("UnlockTier2", "Hidden Potential", "Unlocked a new augmentation"),
+			ACHIEVEMENT_SIMPLE_ENTRY("UnlockAugs", "Power Overwhelming", "Unlocked a full set of augmentations"),
+			ACHIEVEMENT_HIDDEN_ENTRY("Harbinger", "Singularity-Minded"),
+			ACHIEVEMENT_HIDDEN_ENTRY("UnleashTheWolf", "Unleash the Wolf"),
+			ACHIEVEMENT_HIDDEN_ENTRY("Caregiver", "Caregiver"),
+			ACHIEVEMENT_HIDDEN_ENTRY("Careerist", "Careerist"),
+			ACHIEVEMENT_HIDDEN_ENTRY("MixedMethods", "Mixed Methods"),
+			ACHIEVEMENT_HIDDEN_ENTRY("NoSodaForYou", "Whispers of a Soda Machine"),
+			ACHIEVEMENT_HIDDEN_ENTRY("PassiveSmoking", "Passive Smoking Redux"),
+			ACHIEVEMENT_HIDDEN_ENTRY("Reassembled", "Reassembled"),
+			ACHIEVEMENT_HIDDEN_ENTRY("SharpEyed", "Sharp-Eyed"),
+			ACHIEVEMENT_HIDDEN_ENTRY("Environmentalist", "Environmentalist"),
+			ACHIEVEMENT_HIDDEN_ENTRY("WhatSuspect", "Babysitter"),
+			ACHIEVEMENT_HIDDEN_ENTRY("PickTheBaby", "Pick the Baby"),
+			ACHIEVEMENT_HIDDEN_ENTRY("Museophile", "Museophile"),
+			ACHIEVEMENT_HIDDEN_ENTRY("SneakAttack", "Sneak Attack"),
+			ACHIEVEMENT_HIDDEN_ENTRY("Memento", "Memento"),
+			ACHIEVEMENT_HIDDEN_ENTRY("CompulsiveReturner", "Serial Returner"),
+			ACHIEVEMENT_HIDDEN_ENTRY("CaffeineAddict", "Whispers of a Coffee Machine"),
+			ACHIEVEMENT_HIDDEN_ENTRY("Whodunnit", "Whodunnit"),
+			ACHIEVEMENT_HIDDEN_ENTRY("CloseCall", "Close Call"),
+			ACHIEVEMENTS_LISTEND
+		}
+	},
+
 	{
 		"adateinthepark",
 		Common::STEAM_ACHIEVEMENTS,
 		"468530",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("NEW_ACHIEVEMENT_1_0_PHOTO", "Eye of the Beholder", "Remnants of an enchanting evening..."),
 			ACHIEVEMENT_SIMPLE_ENTRY("NEW_ACHIEVEMENT_1_1_", "A Friend in Need", "Sometimes we all need some help."),
@@ -60,6 +274,17 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"alemmo",
 		Common::STEAM_ACHIEVEMENTS,
 		"296850",
+		{
+			STATS_SIMPLE_ENTRY("GRAVESTONES_READ", "Gravestones Read", "0"),
+			STATS_SIMPLE_ENTRY("ITEMS_CAUGHT", "Items Caught", "0"),
+			STATS_SIMPLE_ENTRY("ITEMS_THROWN", "Items Thrown", "0"),
+			STATS_SIMPLE_ENTRY("LINES_SUNG", "Lines Sung", "0"),
+			STATS_SIMPLE_ENTRY("ROOMS_PEEPED", "Rooms Peeped", "0"),
+			STATS_SIMPLE_ENTRY("EXCUSES_GIVEN", "Excuses Given", "0"),
+			STATS_SIMPLE_ENTRY("TITLES_READ", "Titles Read", "0"),
+			STATS_SIMPLE_ENTRY("ITEMS_COLLECTED", "Inventory Items Collected", "0"),
+			STATS_LISTEND
+		},
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("RAIN_MAN", "Rain Man", "Re-enact an iconic rain dance."),
 			ACHIEVEMENT_SIMPLE_ENTRY("TRAILBLAZER", "Trailblazer", "Successfully make a Blazin' Kev beverage on your first attempt."),
@@ -89,6 +314,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"alum",
 		Common::STEAM_ACHIEVEMENTS,
 		"338420",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("BEGIN", "Begin", "You have embarked on the journey of Alum."),
 			ACHIEVEMENT_SIMPLE_ENTRY("ACH_CHAPTER2", "Chapter 2", "You've reached chapter 2"),
@@ -115,6 +341,11 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"astroloco",
 		Common::STEAM_ACHIEVEMENTS,
 		"357490",
+		{
+			STATS_NODESC_ENTRY("TRAIN_COUNT", "0"),
+			STATS_NODESC_ENTRY("TARGET_COUNT", "0"),
+			STATS_LISTEND
+		},
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("NEW_GAME", "New Game", "It's all downhill from here."),
 			ACHIEVEMENT_SIMPLE_ENTRY("TECH_WHIZZ", "Tech-Whizz", "Get Gary back on his feet within two attempts."),
@@ -144,6 +375,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"atotkdeluxe",
 		Common::STEAM_ACHIEVEMENTS,
 		"603870",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("NEW_ACHIEVEMENT_1_0", "Chapter One", "A Mixed Welcome"),
 			ACHIEVEMENT_SIMPLE_ENTRY("NEW_ACHIEVEMENT_1_1", "Chapter Two", "Flight of the Dove"),
@@ -187,6 +419,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"apotheosis",
 		Common::STEAM_ACHIEVEMENTS,
 		"364350",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("PENELOPE_SUPERPOWERS", "Penelope Has Superpowers", "Penelope killed the bandits on the isle."),
 			ACHIEVEMENT_SIMPLE_ENTRY("AARON_SUPERPOWERS", "Aaron Has Superpowers", "Aaron traveled to Infraworld."),
@@ -232,6 +465,13 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		Common::STEAM_ACHIEVEMENTS,
 		"782280",
 		{
+			STATS_SIMPLE_ENTRY("start", "Games Started", "0"),
+			STATS_SIMPLE_ENTRY("round2", "Round Two", "0"),
+			STATS_SIMPLE_ENTRY("round3", "Round Three", "0"),
+			STATS_SIMPLE_ENTRY("won", "Won!", "0"),
+			STATS_LISTEND
+		},
+		{
 			ACHIEVEMENT_SIMPLE_ENTRY("NEW_ACHIEVEMENT_1_1", "In Soviet Russia...", "...Beer drinks you!"),
 			ACHIEVEMENT_SIMPLE_ENTRY("NEW_ACHIEVEMENT_1_2", "You Can't Get Ye Beer.", "I'm certainly not gonna tell you."),
 			ACHIEVEMENT_SIMPLE_ENTRY("NEW_ACHIEVEMENT_1_3", "No Cheese for You!", "Don't be cheesy."),
@@ -273,6 +513,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"blackwell1",
 		Common::STEAM_ACHIEVEMENTS,
 		"80330",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("MEDIUM_WELL_DONE", "Medium Well Done", "Finish the game at least once"),
 			ACHIEVEMENT_SIMPLE_ENTRY("HEAR_ME", "Hear me", "Finish the game with both commentary modes active, from the opening menu till the end"),
@@ -290,6 +531,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"blackwell2",
 		Common::STEAM_ACHIEVEMENTS,
 		"80340",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("SHUTTERBUG", "Shutterbug", "Take all four photographs"),
 			ACHIEVEMENT_SIMPLE_ENTRY("ON_THE_CHIN", "Take it on the Chin", "Get hit by the saxophone only once"),
@@ -309,6 +551,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"blackwell3",
 		Common::STEAM_ACHIEVEMENTS,
 		"80350",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("SOFT_TOUCH", "Soft Touch", "Give Allen some hope before he goes"),
 			ACHIEVEMENT_SIMPLE_ENTRY("LUSH_LIFE", "Lush Life", "Have a few drinks, but you might regret it in the morning"),
@@ -330,6 +573,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"blackwell4",
 		Common::STEAM_ACHIEVEMENTS,
 		"80360",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("MEDIUM_WELL_DONE", "Medium Well Done", "Complete the game once"),
 			ACHIEVEMENT_SIMPLE_ENTRY("TEAMWORK", "Teamwork", "Use both Rosa and Joey to solve a puzzle"),
@@ -348,7 +592,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 			ACHIEVEMENT_SIMPLE_ENTRY("LISTEN_CLOSELY", "Listen Closely, Now", "Finish the game in commentary mode"),
 			ACHIEVEMENT_SIMPLE_ENTRY("BULLET_DODGER", "Bullet Dodger", "Escape the yacht with only getting shot once"),
 			ACHIEVEMENT_SIMPLE_ENTRY("GHOSTS_OF_THE_PAST", "Ghosts of the Past", "Find all the references to previous games in Rosa's apartment"),
-			ACHIEVEMENT_SIMPLE_ENTRY("BLOWEYMALLONE", "Blowey Mallone", "Use Joey's breath ability on at least 10 people"),
+			ACHIEVEMENT_SIMPLE_ENTRY("BLOWEY_MALLONE", "Blowey Mallone", "Use Joey's breath ability on at least 10 people"),
 			ACHIEVEMENTS_LISTEND
 		}
 	},
@@ -357,6 +601,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"blackwell5",
 		Common::STEAM_ACHIEVEMENTS,
 		"236930",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("CONVERGENCE", "Convergence", "Two becomes one"),
 			ACHIEVEMENT_SIMPLE_ENTRY("CURTAINCALL", "Curtain Call", "Save your first ghost"),
@@ -384,6 +629,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"charnelhousetrilogy",
 		Common::STEAM_ACHIEVEMENTS,
 		"288930",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("PASSWORD_PROTECTED", "Password Protected", "You logged in and tracked your parcel."),
 			ACHIEVEMENT_SIMPLE_ENTRY("BREATHING_METHOD", "The Breathing Method", "You suffered a great loss."),
@@ -411,6 +657,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"chronicleofinnsmouth",
 		Common::STEAM_ACHIEVEMENTS,
 		"420180",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("ACH_maleducato", "Shift It, Moron!", "Met the shady thug for the first time."),
 			ACHIEVEMENT_SIMPLE_ENTRY("ACH_malmenato", "Down For The Count.", "Witnessed a brutal beating."),
@@ -462,6 +709,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"crystalshardadventurebundle",
 		Common::STEAM_ACHIEVEMENTS,
 		"551840",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("YROLG0", "Burn Them", "When in doubt, set something on fire."),
 			ACHIEVEMENT_SIMPLE_ENTRY("YROLG1", "Skewer Them", "Shish-ka-bob!"),
@@ -498,6 +746,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"detectivegallo",
 		Common::STEAM_ACHIEVEMENTS,
 		"556060",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_01", "Vigilante", "That taxi driver picked up his last fare\xe2\x80\xa6"),
 			ACHIEVEMENT_SIMPLE_ENTRY("Achiev_02", "Alcoholic", "Cocktails go to my head."),
@@ -532,6 +781,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"docapocalypse",
 		Common::STEAM_ACHIEVEMENTS,
 		"509920",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("ACH_CHAP1_BUNKER", "Chapter 1: Bunker", "You re-emerged from the bunker unharmed many months after catastrophe!"),
 			ACHIEVEMENT_HIDDEN_ENTRY("ACH_TRADING", "Trading Paint"),
@@ -569,6 +819,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"downfall2009",
 		Common::STEAM_ACHIEVEMENTS,
 		"364390",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("DF_PARTONE", "Part One", "You read Part One of the letter"),
 			ACHIEVEMENT_SIMPLE_ENTRY("DF_PARTTWO", "Part Two", "You read Part Two of the letter"),
@@ -608,6 +859,20 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"dustbowl",
 		Common::STEAM_ACHIEVEMENTS,
 		"367110",
+		{
+			STATS_SIMPLE_ENTRY("Pug_Stat", "Enemies punched to death.", "0"),
+			STATS_SIMPLE_ENTRY("22_Stat", "Kill enemies with 22 weapons", "0"),
+			STATS_SIMPLE_ENTRY("Rifle_Stat", "Kill enemies with rifles", "0"),
+			STATS_SIMPLE_ENTRY("Pistol_Stat", "Kill enemies with pistols", "0"),
+			STATS_SIMPLE_ENTRY("Multitool_Stat", "Use Mulititools", "0"),
+			STATS_SIMPLE_ENTRY("Head_Shots", "Total headshots", "0"),
+			STATS_SIMPLE_ENTRY("Limb_Shots", "Total limb shots", "0"),
+			STATS_SIMPLE_ENTRY("Heart_Shots", "Total heart shots", "0"),
+			STATS_SIMPLE_ENTRY("Search_Stat", "Objects Searched", "0"),
+			STATS_SIMPLE_ENTRY("Flame_Kills", "Kill 20 enemies with flamer", "0"),
+			STATS_SIMPLE_ENTRY("Tresspasser", "Enter 50 locations", "0"),
+			STATS_LISTEND
+		},
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("NEW_ACHIEVEMENT_1_0", "Pugilist", "Kill 20 enemies with your fists."),
 			ACHIEVEMENT_SIMPLE_ENTRY("NEW_ACHIEVEMENT_1_1", "Gunslinger", "Kill 50 enemies with pistols."),
@@ -662,6 +927,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"falconcity",
 		Common::STEAM_ACHIEVEMENTS,
 		"1270590",
+		NOSTATS,
 		{
 			ACHIEVEMENT_HIDDEN_ENTRY("SAFE_CRACKER", "Safe Cracker"),
 			ACHIEVEMENT_HIDDEN_ENTRY("HACKER", "A real Hacker!"),
@@ -680,6 +946,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"feriadarles",
 		Common::STEAM_ACHIEVEMENTS,
 		"1181570",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("PARROT_SQUAWK", "Squawk!", "Made the parrot talk"),
 			ACHIEVEMENT_SIMPLE_ENTRY("MAKE_BAGPIPE", "Oh great, bagpipes", "A shrill wailing sound"),
@@ -704,6 +971,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"footballgame",
 		Common::STEAM_ACHIEVEMENTS,
 		"654550",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("RemoveTheEvidence", "Remove the Evidence", "Mom won't suspect a thing..."),
 			ACHIEVEMENT_SIMPLE_ENTRY("TheLake", "The Lake", "Our favorite place."),
@@ -729,6 +997,14 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		Common::STEAM_ACHIEVEMENTS,
 		"80310",
 		{
+			STATS_SIMPLE_ENTRY("ExamStrikes", "Strikes on the Center 7 Exams", "0"),
+			STATS_SIMPLE_ENTRY("Mementos", "Hidden notes found in Center 7", "0"),
+			STATS_SIMPLE_ENTRY("LostHealth", "Health lost during the fights", "0"),
+			STATS_SIMPLE_ENTRY("MagsFound", "Extra ammo magazines found", "0"),
+			STATS_SIMPLE_ENTRY("EggsFound", "Easter Eggs Discovered", "0"),
+			STATS_LISTEND
+		},
+		{
 			ACHIEVEMENT_SIMPLE_ENTRY("GRADE_A_STUDENT", "Grade A Student", "Complete all Center 7 Exams without any strikes"),
 			ACHIEVEMENT_SIMPLE_ENTRY("MEMENTOS", "Mementos", "Find all 6 hidden notes in Center 7"),
 			ACHIEVEMENT_SIMPLE_ENTRY("GOLDEN_GUN", "Golden Gun", "Complete all fights without losing any health"),
@@ -752,6 +1028,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"goldenwake",
 		Common::STEAM_ACHIEVEMENTS,
 		"307570",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("SUPERSALESMAN", "Super Salesman", "You were able to persuade everyone without using Seller Intuition."),
 			ACHIEVEMENT_SIMPLE_ENTRY("SALESMAN", "Salesman", "You were able to persuade one person without using Seller Intuition."),
@@ -779,6 +1056,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"guardduty",
 		Common::STEAM_ACHIEVEMENTS,
 		"872750",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("ACH_KICKED_OUT", "Airborne", "Get kicked out of the Castle"),
 			ACHIEVEMENT_SIMPLE_ENTRY("ACH_FROG_KISS", "Pucker Up", "Girtrude finds a new friend"),
@@ -808,6 +1086,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"herdiscoming",
 		Common::STEAM_ACHIEVEMENTS,
 		"1028740",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("ACH1", "Amateur Enhancer", "Enhance a weapon to +3."),
 			ACHIEVEMENT_SIMPLE_ENTRY("ACH2", "Pro Enhancer", "Enhance a weapon to +5."),
@@ -837,6 +1116,19 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"heroinesquest",
 		Common::STEAM_ACHIEVEMENTS,
 		"283880",
+		{
+			STATS_SIMPLE_ENTRY("scoreWar", "Warrior Score", "0"),
+			STATS_SIMPLE_ENTRY("scoreSor", "Sorceress Score", "0"),
+			STATS_SIMPLE_ENTRY("scoreRog", "Rogue Score", "0"),
+			STATS_SIMPLE_ENTRY("battles", "Battles Won", "0"),
+			STATS_SIMPLE_ENTRY("gold", "Gold Collected", "0"),
+			STATS_SIMPLE_ENTRY("days", "Days Played", "0"),
+			STATS_SIMPLE_ENTRY("endCount", "Games Won", "0"),
+			STATS_SIMPLE_ENTRY("endTime", "Fastest Completion", "999"),
+			STATS_SIMPLE_ENTRY("endHonor", "Highest Honor", "0"),
+			STATS_SIMPLE_ENTRY("bonesTime", "Best Bones Time", "999"),
+			STATS_LISTEND
+		},
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("HQ01", "So You Want To Be A Heroine", "Find your first food"),
 			ACHIEVEMENT_SIMPLE_ENTRY("HQ02", "Apprentice Warrior", "Reach chapter 2 as warrior"),
@@ -892,6 +1184,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"justignorethem",
 		Common::STEAM_ACHIEVEMENTS,
 		"561770",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("ACH_MYST_PHOTO", "Mysterious Photo", "A photo can catch a moment in time?"),
 			ACHIEVEMENT_SIMPLE_ENTRY("ACH_1000_PHOTO", "A Photo Can Tell A Thousand Words", "An empty frame tells a million."),
@@ -934,6 +1227,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"kathyrain",
 		Common::STEAM_ACHIEVEMENTS,
 		"370910",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("FinishDayOne", "Get on the Katmobile", "Finished day one"),
 			ACHIEVEMENT_SIMPLE_ENTRY("FinishDayTwo", "Wow, they're hypnotic...", "Finished day two"),
@@ -963,6 +1257,11 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"killyourself",
 		Common::STEAM_ACHIEVEMENTS,
 		"1251910",
+		{
+			STATS_SIMPLE_ENTRY("book_read", "Book entries read", "0"),
+			STATS_SIMPLE_ENTRY("num_steps", "Steps taken", "0"),
+			STATS_LISTEND
+		},
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("DEATH_0", "I believe I can fly", "Solve the corresponding ending"),
 			ACHIEVEMENT_SIMPLE_ENTRY("DEATH_1", "Dead tired", "Solve the corresponding ending"),
@@ -1016,6 +1315,10 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		Common::STEAM_ACHIEVEMENTS,
 		"761460",
 		{
+			STATS_NODESC_ENTRY("TROPHIES", "0"),
+			STATS_LISTEND
+		},
+		{
 			ACHIEVEMENT_SIMPLE_ENTRY("RINGMYBELL", "Ring My Bell", "You're so annoying"),
 			ACHIEVEMENT_SIMPLE_ENTRY("MANOFWORD", "Man Of Your Word", "Kept your promise to Mrs. Hanbrook"),
 			ACHIEVEMENT_SIMPLE_ENTRY("BOBBIN", "I'm Bobbin, Are You My Mother?", "Played a familiar melody"),
@@ -1065,6 +1368,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"legendofhand",
 		Common::STEAM_ACHIEVEMENTS,
 		"595560",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("MorningRoutine", "Morning Routine", "You've completed your morning exercises"),
 			ACHIEVEMENT_SIMPLE_ENTRY("MansBestFriend", "Man's Best Friend", "Green Island, green dog!"),
@@ -1099,6 +1403,26 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"mage",
 		Common::STEAM_ACHIEVEMENTS,
 		"270610",
+		{
+			STATS_SIMPLE_ENTRY("DEFEATED_BACKERS", "Defeated Backers", "0"),
+			STATS_SIMPLE_ENTRY("HOW_MANY_DRINKS", "How Many Drinks", "0"),
+			STATS_SIMPLE_ENTRY("MUSHROOM_COUNT", "Mushroom Count", "0"),
+			STATS_SIMPLE_ENTRY("ENEMY_TYPES_KILLED", "Enemy Types Killed", "0"),
+			STATS_SIMPLE_ENTRY("KILL_COUNT", "Kill Count", "0"),
+			STATS_SIMPLE_ENTRY("WAFE_FIRE_POINTS", "WAFE Fire Points", "0"),
+			STATS_SIMPLE_ENTRY("WAFE_AIR_POINTS", "WAFE Air Points", "0"),
+			STATS_SIMPLE_ENTRY("WAFE_WATER_POINTS", "WAFE Water Points", "0"),
+			STATS_SIMPLE_ENTRY("WAFE_EARTH_POINTS", "WAFE Earth Points", "0"),
+			STATS_SIMPLE_ENTRY("ELEPORTED_LOCATIONS", "Ele'ported Locations", "0"),
+			STATS_SIMPLE_ENTRY("READ_COUNT", "Read Count", "0"),
+			STATS_SIMPLE_ENTRY("HOW_MANY_CLASSES", "How Many Classes", "0"),
+			STATS_SIMPLE_ENTRY("HOW_MANY_SIDEQUESTS", "How Many Sidequests", "0"),
+			STATS_SIMPLE_ENTRY("TEAR_GEMS_COLLECTED", "Tear Gems Collected", "0"),
+			STATS_SIMPLE_ENTRY("KILL_COUNT50", "Kill Count", "0"),
+			STATS_SIMPLE_ENTRY("KILL_COUNT100", "Kill Count", "0"),
+			STATS_SIMPLE_ENTRY("KILL_COUNT500", "Kill Count", "0"),
+			STATS_LISTEND
+		},
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("DABBLING", "Dabbling", "Earn your first spells from the Sphere of Knowledge."),
 			ACHIEVEMENT_SIMPLE_ENTRY("BACK_OFF_BACKERS", "Back Off Backers", "Beat both Mage sparring partners."),
@@ -1152,6 +1476,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"metaldead",
 		Common::STEAM_ACHIEVEMENTS,
 		"302690",
+		NOSTATS,
 		{
 			ACHIEVEMENT_HIDDEN_ENTRY("ACHIEVEMENT_01", "My First Time"),
 			ACHIEVEMENT_HIDDEN_ENTRY("ACHIEVEMENT_02", "Soiled"),
@@ -1174,6 +1499,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"metaphobia",
 		Common::STEAM_ACHIEVEMENTS,
 		"1220930",
+		NOSTATS,
 		{
 			ACHIEVEMENT_HIDDEN_ENTRY("Have you seen this man?", "Have you seen this man?"),
 			ACHIEVEMENT_SIMPLE_ENTRY("Bookworm", "Bookworm", "Carl's words live on"),
@@ -1189,6 +1515,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"neofeud",
 		Common::STEAM_ACHIEVEMENTS,
 		"673850",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("ACH_DEFEAT_SECURITY", "Robot Lives Matter", "Neutralize the AWOL security guard at Sentient Services"),
 			ACHIEVEMENT_SIMPLE_ENTRY("ACH_TERRESTRIAL_BLUES", "Terrestrial Blues", "Finish your Mount Everest of triplicate paperwork."),
@@ -1235,6 +1562,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"oott",
 		Common::STEAM_ACHIEVEMENTS,
 		"425600",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("tkc_TwoGirls", "He is Gnomor'", "The girls, Snow and Red, tried to save the gnome but alas, they failed."),
 			ACHIEVEMENT_SIMPLE_ENTRY("tkc_HighPriest", "High Priest", "The high priest hightailed it out of the Faerie Realm."),
@@ -1257,6 +1585,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"primordia",
 		Common::STEAM_ACHIEVEMENTS,
 		"227000",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("KEEPINGITREEL", "Keeping it reel", "Find the hidden tape deck"),
 			ACHIEVEMENT_SIMPLE_ENTRY("DEFRAGMENTED", "Defragmented", "Wake a slumbering giant"),
@@ -1295,6 +1624,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"qfi",
 		Common::STEAM_ACHIEVEMENTS,
 		"264560",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("qfi_act1", "Act 1", "You've finished Act 1 of Quest for Infamy. Hooray!"),
 			ACHIEVEMENT_SIMPLE_ENTRY("qfi_act2", "Act 2", "No more working for Rayford!"),
@@ -1363,6 +1693,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"resonance",
 		Common::STEAM_ACHIEVEMENTS,
 		"212050",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("THATWENTWELL", "That went well", "Talk to that nice girl on the subway"),
 			ACHIEVEMENT_SIMPLE_ENTRY("MIRRORMASTER", "Mirror Master", "Grow some eyes in the back of your head"),
@@ -1410,6 +1741,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"richardandalice",
 		Common::STEAM_ACHIEVEMENTS,
 		"279260",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("NEW_ACHIEVEMENT_1_0", "The Albatross Corridor", "You encouraged Alice to begin opening up."),
 			ACHIEVEMENT_SIMPLE_ENTRY("NEW_ACHIEVEMENT_1_1", "Blocks That Matter", "You used a child's toy to escape from the basement."),
@@ -1441,6 +1773,17 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		Common::STEAM_ACHIEVEMENTS,
 		"396090",
 		{
+			STATS_NODESC_ENTRY("XP", "0"),
+			STATS_NODESC_ENTRY("Comedian", "0"),
+			STATS_NODESC_ENTRY("PetroleumTheocracy", "0"),
+			STATS_NODESC_ENTRY("CapitalistPlayground", "0"),
+			STATS_NODESC_ENTRY("UnstableElements", "0"),
+			STATS_NODESC_ENTRY("Charmer", "0"),
+			STATS_NODESC_ENTRY("Polyglot", "0"),
+			STATS_NODESC_ENTRY("HermitKingdom", "0"),
+			STATS_LISTEND
+		},
+		{
 			ACHIEVEMENT_SIMPLE_ENTRY("trophy_the_dictator", "THE DICTATOR", "Congratulations! You beat the game and secured your place in history."),
 			ACHIEVEMENT_SIMPLE_ENTRY("trophy_big_score", "SHAFT'S BIG SCORE", "Gain at least 800 points in a single playthrough."),
 			ACHIEVEMENT_SIMPLE_ENTRY("trophy_metropolis", "METROPOLIS", "Build every state infrastructure building in a single game."),
@@ -1471,6 +1814,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"samaritan",
 		Common::STEAM_ACHIEVEMENTS,
 		"283180",
+		NOSTATS,
 		{
 			ACHIEVEMENT_HIDDEN_ENTRY("ACH_GREEN_FINGERS", "Green Fingers"),
 			ACHIEVEMENT_HIDDEN_ENTRY("ACH_HOBBY_BOTANIST", "Hobby Botanist"),
@@ -1497,6 +1841,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"shardlight",
 		Common::STEAM_ACHIEVEMENTS,
 		"336130",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("ARM", "Disarmed", "Properly disposed of the severed arm."),
 			ACHIEVEMENT_SIMPLE_ENTRY("ORDER", "Order", "You maintained the status quo."),
@@ -1525,6 +1870,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"shivah",
 		Common::STEAM_ACHIEVEMENTS,
 		"252370",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("MAVEN", "Maven", "The best at what you do."),
 			ACHIEVEMENT_SIMPLE_ENTRY("MESHUGGA", "Meshugga", "Absolutely crazy"),
@@ -1544,6 +1890,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"sumatra",
 		Common::STEAM_ACHIEVEMENTS,
 		"610900",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("EnterOffice", "Clocking in", "Another day in paradise!"),
 			ACHIEVEMENT_SIMPLE_ENTRY("Tiger", "Satisfied customer", "A feathery meal for our feline friend"),
@@ -1579,6 +1926,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"technobabylon",
 		Common::STEAM_ACHIEVEMENTS,
 		"307580",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("PART1", "Prisoner of Consciousness", "Part 1 complete"),
 			ACHIEVEMENT_SIMPLE_ENTRY("PART2", "Suicide City", "Part 2 complete"),
@@ -1628,6 +1976,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"thecastle",
 		Common::STEAM_ACHIEVEMENTS,
 		"1133950",
+		NOSTATS,
 		{
 			ACHIEVEMENT_HIDDEN_ENTRY("1_parabolica", "Playing with the satellite dish."),
 			ACHIEVEMENT_HIDDEN_ENTRY("2_torreon", "I want to go higher."),
@@ -1664,6 +2013,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"thecatlady",
 		Common::STEAM_ACHIEVEMENTS,
 		"253110",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("CHAPTER_1", "Chapter 1 Completed!", "Complete the first chapter."),
 			ACHIEVEMENT_SIMPLE_ENTRY("CHAPTER_2", "Chapter 2 Completed!", "Complete the second chapter."),
@@ -1698,6 +2048,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"thesecretsofjesus",
 		Common::STEAM_ACHIEVEMENTS,
 		"1142230",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("ACHIEVEMENT_00", "Truly, truly, I tell you: Do not poke your nose into other people's business!", "E"),
 			ACHIEVEMENT_SIMPLE_ENTRY("ACHIEVEMENT_01", "Finally a bread roll. Religion is not always easy", "S"),
@@ -1724,6 +2075,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"theterribleoldman",
 		Common::STEAM_ACHIEVEMENTS,
 		"1147030",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("Beer", "Three for Two", "That's quite a deal!"),
 			ACHIEVEMENT_SIMPLE_ENTRY("Jackson", "Jackson", "We all have our dreams."),
@@ -1739,6 +2091,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"unavowed",
 		Common::STEAM_ACHIEVEMENTS,
 		"336140",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("START_OF_SHIFT_MALE", "Start of shift (Male)", "Complete the male cop origin"),
 			ACHIEVEMENT_SIMPLE_ENTRY("START_OF_SHIFT_FEMALE", "Start of shift (female)", "Complete the female cop origin"),
@@ -1805,6 +2158,30 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		Common::STEAM_ACHIEVEMENTS,
 		"439310",
 		{
+			STATS_NODESC_ENTRY("stat_kills", "0"),
+			STATS_NODESC_ENTRY("stat_deaths", "0"),
+			STATS_NODESC_ENTRY("stat_emily1", "0"),
+			STATS_NODESC_ENTRY("stat_emily2", "0"),
+			STATS_NODESC_ENTRY("stat_emily3", "0"),
+			STATS_NODESC_ENTRY("stat_bat", "0"),
+			STATS_NODESC_ENTRY("stat_gun", "0"),
+			STATS_NODESC_ENTRY("stat_laser", "0"),
+			STATS_NODESC_ENTRY("stat_flame", "0"),
+			STATS_NODESC_ENTRY("stat_lives", "0"),
+			STATS_NODESC_ENTRY("stat_points", "0"),
+			STATS_NODESC_ENTRY("stat_gunupgrade", "0"),
+			STATS_NODESC_ENTRY("stat_batupgrade", "0"),
+			STATS_NODESC_ENTRY("stat_laserupgrade", "0"),
+			STATS_NODESC_ENTRY("stat_flameupgrade", "0"),
+			STATS_NODESC_ENTRY("stat_laserchargeupgrade", "0"),
+			STATS_NODESC_ENTRY("stat_flamechargeupgrade", "0"),
+			STATS_NODESC_ENTRY("stat_hysteriadamagered", "0"),
+			STATS_NODESC_ENTRY("stat_dgincslowmo", "0"),
+			STATS_NODESC_ENTRY("stat_damagereduction", "0"),
+			STATS_NODESC_ENTRY("stat_mode", "0"),
+			STATS_LISTEND
+		},
+		{
 			ACHIEVEMENT_SIMPLE_ENTRY("ACH_SECOND_TONONE", "Second To None", "Complete a level earning the Second To None Rank."),
 			ACHIEVEMENT_SIMPLE_ENTRY("ACH_SHARPSHOOTER", "Sharpshooter", "Achieve 100% accuracy with the GUN."),
 			ACHIEVEMENT_SIMPLE_ENTRY("ACH_GHOST", "Ghost", "Complete a stage without killing anyone."),
@@ -1844,6 +2221,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"whispersofamachine",
 		Common::STEAM_ACHIEVEMENTS,
 		"631570",
+		NOSTATS,
 		{
 			ACHIEVEMENT_SIMPLE_ENTRY("CaseClosed", "Case Closed", "Finished the game"),
 			ACHIEVEMENT_SIMPLE_ENTRY("PathOfTyr", "Path of Tyr", "Finished the game assertively"),
@@ -1878,6 +2256,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		"zniwadventure",
 		Common::STEAM_ACHIEVEMENTS,
 		"904750",
+		NOSTATS,
 		{
 			ACHIEVEMENT_HIDDEN_ENTRY("ZNIW_STORY1_TINYFOREST", "And so the adventure begins"),
 			ACHIEVEMENT_HIDDEN_ENTRY("ZNIW_STORY2_RIVERBANK", "The good, the bad and the river"),
@@ -1915,7 +2294,7 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 		}
 	},
 
-	{0, Common::UNK_ACHIEVEMENTS, 0, {ACHIEVEMENTS_LISTEND}}
+	{0, Common::UNK_ACHIEVEMENTS, 0, {STATS_LISTEND}, {ACHIEVEMENTS_LISTEND}}
 };
 
 } // End of namespace AGS
@@ -1924,5 +2303,10 @@ static const AchievementDescriptionList achievementDescriptionList[] = {
 #undef ACHIEVEMENT_NODESC_ENTRY
 #undef ACHIEVEMENT_HIDDEN_ENTRY
 #undef ACHIEVEMENTS_LISTEND
+
+#undef STATS_SIMPLE_ENTRY
+#undef STATS_NODESC_ENTRY
+#undef STATS_LISTEND
+#undef NOSTATS
 
 #endif /* AGS_ACHIEVEMENTS_H */

@@ -66,8 +66,29 @@ void SceneScriptCT11::SceneLoaded() {
 			Scene_2D_Region_Add(0, 505, 316, 513, 321);
 			Game_Flag_Set(kFlagCT11DogWrapperAvailable);
 		}
+
+		if (_vm->_cutContent
+		    && !Actor_Clue_Query(kActorMcCoy, kClueGrigoriansNote)
+		    && (Game_Flag_Query(kFlagDektoraIsReplicant)
+		        || !Game_Flag_Query(kFlagGordoIsReplicant))
+		) {
+			// The car is only bought by Reps from CrazyLegs
+			// if Dektora is a Replicant
+			// or if Dektora  is human and Gordo is also human
+			Item_Add_To_World(kItemNote, kModelAnimationGrigoriansNote, kSetCT11, 641.21f, 26.0f, 472.0f, 304, 12, 12, false, true, false, true);
+			Scene_2D_Region_Add(2, 505, 321, 519, 332);
+		}
+
 		if (!Actor_Clue_Query(kActorMcCoy, kClueCar)) {
+#if BLADERUNNER_ORIGINAL_BUGS
 			Scene_2D_Region_Add(1, 412, 258, 552, 358);
+#else
+			// expand region 1 a bit and add two more
+			// as auxilliary in order to better cover the car area
+			Scene_2D_Region_Add(1, 365, 258, 552, 358);
+			Scene_2D_Region_Add(3, 267, 330, 365, 377);
+			Scene_2D_Region_Add(4, 365, 358, 454, 377);
+#endif // BLADERUNNER_ORIGINAL_BUGS
 		}
 	} else {
 		if (Game_Flag_Query(kFlagCT11DogWrapperAvailable)) {
@@ -75,6 +96,15 @@ void SceneScriptCT11::SceneLoaded() {
 			Game_Flag_Reset(kFlagCT11DogWrapperAvailable);
 			Game_Flag_Set(kFlagCT11DogWrapperTaken);
 		}
+		// Check if Grigorian's note is still in the world after Act 3
+		// and remove it (in cut content)
+		if (_vm->_cutContent
+		    && Game_Flag_Query(kFlagCT11GrigorianNotePlaced)
+		    && !Actor_Clue_Query(kActorMcCoy, kClueGrigoriansNote)) {
+			Item_Remove_From_World(kItemNote);
+			Game_Flag_Reset(kFlagCT11GrigorianNotePlaced);
+		}
+
 		Unobstacle_Object("BRIDGE SUPPORT", true);
 		Unobstacle_Object("BODY", true);
 		Unobstacle_Object("HEADLIGHTS", true);
@@ -153,11 +183,36 @@ bool SceneScriptCT11::ClickedOn2DRegion(int region) {
 			Actor_Voice_Over(560, kActorVoiceOver);
 			Actor_Voice_Over(570, kActorVoiceOver);
 			Actor_Voice_Over(580, kActorVoiceOver);
+#if !BLADERUNNER_ORIGINAL_BUGS
+			// in the original game the hotspot would not be removed
+			// after picking up the lichendog Wrapper
+			Scene_2D_Region_Remove(0);
+#endif // !BLADERUNNER_ORIGINAL_BUGS
 		}
 		return true;
 	}
 
-	if (region == 1) {
+	if (_vm->_cutContent
+	    && region == 2
+	    && !Actor_Clue_Query(kActorMcCoy, kClueGrigoriansNote)
+	) {
+		if (!Loop_Actor_Walk_To_XYZ(kActorMcCoy, 686.0f, 0.0f, 658.0f, 12, true, false, false)) {
+			Actor_Face_Heading(kActorMcCoy, 47, false);
+			Item_Remove_From_World(kItemNote);
+			Actor_Clue_Acquire(kActorMcCoy, kClueGrigoriansNote, false, -1);
+			Item_Pickup_Spin_Effect(kModelAnimationGrigoriansNote, 512, 326);
+			Actor_Voice_Over(8840, kActorMcCoy);
+			Scene_2D_Region_Remove(2);
+		}
+		return true;
+	}
+
+	if (region == 1
+#if !BLADERUNNER_ORIGINAL_BUGS
+	    || region == 3
+	    || region == 4
+#endif // !BLADERUNNER_ORIGINAL_BUGS
+	) {
 		if (!Loop_Actor_Walk_To_XYZ(kActorMcCoy, 686.0f, 0.0f, 658.0f, 12, true, false, false)) {
 			Actor_Face_Heading(kActorMcCoy, 47, false);
 			int cluesFound = 0;
@@ -188,6 +243,11 @@ bool SceneScriptCT11::ClickedOn2DRegion(int region) {
 				Actor_Voice_Over(540, kActorVoiceOver);
 				Actor_Clue_Acquire(kActorMcCoy, kClueCar, false, -1);
 				Scene_2D_Region_Remove(1);
+#if !BLADERUNNER_ORIGINAL_BUGS
+				Scene_2D_Region_Remove(3);
+				Scene_2D_Region_Remove(4);
+#endif // !BLADERUNNER_ORIGINAL_BUGS
+
 			} else {
 				Actor_Says(kActorMcCoy, 8525, 12);
 			}

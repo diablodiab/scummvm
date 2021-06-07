@@ -1190,8 +1190,7 @@ void OptionsDialog::addKeyMapperControls(GuiObject *boss, const Common::String &
 }
 
 void OptionsDialog::addAchievementsControls(GuiObject *boss, const Common::String &prefix, const Common::AchievementsInfo &info) {
-	Common::String achDomainId = ConfMan.get("achievements", _domain);
-	AchMan.setActiveDomain(info.platform, info.appId);
+	AchMan.setActiveDomain(info);
 
 	GUI::ScrollContainerWidget *scrollContainer;
 	scrollContainer = new GUI::ScrollContainerWidget(boss, prefix + "Container", "");
@@ -1203,8 +1202,8 @@ void OptionsDialog::addAchievementsControls(GuiObject *boss, const Common::Strin
 
 	uint16 lineHeight = g_gui.xmlEval()->getVar("Globals.Line.Height");
 	uint16 yStep = lineHeight;
-	uint16 ySmallStep = yStep/3;
-	uint16 yPos = lineHeight + yStep*3;
+	uint16 ySmallStep = yStep / 3;
+	uint16 yPos = lineHeight + yStep * 3;
 	uint16 progressBarWidth = 240;
 	uint16 width = g_system->getOverlayWidth() <= 320 ? 240 : 410;
 	uint16 descrDelta = g_system->getOverlayWidth() <= 320 ? 25 : 30;
@@ -1258,6 +1257,37 @@ void OptionsDialog::addAchievementsControls(GuiObject *boss, const Common::Strin
 		progressBar->setValue(nAchieved);
 		progressBar->setMaxValue(nMax);
 		progressBar->setEnabled(false);
+	}
+}
+
+void OptionsDialog::addStatisticsControls(GuiObject *boss, const Common::String &prefix, const Common::AchievementsInfo &info) {
+	AchMan.setActiveDomain(info);
+
+	GUI::ScrollContainerWidget *scrollContainer;
+	scrollContainer = new GUI::ScrollContainerWidget(boss, prefix + "Container", "");
+	scrollContainer->setBackgroundType(GUI::ThemeEngine::kWidgetBackgroundNo);
+
+	uint16 nMax = info.stats.size();
+
+	uint16 lineHeight = g_gui.xmlEval()->getVar("Globals.Line.Height");
+	uint16 yStep = lineHeight;
+	uint16 ySmallStep = yStep / 3;
+	uint16 yPos = lineHeight;
+	uint16 width = g_system->getOverlayWidth() <= 320 ? 240 : 410;
+
+	for (uint16 idx = 0; idx < nMax ; idx++) {
+		Common::String key = info.stats[idx].id;
+		if (info.stats[idx].comment) {
+			key = info.stats[idx].comment;
+		}
+
+		Common::String value = AchMan.getStatRaw(info.stats[idx].id);
+
+		Common::U32String str = Common::U32String::format("%s: %s", key.c_str(), value.c_str());
+		new StaticTextWidget(scrollContainer, lineHeight, yPos, width, yStep, str, Graphics::kTextAlignStart);
+
+		yPos += yStep;
+		yPos += ySmallStep;
 	}
 }
 

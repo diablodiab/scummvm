@@ -232,7 +232,7 @@ void Item::move(int32 X, int32 Y, int32 Z) {
 	if (!dest_fast && (_flags & Item::FLG_FASTAREA)) {
 		_extendedFlags |= EXT_LERP_NOPREV;
 		if (_extendedFlags & EXT_CAMERA)
-			CameraProcess::GetCameraProcess()->ItemMoved();
+			CameraProcess::GetCameraProcess()->itemMoved();
 		else
 			leaveFastArea();
 
@@ -247,7 +247,7 @@ void Item::move(int32 X, int32 Y, int32 Z) {
 	// If we are being followed, notify the camera that we moved
 	// Note that we don't need to
 	if (_extendedFlags & EXT_CAMERA)
-		CameraProcess::GetCameraProcess()->ItemMoved();
+		CameraProcess::GetCameraProcess()->itemMoved();
 
 	if (_extendedFlags & EXT_TARGET)
 		TargetReticleProcess::get_instance()->itemMoved(this);
@@ -1194,9 +1194,6 @@ uint16 Item::fireWeapon(int32 x, int32 y, int32 z, Direction dir, int firetype, 
 	if (!GAME_IS_CRUSADER)
 		return 0;
 
-	if (GAME_IS_REGRET)
-		warning("Item::fireWeapon: TODO: Update for Regret (different firetypes)");
-
 	ix += x;
 	iy += y;
 	iz += z;
@@ -1229,7 +1226,7 @@ uint16 Item::fireWeapon(int32 x, int32 y, int32 z, Direction dir, int firetype, 
 		return 0;
 	}
 
-	int spriteframe = 0; // fire types 1, 2, 0xb, 0xd
+	int spriteframe = 0; // fire types 1, 2, 7, 8, 0xb, 0xd
 	switch (firetype) {
 	case 3:
 	case 9:
@@ -1246,8 +1243,14 @@ uint16 Item::fireWeapon(int32 x, int32 y, int32 z, Direction dir, int firetype, 
 		spriteframe = 0x47 + getRandom() % 5;
 		break;
 	case 0xf:
+	case 0x12: // No Regret only
+	case 0x13: // No Regret only
 		spriteframe = 0x4c;
 		break;
+	case 0x10: // No Regret only
+		spriteframe = dir + 0x50;
+	case 0x11: // No Regret only
+		spriteframe = dir * 6 + 0x78;
 	default:
 		break;
 	}
@@ -1317,7 +1320,7 @@ uint16 Item::fireWeapon(int32 x, int32 y, int32 z, Direction dir, int firetype, 
 	return spriteprocpid;
 }
 
-uint16 Item::fireDistance(const Item *other, Direction dir, int16 xoff, int16 yoff, int16 zoff) {
+uint16 Item::fireDistance(const Item *other, Direction dir, int16 xoff, int16 yoff, int16 zoff) const {
 	if (!other)
 		return 0;
 
@@ -1335,13 +1338,13 @@ uint16 Item::fireDistance(const Item *other, Direction dir, int16 xoff, int16 yo
 	int16 yoff2 = 0;
 	int16 zoff2 = 0;
 	bool other_offsets = false;
-	Actor *a = dynamic_cast<Actor *>(this);
+	const Actor *a = dynamic_cast<const Actor *>(this);
 	if (a) {
 		Animation::Sequence anim;
 		bool kneeling = a->isKneeling();
 		bool smallwpn = true;
-		MainActor *ma = dynamic_cast<MainActor *>(this);
-		Item *wpn = getItem(a->getActiveWeapon());
+		const MainActor *ma = dynamic_cast<const MainActor *>(this);
+		const Item *wpn = getItem(a->getActiveWeapon());
 		if (wpn && wpn->getShapeInfo()->_weaponInfo) {
 			smallwpn = wpn->getShapeInfo()->_weaponInfo->_small;
 		}
@@ -3487,7 +3490,7 @@ uint32 Item::I_move(const uint8 *args, unsigned int /*argsize*/) {
 uint32 Item::I_legalMoveToPoint(const uint8 *args, unsigned int argsize) {
 	ARG_ITEM_FROM_PTR(item);
 	ARG_WORLDPOINT(point);
-	ARG_UINT16(force); // 0/1
+	ARG_UINT16(move_if_blocked); // 0/1
 	ARG_UINT16(unknown2); // always 0
 
 	int32 x = point.getX();
@@ -3501,10 +3504,34 @@ uint32 Item::I_legalMoveToPoint(const uint8 *args, unsigned int argsize) {
 
 	if (!item)
 		return 0;
-	//! What should this do to ethereal items?
-	if (item->collideMove(x, y, z, false, force == 1) == 0x4000)
-		return 1;
-	return 0;
+
+	//
+	// Return true when there are no blockers.
+	// If there are blockers, only move if move_if_blocked is set.
+	//
+	int retval = 1;
+	Std::list<CurrentMap::SweepItem> collisions;
+	int32 start[3], end[3], dims[3];
+	end[0] = x;
+	end[1] = y;
+	end[2] = z;
+	item->getLocation(start[0], start[1], start[2]);
+	item->getFootpadWorld(dims[0], dims[1], dims[2]);
+	CurrentMap *map = World::get_instance()->getCurrentMap();
+	map->sweepTest(start, end, dims, item->getShapeInfo()->_flags,
+				   item->getObjId(), true, &collisions);
+	for (Std::list<CurrentMap::SweepItem>::iterator it = collisions.begin();
+		 it != collisions.end(); it++) {
+		if (it->_blocking && !it->_touching && it->_endTime > 0) {
+			if (!move_if_blocked)
+				return 0;
+			retval = 0;
+			break;
+		}
+	}
+
+	item->collideMove(x, y, z, false, false);
+	return retval;
 }
 
 uint32 Item::I_legalMoveToContainer(const uint8 *args, unsigned int /*argsize*/) {

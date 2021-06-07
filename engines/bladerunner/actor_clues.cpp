@@ -248,6 +248,16 @@ int ActorClues::getFromActorId(int clueId) const {
 	return _clues[clueIndex].fromActorId;
 }
 
+/**
+ * @brief returns if flag2 for specified clue is set.
+ *
+ * Bit flag "flag2" seems to affect one modifier when sharing / spreading clues
+ * (based on Honesty, friendliness and some seemingly *complicated* algorithm).
+ * It seems that it increases the overall modifier value for a clue, making it more likely to be shared with another actor.
+ *
+ * @param clueId
+ * @return true if this bit flag is set, false otherwise
+*/
 bool ActorClues::isFlag2(int clueId) const {
 	int clueIndex = findClueIndex(clueId);
 	if (clueIndex == -1) {
@@ -276,6 +286,32 @@ void ActorClues::setViewed(int clueId, bool viewed) {
 		_clues[clueIndex].flags |= 0x04;
 	} else {
 		_clues[clueIndex].flags &= ~0x04;
+	}
+}
+
+// Method for Restored Content
+// Checks whether a clue, which McCoy has, was shared between McCoy and Mainframe
+bool ActorClues::isSharedWithMainframe(int clueId) const {
+	int clueIndex = findClueIndex(clueId);
+	if (clueIndex == -1) {
+		return false;
+	}
+
+	return _clues[clueIndex].field4 & 0x01;
+}
+
+// Method for Restored Content
+// Marks a clue, which McCoy has, as shared between McCoy and Mainframe
+void ActorClues::setSharedWithMainframe(int clueId, bool value) {
+	int clueIndex = findClueIndex(clueId);
+	if (clueIndex == -1) {
+		return;
+	}
+
+	if (value) {
+		_clues[clueIndex].field4 |= 0x01;
+	} else {
+		_clues[clueIndex].field4 &= ~0x01;
 	}
 }
 
@@ -358,12 +394,12 @@ void ActorClues::remove(int index) {
 	_clues[index].flags       = 0;
 	_clues[index].fromActorId = -1;
 
-	_clues[index].field3 = -1;
-	_clues[index].field4 = 0;
-	_clues[index].field5 = -1;
-	_clues[index].field6 = 0;
-	_clues[index].field7 = -1;
-	_clues[index].field8 = 0;
+	_clues[index].field3 = -1; // unused (but stored/restored)
+	_clues[index].field4 = 0;  // Restored Content: Use to mark if McCoy's clue was shared with Mainframe. original: unused (but stored/restored)
+	_clues[index].field5 = -1; // unused (but stored/restored)
+	_clues[index].field6 = 0;  // unused (but stored/restored)
+	_clues[index].field7 = -1; // unused (but stored/restored)
+	_clues[index].field8 = 0;  // unused (but stored/restored)
 }
 
 void ActorClues::save(SaveFileWriteStream &f) {

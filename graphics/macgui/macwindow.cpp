@@ -316,6 +316,10 @@ void MacWindow::loadBorder(Common::SeekableReadStream &file, uint32 flags, Borde
 	_macBorder.loadBorder(file, flags, offsets);
 }
 
+void MacWindow::setBorder(Graphics::TransparentSurface *surface, uint32 flags, BorderOffsets offsets) {
+	_macBorder.setBorder(surface, flags, offsets);
+}
+
 void MacWindow::resizeBorderSurface() {
 	updateOuterDims();
 	_borderSurface.free();
@@ -420,8 +424,11 @@ bool MacWindow::processEvent(Common::Event &event) {
 
 	switch (event.type) {
 	case Common::EVENT_MOUSEMOVE:
-		if (_wm->_mouseDown && _wm->_hoveredWidget && !_wm->_hoveredWidget->_dims.contains(_dims.left - event.mouse.x, _dims.top - event.mouse.y)) {
+		if (_wm->_mouseDown && _wm->_hoveredWidget && !_wm->_hoveredWidget->_dims.contains(event.mouse.x - _dims.left, event.mouse.y - _dims.top)) {
 			_wm->_hoveredWidget->setActive(false);
+			// since we de-active the hoveredWidget, so we need to check whether it's the activeWidget of wm
+			if (_wm->getActiveWidget() == _wm->_hoveredWidget)
+				_wm->setActiveWidget(nullptr);
 			_wm->_hoveredWidget = nullptr;
 		}
 
@@ -484,6 +491,12 @@ bool MacWindow::processEvent(Common::Event &event) {
 		if (_wm->getActiveWidget())
 			return _wm->getActiveWidget()->processEvent(event);
 
+		return false;
+
+	case Common::EVENT_WHEELUP:
+	case Common::EVENT_WHEELDOWN:
+		if (_wm->getActiveWidget() && _wm->getActiveWidget()->processEvent(event))
+			return true;
 		return false;
 
 	default:

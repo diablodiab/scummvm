@@ -238,7 +238,7 @@ public:
 	 * Returns if the video has reached the end or not.
 	 * @return true if the video has finished playing or if none is loaded, false otherwise
 	 */
-	bool endOfVideo() const;
+	virtual bool endOfVideo() const;
 
 	/**
 	 * Returns the current frame number of the video.
@@ -944,7 +944,7 @@ private:
 
 	// Current playback status
 	bool _needsUpdate;
-	Audio::Timestamp _lastTimeChange, _endTime;
+	Audio::Timestamp _endTime;
 	bool _endTimeSet;
 	Common::Rational _playbackRate;
 	VideoTrack *_nextVideoTrack;
@@ -959,6 +959,7 @@ private:
 	// Default PixelFormat settings
 	Graphics::PixelFormat _defaultHighColorFormat;
 
+protected:
 	// Internal helper functions
 	void stopAudio();
 	void startAudio();
@@ -966,7 +967,10 @@ private:
 	bool hasFramesLeft() const;
 	bool hasAudio() const;
 
+	Audio::Timestamp _lastTimeChange;
 	int32 _startTime;
+
+private:
 	uint32 _pauseLevel;
 	uint32 _pauseStartTime;
 	byte _audioVolume;

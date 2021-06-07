@@ -413,14 +413,12 @@ int32 Menu::processMenu(MenuSettings *menuSettings, bool showCredits) {
 	// if we are running the game already, the buttons are just rendered on top of the scene
 	if (_engine->_scene->isGameRunning()) {
 		_engine->_screens->copyScreen(_engine->workVideoBuffer, _engine->frontVideoBuffer);
-		_engine->flip();
 	} else {
 		_engine->_screens->loadMenuImage(false);
 	}
 	uint32 startMillis = _engine->_system->getMillis();
 	do {
-		FrameMarker frame;
-		ScopedFPS scopedFps;
+		FrameMarker frame(_engine);
 		const uint32 loopMillis = _engine->_system->getMillis();
 		_engine->readKeys();
 
@@ -614,7 +612,6 @@ int32 Menu::processMenu(MenuSettings *menuSettings, bool showCredits) {
 
 int32 Menu::advoptionsMenu() {
 	_engine->_screens->copyScreen(_engine->workVideoBuffer, _engine->frontVideoBuffer);
-	_engine->flip();
 
 	ScopedCursor scoped(_engine);
 	for (;;) {
@@ -639,7 +636,6 @@ int32 Menu::advoptionsMenu() {
 
 int32 Menu::savemanageMenu() {
 	_engine->_screens->copyScreen(_engine->workVideoBuffer, _engine->frontVideoBuffer);
-	_engine->flip();
 
 	ScopedCursor scoped(_engine);
 	for (;;) {
@@ -665,7 +661,6 @@ int32 Menu::savemanageMenu() {
 
 int32 Menu::volumeMenu() {
 	_engine->_screens->copyScreen(_engine->workVideoBuffer, _engine->frontVideoBuffer);
-	_engine->flip();
 
 	ScopedCursor scoped(_engine);
 	for (;;) {
@@ -698,7 +693,6 @@ void Menu::inGameOptionsMenu() {
 
 int32 Menu::optionsMenu() {
 	_engine->_screens->copyScreen(_engine->workVideoBuffer, _engine->frontVideoBuffer);
-	_engine->flip();
 
 	_engine->_sound->stopSamples();
 	_engine->_music->playTrackMusic(9); // LBA's Theme
@@ -762,8 +756,7 @@ bool Menu::init() {
 }
 
 EngineState Menu::run() {
-	FrameMarker frame;
-	ScopedFPS scopedFps;
+	FrameMarker frame(_engine);
 	_engine->_text->initTextBank(TextBankId::Options_and_menus);
 
 	_engine->_music->playTrackMusic(9); // LBA's Theme
@@ -814,8 +807,7 @@ int32 Menu::giveupMenu() {
 
 	int32 menuId;
 	do {
-		FrameMarker frame;
-		ScopedFPS scopedFps;
+		FrameMarker frame(_engine);
 		_engine->_text->initTextBank(TextBankId::Options_and_menus);
 		menuId = processMenu(localMenu);
 		switch (menuId) {
@@ -1073,8 +1065,7 @@ void Menu::processBehaviourMenu() {
 #endif
 	ScopedKeyMap scopedKeyMap(_engine, uiKeyMapId);
 	while (_engine->_input->isActionActive(TwinEActionType::BehaviourMenu) || _engine->_input->isQuickBehaviourActionActive()) {
-		FrameMarker frame;
-		ScopedFPS scopedFps(50);
+		FrameMarker frame(_engine, 50);
 		_engine->readKeys();
 
 #if 0
@@ -1210,8 +1201,7 @@ void Menu::processInventoryMenu() {
 	//ScopedCursor scopedCursor(_engine);
 	ScopedKeyMap scopedKeyMap(_engine, uiKeyMapId);
 	for (;;) {
-		FrameMarker frame;
-		ScopedFPS fps(66);
+		FrameMarker frame(_engine, 66);
 		_engine->readKeys();
 		int32 prevSelectedItem = inventorySelectedItem;
 

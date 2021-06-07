@@ -334,8 +334,7 @@ void Redraw::processDrawListShadows(const DrawListStruct &drawCmd) {
 
 	addRedrawArea(_engine->_interface->textWindow);
 
-	// show clipping area
-	//drawBox(_engine->_renderer->renderRect.left, _engine->_renderer->renderRect.top, _engine->_renderer->renderRect.right, _engine->_renderer->renderRect.bottom);
+	_engine->_debugScene->drawClip(renderRect);
 }
 
 void Redraw::processDrawListActors(const DrawListStruct &drawCmd, bool bgRedraw) {
@@ -451,8 +450,7 @@ void Redraw::processDrawListActorSprites(const DrawListStruct &drawCmd, bool bgR
 			_engine->_interface->blitBox(_engine->_interface->textWindow, _engine->frontVideoBuffer, _engine->workVideoBuffer);
 		}
 
-		// show clipping area
-		//_engine->_debugScene->drawClip(renderRect);
+		_engine->_debugScene->drawClip(renderRect);
 	}
 }
 
@@ -691,8 +689,6 @@ void Redraw::redrawEngineActions(bool bgRedraw) {
 
 		if (_engine->_scene->needChangeScene != -1 && _engine->_scene->needChangeScene != -2) {
 			_engine->_screens->fadeIn(_engine->_screens->paletteRGBA);
-			_engine->setPalette(_engine->_screens->paletteRGBA);
-			_engine->flip();
 		}
 	} else {
 		blitBackgroundAreas();
@@ -721,7 +717,6 @@ void Redraw::redrawEngineActions(bool bgRedraw) {
 	}
 
 	if (bgRedraw) {
-		_engine->flip();
 		moveNextAreas();
 		_engine->unfreezeTime();
 	} else {
@@ -768,11 +763,7 @@ void Redraw::drawBubble(int32 actorIdx) {
 	renderRect.bottom = spriteHeight + renderRect.top - 1;
 
 	_engine->_interface->setClip(renderRect);
-
-	if (_engine->_grid->drawSprite(renderRect.left, renderRect.top, spritePtr)) {
-		_engine->copyBlockPhys(renderRect, true);
-	}
-
+	_engine->_grid->drawSprite(renderRect.left, renderRect.top, spritePtr);
 	_engine->_interface->resetClip();
 }
 

@@ -50,6 +50,15 @@ enum AchievementsPlatform {
 };
 
 /**
+ * Information structure for game-specific statistics.
+ */
+struct StatDescription {
+	const char *id;      //!< Stat internal ID, such as "ITEMS_THROWN".
+	const char *comment; //!< Optional stat comment, such as "Items Thrown".
+	const char *start;   //!< Stat default value, such as "0".
+};
+
+/**
  * Information structure for game-specific achievements.
  */
 struct AchievementDescription {
@@ -65,6 +74,7 @@ struct AchievementDescription {
 struct AchievementsInfo {
 	Common::AchievementsPlatform platform;              //!< Achievements platform, such as "STEAM_ACHIEVEMENTS".
 	Common::String appId;                               //!< Achievements application ID of the given platform.
+	Common::Array<StatDescription> stats;               //!< Descriptions of all game stats.
 	Common::Array<AchievementDescription> descriptions; //!< Descriptions of all game achievements.
 
 	AchievementsInfo() { platform = Common::UNK_ACHIEVEMENTS; }
@@ -81,12 +91,11 @@ public:
 	~AchievementsManager();
 
 	/**
-	 * Set a platform and application ID as active domain.
+	 * Set a platform and application ID as active domain, store messages texts.
 	 *
-	 * @param[in] platform Achievements platform.
-	 * @param[in] appId	Achievements application ID of the given platform.
+	 * @param[in] info Achievements platform, application ID and messages information.
 	 */
-	bool setActiveDomain(AchievementsPlatform platform, const String &appId);
+	bool setActiveDomain(const AchievementsInfo &info);
 	bool unsetActiveDomain();                            //!< Unset the current active domain.
 	bool isReady() const { return _iniFile != nullptr; } //!< Check whether the domain is ready.
 
@@ -95,15 +104,14 @@ public:
 	 * @{
 	 */
 
-	/** Set an achievement.
+	/** Set an achievement. Message is automatically displayed with text from active domain.
 	 *
 	 * @param[in] id			   Internal ID of the achievement.
-	 * @param[in] displayedMessage Message displayed when the achievement is achieved.
 	 */
-	bool setAchievement(const String &id, const String &displayedMessage);
+	bool setAchievement(const String &id);
 
 	/**
-	 * Set an achievement as achieved.
+	 * Check if an achievement as achieved.
 	 *
 	 * @param[in] id Internal ID of the achievement.
 	 */
@@ -128,7 +136,7 @@ public:
 	 *
 	 * @param[in] id Internal ID of the achievement.
 	 */
-	int getStatInt(const String &id);
+	int getStatInt(const String &id) const;
 
 	/**
 	 * Set a statistic to an integer number.
@@ -143,7 +151,7 @@ public:
 	 *
 	 * @param[in] id	Internal ID of the achievement.
 	 */
-	float getStatFloat(const String &id);
+	float getStatFloat(const String &id) const;
 
 	/**
 	 * Set a statistic to a float number.
@@ -152,6 +160,30 @@ public:
 	 * @param[in] value Value to which the statistic is set.
 	 */
 	bool setStatFloat(const String &id, float value);
+
+	/**
+	 * Get a statistic (raw string).
+	 *
+	 * @param[in] id	Internal ID of the achievement.
+	 */
+	const String getStatRaw(const String &id) const;
+
+	/**
+	 * Get an average rate statistic (float).
+	 * Calcucated by devision the sum of count by the sum of times.
+	 *
+	 * @param[in] id	Internal ID of the achievement.
+	 */
+	float getAverageRateStatFloat(const String &id) const;
+
+	/**
+	 * Update an average rate statistic (float). 
+	 *
+	 * @param[in] id	Internal ID of the achievement.
+	 * @param[in] count Value to which the statistic count is increased.
+	 * @param[in] times Value to which the statistic times is increased.
+	 */
+	bool updateAverageRateStatFloat(const String &id, float count, float times);
 
 	/** @} */
 
@@ -164,9 +196,29 @@ public:
 
 	/** @} */
 
+	/**
+	 * @name Methods for storing platform-specific data
+	 * @{
+	 */
+
+	/**
+	 * Store provided key and value pair in additional section.
+	 * May be useful for posting achievements to original platform.
+	 *
+	 * @param[in] id	Internal ID of the achievement.
+	 * @param[in] value Value to which the statistic is set.
+	 */
+	bool setSpecialString(const String &id, const String &value);
+
+	/** @} */
+
 private:
+	float getStatFloatEx(const String &id, const String &section) const;
+	bool setStatFloatEx(const String &id, float value, const String &section) const;
+
 	INIFile *_iniFile;
 	String _iniFileName;
+	Common::Array<AchievementDescription> _descriptions;
 };
 
 /** Shortcut for accessing the Achievements Manager. */

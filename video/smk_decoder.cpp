@@ -29,6 +29,7 @@
 #include "common/endian.h"
 #include "common/util.h"
 #include "common/stream.h"
+#include "common/bitarray.h"
 #include "common/bitstream.h"
 #include "common/system.h"
 #include "common/textconsole.h"
@@ -70,23 +71,28 @@ private:
 	byte _prefixlength[256];
 
 	Common::BitStreamMemory8LSB &_bs;
+	bool _empty;
 };
 
 SmallHuffmanTree::SmallHuffmanTree(Common::BitStreamMemory8LSB &bs)
-	: _treeSize(0), _bs(bs) {
-	uint32 bit = _bs.getBit();
-	assert(bit);
+	: _treeSize(0), _bs(bs), _empty(false) {
+	if (!_bs.getBit()) {
+		_empty = true;
+		return;
+	}
 
 	for (uint16 i = 0; i < 256; ++i)
 		_prefixtree[i] = _prefixlength[i] = 0;
 
 	decodeTree(0, 0);
 
-	bit = _bs.getBit();
-	assert(!bit);
+	(void)_bs.getBit();
 }
 
 uint16 SmallHuffmanTree::decodeTree(uint32 prefix, int length) {
+	if (_empty)
+		return 0;
+
 	if (!_bs.getBit()) { // Leaf
 		_tree[_treeSize] = _bs.getBits(8);
 
@@ -118,6 +124,9 @@ uint16 SmallHuffmanTree::decodeTree(uint32 prefix, int length) {
 }
 
 uint16 SmallHuffmanTree::getCode(Common::BitStreamMemory8LSB &bs) {
+	if (_empty)
+		return 0;
+
 	byte peek = bs.peekBits(MIN<uint32>(bs.size() - bs.pos(), 8));
 	uint16 *p = &_tree[_prefixtree[peek]];
 	bs.skip(_prefixlength[peek]);
@@ -189,8 +198,7 @@ BigHuffmanTree::BigHuffmanTree(Common::BitStreamMemory8LSB &bs, int allocSize)
 	_treeSize = 0;
 	_tree = new uint32[allocSize / 4];
 	decodeTree(0, 0);
-	bit = _bs.getBit();
-	assert(!bit);
+	(void)_bs.getBit();
 
 	for (uint32 i = 0; i < 3; ++i) {
 		if (_last[i] == 0xffffffff) {
@@ -319,6 +327,8 @@ bool SmackerDecoder::loadStream(Common::SeekableReadStream *stream) {
 	// If bits 1 or 2 are set, the frame should be scaled to twice its height
 	// before it is displayed.
 	_header.flags = _fileStream->readUint32LE();
+	if (_header.flags & 1)
+		frameCount++;
 
 	SmackerVideoTrack *videoTrack = createVideoTrack(width, height, frameCount, frameRate, _header.flags, _header.signature);
 	addTrack(videoTrack);
@@ -369,6 +379,8 @@ bool SmackerDecoder::loadStream(Common::SeekableReadStream *stream) {
 				warning("Unhandled Smacker v2 audio compression");
 
 			addTrack(new SmackerAudioTrack(_header.audioInfo[i], getSoundType()));
+		} else {
+			addTrack(new SmackerEmptyTrack());
 		}
 	}
 
@@ -519,7 +531,8 @@ VideoDecoder::AudioTrack *SmackerDecoder::getAudioTrack(int index) {
 
 SmackerDecoder::SmackerVideoTrack::SmackerVideoTrack(uint32 width, uint32 height, uint32 frameCount, const Common::Rational &frameRate, uint32 flags, uint32 signature) {
 	_surface = new Graphics::Surface();
-	_surface->create(width, height * (flags ? 2 : 1), Graphics::PixelFormat::createFormatCLUT8());
+	_surface->create(width, height * ((flags & 6) ? 2 : 1), Graphics::PixelFormat::createFormatCLUT8());
+	_dirtyBlocks.set_size(width * height / 16);
 	_frameCount = frameCount;
 	_frameRate = frameRate;
 	_flags = flags;
@@ -564,9 +577,10 @@ void SmackerDecoder::SmackerVideoTrack::decodeFrame(Common::BitStreamMemory8LSB 
 	_MClrTree->reset();
 	_FullTree->reset();
 	_TypeTree->reset();
+	_dirtyBlocks.clear();
 
 	// Height needs to be doubled if we have flags (Y-interlaced or Y-doubled)
-	uint doubleY = _flags ? 2 : 1;
+	uint doubleY = (_flags & 6) ? 2 : 1;
 
 	uint bw = getWidth() / 4;
 	uint bh = getHeight() / doubleY / 4;
@@ -601,6 +615,7 @@ void SmackerDecoder::SmackerVideoTrack::decodeFrame(Common::BitStreamMemory8LSB 
 					}
 					map >>= 4;
 				}
+				_dirtyBlocks.set(block);
 				++block;
 			}
 			break;
@@ -678,6 +693,7 @@ void SmackerDecoder::SmackerVideoTrack::decodeFrame(Common::BitStreamMemory8LSB 
 					default:
 						break;
 				}
+				_dirtyBlocks.set(block);
 				++block;
 			}
 			break;
@@ -695,6 +711,7 @@ void SmackerDecoder::SmackerVideoTrack::decodeFrame(Common::BitStreamMemory8LSB 
 					out[0] = out[1] = out[2] = out[3] = col;
 					out += stride;
 				}
+				_dirtyBlocks.set(block);
 				++block;
 			}
 			break;
@@ -876,6 +893,80 @@ Common::Rational SmackerDecoder::getFrameRate() const {
 	const SmackerVideoTrack *videoTrack = (const SmackerVideoTrack *)getTrack(0);
 
 	return videoTrack->getFrameRate();
+}
+
+const Common::Rect *SmackerDecoder::getNextDirtyRect() {
+	SmackerVideoTrack *videoTrack = (SmackerVideoTrack *)getTrack(0);
+
+	return videoTrack->getNextDirtyRect();
+}
+
+const Common::Rect *SmackerDecoder::SmackerVideoTrack::getNextDirtyRect() {
+	uint doubleY = (_flags & 6) ? 2 : 1;
+
+	uint bw = getWidth() / 4;
+	uint bh = getHeight() / 4;
+	uint blocks = bw*bh;
+
+	// Scan forward in dirty blocks bitarray for next dirty rect
+	uint block_idx = (_lastDirtyRect.left) / 4 + (_lastDirtyRect.top / 4 / doubleY) * bw;
+	while (block_idx < blocks && !_dirtyBlocks.get(block_idx)) {
+		++block_idx;
+	}
+	if (block_idx == blocks) {
+		_lastDirtyRect = Common::Rect();
+		return nullptr;
+	}
+
+	uint block_x0 = block_idx % bw;
+	uint block_y0 = block_idx / bw;
+
+	// Find the width of the dirty rect
+	uint block_x1 = block_x0 + 1;
+	while (block_x1 < bw && _dirtyBlocks.get(block_x1 + block_y0 * bw)) {
+		++block_x1;
+	}
+
+	// Find the height of the dirty rect
+	uint block_y1 = block_y0 + 1;
+	while (block_y1 < bh) {
+		// Check that the rect to the left of the next line isn't dirty
+		if (block_x0 != 0 && _dirtyBlocks.get(block_x0 - 1 + block_y1 * bw)) {
+			break;
+		}
+
+		// Check that all the rects on this line are dirty
+		uint bx;
+		for (bx = block_x0; bx != block_x1; ++bx) {
+			if (!_dirtyBlocks.get(bx + block_y1 * bw)) {
+				break;
+			}
+		}
+		if (bx != block_x1) {
+			break;
+		}
+
+		// Check that the rect to the right of this line isn't dirty
+		if (bx != bw && _dirtyBlocks.get(bx + block_y1 * bw)) {
+			break;
+		}
+		++block_y1;
+	}
+
+	// Undirty all the rects that we're returning
+	for (uint y = block_y0; y != block_y1; ++y) {
+		for (uint x = block_x0; x != block_x1; ++x) {
+			_dirtyBlocks.unset(x + y * bw);
+		}
+	}
+
+	_lastDirtyRect = Common::Rect(
+		int16(4 * block_x0),
+		int16(4 * block_y0 * doubleY),
+		int16(4 * block_x1),
+		int16(4 * block_y1 * doubleY)
+	);
+	return &_lastDirtyRect;
 }
 
 } // End of namespace Video
