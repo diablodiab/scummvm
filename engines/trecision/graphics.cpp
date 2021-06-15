@@ -27,11 +27,12 @@
 #include "graphics/pixelformat.h"
 #include "graphics/surface.h"
 
-#include "trecision/3d.h"
 #include "trecision/actor.h"
 #include "trecision/anim.h"
 #include "trecision/defines.h"
 #include "trecision/graphics.h"
+#include "trecision/pathfinding3d.h"
+#include "trecision/renderer3d.h"
 #include "trecision/text.h"
 #include "trecision/trecision.h"
 #include "trecision/video.h"
@@ -57,6 +58,8 @@ GraphicsManager::~GraphicsManager() {
 	_rightInventoryArrow.free();
 	_inventoryIcons.free();
 	_saveSlotThumbnails.free();
+	_textureMat.free();
+
 	delete[] _font;
 }
 
@@ -236,10 +239,6 @@ void GraphicsManager::copyToScreen(int x, int y, int w, int h) {
 	);
 }
 
-uint16 *GraphicsManager::getScreenBufferPtr() {
-	return (uint16 *)_screenBuffer.getPixels();
-}
-
 void GraphicsManager::readSurface(Common::SeekableReadStream *stream, Graphics::Surface *surface, uint16 width, uint16 height, uint16 count) {
 	surface->create(width * count, height, kImageFormat);
 
@@ -251,6 +250,15 @@ void GraphicsManager::readSurface(Common::SeekableReadStream *stream, Graphics::
 	}
 
 	surface->convertToInPlace(_screenFormat);
+}
+
+void GraphicsManager::readTexture(Common::SeekableReadStream *stream) {
+	readSurface(stream, &_textureMat, 91, 256);
+}
+
+void GraphicsManager::drawTexturePixel(uint16 textureX, uint16 textureY, uint16 screenX, uint16 screenY) {
+	const uint16 texturePixel = (uint16)_textureMat.getPixel(textureX, textureY);
+	_screenBuffer.setPixel(screenX, screenY, texturePixel);
 }
 
 void GraphicsManager::loadBackground(Common::SeekableReadStream *stream, uint16 width, uint16 height) {
@@ -339,16 +347,10 @@ void GraphicsManager::clearScreenBufferSaveSlotDescriptions() {
 	_screenBuffer.fillRect(Common::Rect(0, FIRSTLINE + ICONDY + 10, MAXX, MAXY), 0);
 }
 
-void GraphicsManager::updatePixelFormat(uint16 *p, uint32 len) const {
-	if (_screenFormat == kImageFormat)
-		return;
-
+uint16 GraphicsManager::convertToScreenFormat(uint16 color) const {
 	uint8 r, g, b;
-	for (uint32 a = 0; a < len; ++a) {
-		const uint16 t = p[a];
-		kImageFormat.colorToRGB(t, r, g, b);
-		p[a] = _screenFormat.RGBToColor(r, g, b);
-	}
+	kImageFormat.colorToRGB(color, r, g, b);
+	return (uint16)_screenFormat.RGBToColor(r, g, b);
 }
 
 /**
@@ -413,8 +415,10 @@ void GraphicsManager::dissolve() {
 
 	while (sv + val > cv) {
 		_vm->checkSystem();
-		if (lastv + cv < sv + val)
+		if (lastv + cv < sv + val) {
+			cv = _vm->readTime();
 			continue;
+		}
 
 		lastv = (sv - cv) + val;
 
@@ -655,7 +659,7 @@ void GraphicsManager::paintObjAnm(uint16 curBox) {
 		}
 	}
 
-	if (_vm->_actorPos == curBox && _vm->_flagShowCharacter) {
+	if (_vm->_pathFind->getActorPos() == curBox && _vm->_flagShowCharacter) {
 		_vm->_renderer->drawCharacter(CALCPOINTS);
 
 		int x1 = _vm->_actor->_lim[0];
@@ -674,7 +678,7 @@ void GraphicsManager::paintObjAnm(uint16 curBox) {
 
 		_vm->_renderer->drawCharacter(DRAWFACES);
 
-	} else if (_vm->_actorPos == curBox && !_vm->_flagDialogActive) {
+	} else if (_vm->_pathFind->getActorPos() == curBox && !_vm->_flagDialogActive) {
 		_vm->_animMgr->refreshActionAnimation();
 	}
 }
@@ -683,14 +687,14 @@ uint16 GraphicsManager::getCharWidth(byte character) {
 	return _font[character * 3 + 2];
 }
 
-void GraphicsManager::drawChar(byte curChar, uint16 shadowCol, uint16 textCol, uint16 line, Common::Rect rect, Common::Rect subtitleRect, uint16 inc, Graphics::Surface *externalSurface) {
+void GraphicsManager::drawChar(byte curChar, uint16 textColor, uint16 line, Common::Rect rect, Common::Rect subtitleRect, uint16 inc, Graphics::Surface *externalSurface) {
 	const uint16 charOffset = _font[curChar * 3] + (uint16)(_font[curChar * 3 + 1] << 8);
 	uint16 fontDataOffset = 768;
 	const uint16 charWidth = getCharWidth(curChar);
 
 	for (uint16 y = line * CARHEI; y < (line + 1) * CARHEI; ++y) {
 		uint16 curPos = 0;
-		uint16 curColor = shadowCol;
+		uint16 curColor = MASKCOL;
 
 		while (curPos <= charWidth - 1) {
 			if (y >= subtitleRect.top && y < subtitleRect.bottom) {
@@ -712,12 +716,12 @@ void GraphicsManager::drawChar(byte curChar, uint16 shadowCol, uint16 textCol, u
 			curPos += _font[charOffset + fontDataOffset];
 			++fontDataOffset;
 
-			if (curColor == shadowCol)
+			if (curColor == MASKCOL)
 				curColor = 0;
 			else if (curColor == 0)
-				curColor = textCol;
-			else if (curColor == textCol)
-				curColor = shadowCol;
+				curColor = textColor;
+			else if (curColor == textColor)
+				curColor = MASKCOL;
 		}
 	}
 }

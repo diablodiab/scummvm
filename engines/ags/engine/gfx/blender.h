@@ -31,17 +31,26 @@
 
 namespace AGS3 {
 
+//
+// Allegro's standard alpha blenders result in:
+// - src and dst RGB are combined proportionally to src alpha
+//   (src.rgb * src.alpha + dst.rgb * (1 - dst.alpha));
+// - final alpha is zero.
+// This blender is suggested for use with opaque destinations
+// (ones without alpha channel).
+//
+/* Declared in Allegro's color.h:
+void set_alpha_blender();
+*/
+
 // Customizable alpha blender that uses the supplied alpha value as src alpha,
 // and preserves destination's alpha channel (if there was one);
 void set_my_trans_blender(int r, int g, int b, int a);
-
 // Additive alpha blender plain copies src over, applying a summ of src and
 // dst alpha values.
 void set_additive_alpha_blender();
 // Opaque alpha blender plain copies src over, applying opaque alpha value.
 void set_opaque_alpha_blender();
-// Sets argb2argb for 32-bit mode, and provides appropriate funcs for blending 32-bit onto 15/16/24-bit destination
-void set_argb2any_blender();
 
 } // namespace AGS3
 

@@ -117,7 +117,6 @@ static const char *const selectorNameTable[] = {
 	"solvePuzzle",  // Quest For Glory 3
 	"curIcon",      // Quest For Glory 3, QFG4
 	"curInvIcon",   // Quest For Glory 3, QFG4
-	"timesShownID", // Space Quest 1 VGA
 	"startText",    // King's Quest 6 CD / Laura Bow 2 CD for audio+text support
 	"startAudio",   // King's Quest 6 CD / Laura Bow 2 CD for audio+text support
 	"modNum",       // King's Quest 6 CD / Laura Bow 2 CD for audio+text support
@@ -242,7 +241,6 @@ enum ScriptPatcherSelectors {
 	SELECTOR_solvePuzzle,
 	SELECTOR_curIcon,
 	SELECTOR_curInvIcon,
-	SELECTOR_timesShownID,
 	SELECTOR_startText,
 	SELECTOR_startAudio,
 	SELECTOR_modNum,
@@ -19538,12 +19536,21 @@ static const uint16 sq1vgaPatchUlenceFlatsGeneratorGlitch[] = {
 	PATCH_END
 };
 
-// No documentation for this patch (TODO)
+// Showing the Sarien droid the ID card three times is supposed to kill you,
+//  but the script is missing a line and compares the number three against the
+//  DeltaurRegion class instead of its timesShownID property. In SSCI this
+//  comparison happened to pass and you would never be killed. In ScummVM,
+//  comparing this object to an integer fails and you're killed the first time.
+//
+// We fix this by re-ordering the instructions so that timesShownID is tested
+//  correctly. Sierra fixed this in later versions.
+//
+// Applies to at least: English PC VGA
+// Responsible method: egoShowsCard:changeState(2)
 static const uint16 sq1vgaSignatureEgoShowsCard[] = {
-	SIG_MAGICDWORD,
-	0x38, SIG_SELECTOR16(timesShownID), // pushi timesShownID
+	0x38, SIG_ADDTOOFFSET(+2),          // pushi timesShownID
 	0x78,                               // push1
-	0x38, SIG_SELECTOR16(timesShownID), // pushi timesShownID
+	0x38, SIG_ADDTOOFFSET(+2),          // pushi timesShownID
 	0x76,                               // push0
 	0x51, 0x7c,                         // class DeltaurRegion
 	0x4a, 0x04,                         // send 0x04 (get timesShownID)
@@ -19552,17 +19559,15 @@ static const uint16 sq1vgaSignatureEgoShowsCard[] = {
 	0x02,                               // add
 	0x36,                               // push
 	0x51, 0x7c,                         // class DeltaurRegion
-	0x4a, 0x06,                         // send 0x06 (set timesShownID)
+	0x4a, SIG_MAGICDWORD, 0x06,         // send 0x06 (set timesShownID)
 	0x36,                               // push      (wrong, acc clobbered by class, above)
 	0x35, 0x03,                         // ldi 0x03
 	0x22,                               // lt?
 	SIG_END
 };
 
-// Note that this script patch is merely a reordering of the
-// instructions in the original script.
 static const uint16 sq1vgaPatchEgoShowsCard[] = {
-	0x38, PATCH_SELECTOR16(timesShownID), // pushi timesShownID
+	0x38, PATCH_GETORIGINALUINT16(+1),  // pushi timesShownID
 	0x76,                               // push0
 	0x51, 0x7c,                         // class DeltaurRegion
 	0x4a, 0x04,                         // send 0x04 (get timesShownID)
@@ -19570,7 +19575,7 @@ static const uint16 sq1vgaPatchEgoShowsCard[] = {
 	0x35, 0x01,                         // ldi 1
 	0x02,                               // add
 	0x36,                               // push (this push corresponds to the wrong one above)
-	0x38, PATCH_SELECTOR16(timesShownID), // pushi timesShownID
+	0x38, PATCH_GETORIGINALUINT16(+1),  // pushi timesShownID
 	0x78,                               // push1
 	0x36,                               // push
 	0x51, 0x7c,                         // class DeltaurRegion
@@ -19671,6 +19676,68 @@ static const uint16 sq1vgaPatchSpiderDroidTiming[] = {
 	PATCH_END
 };
 
+// In room 28, Orat's sounds are re-played on every game cycle and interrupt
+//  themselves, causing stuttering effects. There are two sounds that doit
+//  methods play depending on their actor's current cel: Orat growling and ego
+//  getting bounced. orat:doit and noticeEgo:doit attempt to only play their
+//  sounds once per cel change but they both use the same local variable to
+//  store the previous cel and overwrite each other's value on every cycle.
+//
+// We fix this by patching noticeEgo to use its register property instead of the
+//  local variable that orat also uses.
+//
+// Applies to: All versions
+// Responsible method: noticeEgo::doit
+static const uint16 sq1vgaSignatureOratSounds[] = {
+	SIG_MAGICDWORD,
+	0x8b, 0x07,                         // lsl 07
+	0x39, SIG_SELECTOR8(cel),           // pushi cel
+	0x76,                               // push0
+	0x81, 0x00,                         // lag 00
+	0x4a, 0x04,                         // send 04 [ ego cel? ]
+	0x1c,                               // ne?
+	SIG_ADDTOOFFSET(+177),
+	0x39, SIG_SELECTOR8(cel),           // pushi cel
+	0x76,                               // push0
+	0x81, 0x00,                         // lag 00
+	0x4a, 0x04,                         // send 04 [ ego cel? ]
+	0xa3, 0x07,                         // sal 07
+	SIG_END
+};
+
+static const uint16 sq1vgaPatchOratSounds[] = {
+	0x67, 0x1a,                         // pTos register
+	PATCH_ADDTOOFFSET(+192),
+	0x65, 0x1a,                         // aTop register
+	PATCH_END
+};
+
+// In room 64 on the Sarien ship with the star generator, most objects don't
+//  display their Look messages. Their doVerb methods have a structure that
+//  fails to call super:doVerb when the verb isn't inventory.
+//
+// We fix this by patching out the inventory tests in the broken doVerb methods.
+//  Note that this technique only works because these doVerb methods don't have
+//  handlers for item zero: the data cartridge.
+//
+// Applies to: All versions
+// Responsible methods: rm64:doVerb, upperLanding:doVerb, emitter:doVerb, tubes:doVerb,
+//                      space:doVerb, leftShieldEmitter:doVerb, rightShieldEmitter:doVerb
+static const uint16 sq1vgaSignatureRoom64Verbs[] = {
+	SIG_MAGICDWORD,
+	0x8f, 0x01,                         // lsp 01 [ verb ]
+	0x35, 0x04,                         // ldi 04 [ inventory ]
+	0x1a,                               // eq?
+	0x30, SIG_ADDTOOFFSET(+2),          // bnt    [ end of method ]
+	0x8f, 0x02,                         // lsp 02 [ item number ]
+	SIG_END
+};
+
+static const uint16 sq1vgaPatchRoom64Verbs[] = {
+	0x33, 0x06,                         // jmp 06 [ skip inventory verb check ]
+	PATCH_END
+};
+
 // The Russian version of SQ1VGA has mangled class names in its scripts. This
 //  isn't a problem in Sierra's interpreter since this is just metadata, but our
 //  feature detection code looks up several classes by name and requires them to
@@ -19691,6 +19758,7 @@ static const uint16 sq1vgaPatchRussianMotionName[] = {
 	0x6E, 0x00,
 	PATCH_END
 };
+
 static const uint16 sq1vgaSignatureRussianRmName[] = {
 	SIG_MAGICDWORD,
 	0x2a, 0x52, 0x6d, 0x00,             // *Rm
@@ -19715,9 +19783,11 @@ static const uint16 sq1vgaPatchRussianSoundName[] = {
 
 //          script, description,                                      signature                                   patch
 static const SciScriptPatcherEntry sq1vgaSignatures[] = {
+	{  true,    28, "orat sounds",                                 1, sq1vgaSignatureOratSounds,                  sq1vgaPatchOratSounds },
 	{  true,    45, "Ulence Flats: timepod graphic glitch",        1, sq1vgaSignatureUlenceFlatsTimepodGfxGlitch, sq1vgaPatchUlenceFlatsTimepodGfxGlitch },
 	{  true,    45, "Ulence Flats: force field generator glitch",  1, sq1vgaSignatureUlenceFlatsGeneratorGlitch,  sq1vgaPatchUlenceFlatsGeneratorGlitch },
 	{  true,    58, "Sarien armory droid zapping ego first time",  1, sq1vgaSignatureEgoShowsCard,                sq1vgaPatchEgoShowsCard },
+	{  true,    64, "room 64 verbs",                               7, sq1vgaSignatureRoom64Verbs,                 sq1vgaPatchRoom64Verbs },
 	{  true,   704, "spider droid timing issue",                   1, sq1vgaSignatureSpiderDroidTiming,           sq1vgaPatchSpiderDroidTiming },
 	{  true,   989, "rename russian Sound class",                  1, sq1vgaSignatureRussianSoundName,            sq1vgaPatchRussianSoundName },
 	{  true,   992, "rename russian Motion class",                 1, sq1vgaSignatureRussianMotionName,           sq1vgaPatchRussianMotionName },

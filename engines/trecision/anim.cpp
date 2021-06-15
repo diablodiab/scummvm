@@ -21,9 +21,9 @@
  */
 
 #include "trecision/anim.h"
-#include "trecision/logic.h"
-#include "trecision/3d.h"
 #include "trecision/dialog.h"
+#include "trecision/logic.h"
+#include "trecision/pathfinding3d.h"
 #include "trecision/scheduler.h"
 #include "trecision/text.h"
 #include "trecision/trecision.h"
@@ -107,13 +107,13 @@ void AnimTypeManager::executeAtFrameDoit(ATFHandle *h, int doit, uint16 objectId
 		_vm->_flagShowCharacter = true;
 		break;
 	case fCHARACTERFOREGROUND:
-		_vm->_forcedActorPos = BOX_FOREGROUND;
+		_vm->_pathFind->setForcedActorPos(BOX_FOREGROUND);
 		break;
 	case fCHARACTERBACKGROUND:
-		_vm->_forcedActorPos = BOX_BACKGROUND;
+		_vm->_pathFind->setForcedActorPos(BOX_BACKGROUND);
 		break;
 	case fCHARACTERNORM:
-		_vm->_forcedActorPos = BOX_NORMAL;
+		_vm->_pathFind->setForcedActorPos(BOX_NORMAL);
 		break;
 	case fSETEXTRA:
 		_vm->_obj[objectId].setFlagExtra(true);

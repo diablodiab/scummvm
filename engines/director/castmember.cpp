@@ -72,7 +72,7 @@ BitmapCastMember::BitmapCastMember(Cast *cast, uint16 castId, Common::SeekableRe
 	_clut = kClutSystemMac;
 	_bitsPerPixel = 0;
 
-	if (version < 400) {
+	if (version < kFileVer400) {
 		_flags1 = flags1;	// region: 0 - auto, 1 - matte, 2 - disabled, 8 - no auto
 
 		_bytes = stream.readUint16();
@@ -93,7 +93,7 @@ BitmapCastMember::BitmapCastMember(Cast *cast, uint16 castId, Common::SeekableRe
 		if (_pitch % 16)
 			_pitch += 16 - (_initialRect.width() % 16);
 
-	} else if (version >= 400 && version < 500) {
+	} else if (version >= kFileVer400 && version < kFileVer500) {
 		_flags1 = flags1;
 		_pitch = stream.readUint16();
 		_pitch &= 0x0fff;
@@ -142,7 +142,7 @@ BitmapCastMember::BitmapCastMember(Cast *cast, uint16 castId, Common::SeekableRe
 			debug("BitmapCastMember: tail");
 			Common::hexdump(buf, tail);
 		}
-	} else if (version >= 500) {
+	} else if (version >= kFileVer500) {
 		uint16 count = stream.readUint16();
 		for (uint16 cc = 0; cc < count; cc++)
 			stream.readUint32();
@@ -542,7 +542,7 @@ TextCastMember::TextCastMember(Cast *cast, uint16 castId, Common::SeekableReadSt
 	_bgpalinfo1 = _bgpalinfo2 = _bgpalinfo3 = 0;
 	_fgpalinfo1 = _fgpalinfo2 = _fgpalinfo3 = 0xff;
 
-	if (version < 400) {
+	if (version < kFileVer400) {
 		_flags1 = flags1; // region: 0 - auto, 1 - matte, 2 - disabled
 		_borderSize = static_cast<SizeType>(stream.readByte());
 		_gutterSize = static_cast<SizeType>(stream.readByte());
@@ -558,7 +558,7 @@ TextCastMember::TextCastMember(Cast *cast, uint16 castId, Common::SeekableReadSt
 		uint16 pad4 = 0;
 		uint16 totalTextHeight;
 
-		if (version >= 200 && version < 300) {
+		if (version < kFileVer300) {
 			pad2 = stream.readUint16();
 			if (pad2 != 0) { // In D2 there are values
 				warning("TextCastMember: pad2: %x", pad2);
@@ -588,7 +588,7 @@ TextCastMember::TextCastMember(Cast *cast, uint16 castId, Common::SeekableReadSt
 		if (debugChannelSet(2, kDebugLoading)) {
 			_initialRect.debugPrint(2, "TextCastMember(): rect:");
 		}
-	} else if (version >= 400 && version < 500) {
+	} else if (version >= kFileVer400 && version < kFileVer500) {
 		_flags1 = flags1;
 		_borderSize = static_cast<SizeType>(stream.readByte());
 		_gutterSize = static_cast<SizeType>(stream.readByte());
@@ -638,7 +638,7 @@ TextCastMember::TextCastMember(Cast *cast, uint16 castId, Common::SeekableReadSt
 	if (asButton) {
 		_type = kCastButton;
 
-		if (version < 500) {
+		if (version < kFileVer500) {
 			_buttonType = static_cast<ButtonType>(stream.readUint16BE() - 1);
 		} else {
 			warning("TextCastMember(): Attempting to initialize >D4 button castmember");
@@ -682,17 +682,43 @@ void TextCastMember::importStxt(const Stxt *stxt) {
 	_ptext = stxt->_ptext;
 }
 
+// calculate text dimensions in mactext
+// formula comes from the ctor of macwidget and mactext
+//	_dims.left = x;
+//	_dims.right = x + w + (2 * border) + (2 * gutter) + shadow;
+//	_dims.top = y;
+//	_dims.bottom = y + h + (2 * border) + gutter + shadow;
+// x, y, w + 2, h
+Common::Rect TextCastMember::getTextOnlyDimensions(const Common::Rect &targetDims) {
+	int w = targetDims.right - targetDims.left - 2 * _borderSize - 2 * _gutterSize - _boxShadow;
+	int h = targetDims.bottom - targetDims.top - 2 * _borderSize - _gutterSize - _boxShadow;
+	w -= 2;
+	return Common::Rect(w, h);
+}
+
 Graphics::MacWidget *TextCastMember::createWidget(Common::Rect &bbox, Channel *channel) {
 	Graphics::MacFont *macFont = new Graphics::MacFont(_fontId, _fontSize, _textSlant);
 	Graphics::MacWidget *widget = nullptr;
+	Common::Rect dims;
 
 	switch (_type) {
 	case kCastText:
-		widget = new Graphics::MacText(g_director->getCurrentWindow(), bbox.left, bbox.top, bbox.width(), bbox.height(), g_director->_wm, _ftext, macFont, getForeColor(), getBackColor(), bbox.width(), getAlignment(), 0, _borderSize, _gutterSize, _boxShadow, _textShadow);
+		// since mactext will add some offsets itself, then we calculate it first, to make sure the result size is the same as bbox
+		// use the initialRect for the dims, (seems like initialRect is same as bbox since we once called setCast)
+		dims = getTextOnlyDimensions(_initialRect);
+		widget = new Graphics::MacText(g_director->getCurrentWindow(), bbox.left, bbox.top, dims.width(), dims.height(), g_director->_wm, _ftext, macFont, getForeColor(), getBackColor(), dims.width(), getAlignment(), 0, _borderSize, _gutterSize, _boxShadow, _textShadow);
+		((Graphics::MacText *)widget)->setSelRange(g_director->getCurrentMovie()->_selStart, g_director->getCurrentMovie()->_selEnd);
 		((Graphics::MacText *)widget)->draw();
 		((Graphics::MacText *)widget)->_focusable = _editable;
 		((Graphics::MacText *)widget)->setEditable(_editable);
 		((Graphics::MacText *)widget)->_selectable = _editable;
+
+		// since we disable the ability of setActive in setEdtiable, then we need to set active widget manually
+		if (_editable) {
+			Graphics::MacWidget *activeWidget = g_director->_wm->getActiveWidget();
+			if (activeWidget == nullptr || !activeWidget->isEditable())
+				g_director->_wm->setActiveWidget(widget);
+		}
 		break;
 
 	case kCastButton:
@@ -765,7 +791,7 @@ ShapeCastMember::ShapeCastMember(Cast *cast, uint16 castId, Common::SeekableRead
 
 	_ink = kInkTypeCopy;
 
-	if (version < 400) {
+	if (version < kFileVer400) {
 		unk1 = stream.readByte();
 		_shapeType = static_cast<ShapeType>(stream.readByte());
 		_initialRect = Movie::readRect(stream);
@@ -777,7 +803,7 @@ ShapeCastMember::ShapeCastMember(Cast *cast, uint16 castId, Common::SeekableRead
 		_ink = static_cast<InkType>(_fillType & 0x3f);
 		_lineThickness = stream.readByte();
 		_lineDirection = stream.readByte();
-	} else if (version >= 400 && version < 500) {
+	} else if (version >= kFileVer400 && version < kFileVer500) {
 		unk1 = stream.readByte();
 		_shapeType = static_cast<ShapeType>(stream.readByte());
 		_initialRect = Movie::readRect(stream);
@@ -821,9 +847,9 @@ ScriptCastMember::ScriptCastMember(Cast *cast, uint16 castId, Common::SeekableRe
 	_type = kCastLingoScript;
 	_scriptType = kNoneScript;
 
-	if (version < 400) {
+	if (version < kFileVer400) {
 		error("Unhandled Script cast");
-	} else if (version >= 400 && version < 500) {
+	} else if (version >= kFileVer400 && version < kFileVer500) {
 		byte unk1 = stream.readByte();
 		byte type = stream.readByte();
 
@@ -842,7 +868,7 @@ ScriptCastMember::ScriptCastMember(Cast *cast, uint16 castId, Common::SeekableRe
 
 		stream.readByte(); // There should be no more data
 		assert(stream.eos());
-	} else if (version >= 500) {
+	} else if (version >= kFileVer500) {
 		stream.readByte();
 		stream.readByte();
 

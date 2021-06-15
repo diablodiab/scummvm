@@ -21,7 +21,7 @@
  */
 
 #include "ags/shared/ac/view.h"
-#include "ags/shared/util/alignedstream.h"
+#include "ags/shared/util/aligned_stream.h"
 
 namespace AGS3 {
 
@@ -34,7 +34,8 @@ ViewFrame::ViewFrame()
 	, yoffs(0)
 	, speed(0)
 	, flags(0)
-	, sound(0) {
+	, sound(0)
+	, audioclip(-1) {
 	reserved_for_future[0] = 0;
 	reserved_for_future[1] = 0;
 }
@@ -46,8 +47,8 @@ void ViewFrame::ReadFromFile(Stream *in) {
 	speed = in->ReadInt16();
 	flags = in->ReadInt32();
 	sound = in->ReadInt32();
-	reserved_for_future[0] = in->ReadInt32();
-	reserved_for_future[1] = in->ReadInt32();
+	in->ReadInt32(); // reserved 1
+	in->ReadInt32(); // reserved 1
 }
 
 void ViewFrame::WriteToFile(Stream *out) {
@@ -57,8 +58,8 @@ void ViewFrame::WriteToFile(Stream *out) {
 	out->WriteInt16(speed);
 	out->WriteInt32(flags);
 	out->WriteInt32(sound);
-	out->WriteInt32(reserved_for_future[0]);
-	out->WriteInt32(reserved_for_future[1]);
+	out->WriteInt32(0);
+	out->WriteInt32(0);
 }
 
 ViewLoopNew::ViewLoopNew()
@@ -178,7 +179,7 @@ void Convert272ViewsToNew(const std::vector<ViewStruct272> &oldv, ViewStruct *ne
 			newv[a].loops[b].Initialize(oldv[a].numframes[b]);
 
 			if ((oldv[a].numframes[b] > 0) &&
-				(oldv[a].frames[b][oldv[a].numframes[b] - 1].pic == -1)) {
+			        (oldv[a].frames[b][oldv[a].numframes[b] - 1].pic == -1)) {
 				newv[a].loops[b].flags = LOOPFLAG_RUNNEXTLOOP;
 				newv[a].loops[b].numFrames--;
 			} else

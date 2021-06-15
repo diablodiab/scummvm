@@ -38,10 +38,13 @@ private:
 	TrecisionEngine *_vm;
 
 	bool Cmd_Room(int argc, const char **argv);
+	bool Cmd_DumpAnim(int argc, const char **argv);
 	bool Cmd_DumpFile(int argc, const char **argv);
 	bool Cmd_Dialog(int argc, const char **argv);
 	bool Cmd_Item(int argc, const char **argv);
 	bool Cmd_Say(int argc, const char **argv);
+	bool Cmd_Position(int argc, const char **argv);
+	bool Cmd_ToggleObject(int argc, const char **argv);
 };
 
 } // End of namespace Trecision

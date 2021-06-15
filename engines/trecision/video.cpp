@@ -110,6 +110,12 @@ bool NightlongSmackerDecoder::forceSeekToFrame(uint frame) {
 	return true;
 }
 
+// TODO: Background videos only loop smoothly like this,
+// possibly an audio track bug?
+bool NightlongSmackerDecoder::endOfFrames() const {
+	return getCurFrame() >= (int32)getFrameCount() - 1;
+}
+
 AnimManager::AnimManager(TrecisionEngine *vm) : _vm(vm) {
 	for (int i = 0; i < MAXSMACK; ++i) {
 		_smkAnims[i] = nullptr;
@@ -212,10 +218,12 @@ void AnimManager::drawFrameSubtitles(Graphics::Surface *surface, int frameNum) {
 	// Subtitles can be placed in different coordinates in the video,
 	// which are set inside dialogHandler(), but are then reset to
 	// fixed coordinates
-	_vm->_drawText._rect = Common::Rect(20, 380 - TOP, MAXX - 40 + 20, _vm->_drawText.calcHeight(_vm) + (380 - TOP));
+	_vm->_drawText._rect.left = 20;
+	_vm->_drawText._rect.top = 380 - TOP;
+	_vm->_drawText._rect.setWidth(MAXX - 40);
+	_vm->_drawText._rect.setHeight(_vm->_drawText.calcHeight(_vm));
 	_vm->_drawText._subtitleRect = Common::Rect(MAXX, MAXY);
-	_vm->_drawText._shadowCol = MASKCOL;
-	_vm->_drawText.draw(_vm, surface);
+	_vm->_drawText.draw(_vm, false, surface);
 }
 
 void AnimManager::openSmkAnim(int slot, const Common::String &name) {
@@ -428,22 +436,24 @@ void AnimManager::refreshSmkAnim(uint16 animation) {
 		handleEndOfVideo(animation, kSmackerAction);
 	}
 
-	for (int32 a = 0; a < MAXCHILD; a++) {
-		if (!(_animTab[animation]._flag & (SMKANIM_OFF1 << a)) && (_animTab[animation]._lim[a].bottom != 0)) {
-			_vm->_graphicsMgr->addDirtyRect(_animTab[animation]._lim[a], true);
+	for (int32 i = 0; i < MAXCHILD; i++) {
+		if (!(_animTab[animation]._flag & (SMKANIM_OFF1 << i)) && _animTab[animation]._lim[i].bottom != 0) {
+			_vm->_graphicsMgr->addDirtyRect(_animTab[animation]._lim[i], true);
 		}
 	}
 }
 
 void AnimManager::handleEndOfVideo(int animation, int slot) {
+	const bool isLoopingOrBackground = (_animTab[animation]._flag & SMKANIM_LOOP) || (_animTab[animation]._flag & SMKANIM_BKG);
+
 	if (_smkAnims[slot] == nullptr) {
 		smkStop(slot);
 		return;
 	}
-	if (!_smkAnims[slot]->endOfVideo())
+	if (!_smkAnims[slot]->endOfFrames())
 		return;
 	
-	if (!(_animTab[animation]._flag & SMKANIM_LOOP) && !(_animTab[animation]._flag & SMKANIM_BKG)) {
+	if (!isLoopingOrBackground) {
 		smkStop(slot);
 		_vm->_flagPaintCharacter = true;
 	} else {
@@ -451,6 +461,10 @@ void AnimManager::handleEndOfVideo(int animation, int slot) {
 		_vm->_animTypeMgr->init(animation, 0);
 		_bgAnimRestarted = true;
 	}
+}
+
+static bool rectsIntersect(Common::Rect r1, Common::Rect r2) {
+	return (r1.left <= r2.right) && (r1.right >= r2.left) && (r1.top <= r2.bottom) && (r1.bottom >= r2.top);
 }
 
 void AnimManager::drawSmkBackgroundFrame(int animation) {
@@ -465,20 +479,30 @@ void AnimManager::drawSmkBackgroundFrame(int animation) {
 	const byte *palette = smkDecoder->getPalette();
 
 	if (smkDecoder->getCurFrame() == 0 && !_bgAnimRestarted) {
-		_vm->_graphicsMgr->blitToScreenBuffer(frame, 0, TOP, palette, true);
+		bool drawFrame = true;
+
+		for (int32 i = 0; i < MAXCHILD; i++) {
+			if ((_animTab[animation]._flag & (SMKANIM_OFF1 << i))) {
+				drawFrame = false;
+				break;
+			}
+		}
+
+		if (drawFrame)
+			_vm->_graphicsMgr->blitToScreenBuffer(frame, 0, TOP, palette, true);
 	} else {
 		while (lastRect) {
-			bool intersects = false;
-			for (int32 a = 0; a < MAXCHILD; a++) {
-				if (_animTab[animation]._flag & (SMKANIM_OFF1 << a)) {
-					if (_animTab[animation]._lim[a].intersects(*lastRect)) {
-						intersects = true;
-						break;
-					}
+			bool drawDirtyRect = true;
+
+			for (int32 i = 0; i < MAXCHILD; i++) {
+				const bool intersect = rectsIntersect(_animTab[animation]._lim[i], *lastRect);
+				if ((_animTab[animation]._flag & (SMKANIM_OFF1 << i)) && intersect) {
+					drawDirtyRect = false;
+					break;
 				}
 			}
 
-			if (smkDecoder->getCurFrame() > 0 && !intersects) {
+			if (smkDecoder->getCurFrame() > 0 && drawDirtyRect) {
 				Graphics::Surface anim = frame->getSubArea(*lastRect);
 				_vm->_graphicsMgr->blitToScreenBuffer(&anim, lastRect->left, lastRect->top + TOP, palette, true);
 			}

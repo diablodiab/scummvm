@@ -20,11 +20,11 @@
  *
  */
 
-#include "trecision/3d.h"
 #include "trecision/actor.h"
 #include "trecision/defines.h"
 #include "trecision/graphics.h"
 #include "trecision/logic.h"
+#include "trecision/pathfinding3d.h"
 #include "trecision/text.h"
 #include "trecision/trecision.h"
 #include "trecision/video.h"
@@ -246,7 +246,7 @@ void TrecisionEngine::showInventoryName(uint16 obj, bool showhide) {
 		_lastInv = (obj | 0x8000);
 		if (_lastInv)
 			_textMgr->clearLastText();
-		_textMgr->addText(pos, desc.c_str(), COLOR_INVENTORY, MASKCOL);
+		_textMgr->addText(pos, desc.c_str(), COLOR_INVENTORY);
 	} else {
 		if (obj == _lastInv)
 			return;
@@ -268,7 +268,7 @@ void TrecisionEngine::showInventoryName(uint16 obj, bool showhide) {
 			_textMgr->clearLastText();
 
 		if (_inventoryObj[obj]._name)
-			_textMgr->addText(pos, _objName[_inventoryObj[obj]._name], COLOR_INVENTORY, MASKCOL);
+			_textMgr->addText(pos, _objName[_inventoryObj[obj]._name], COLOR_INVENTORY);
 	}
 }
 
@@ -303,8 +303,10 @@ void TrecisionEngine::replaceIcon(uint8 oldIcon, uint8 newIcon) {
 }
 
 void TrecisionEngine::rollInventory(uint8 status) {
+	static const int16 inventorySpeed[8] = { 20, 10, 5, 3, 2, 0, 0, 0 };
+
 	if (status == INV_PAINT) {
-		_inventoryCounter -= _inventorySpeed[_inventorySpeedIndex++];
+		_inventoryCounter -= inventorySpeed[_inventorySpeedIndex++];
 		if (_inventoryCounter <= INVENTORY_SHOW || _inventorySpeedIndex > 5) {
 			_inventorySpeedIndex = 0;
 			setInventoryStart(_iconBase, INVENTORY_SHOW);
@@ -316,7 +318,7 @@ void TrecisionEngine::rollInventory(uint8 status) {
 			return;
 		}
 	} else if (status == INV_DEPAINT) {
-		_inventoryCounter += _inventorySpeed[_inventorySpeedIndex++];
+		_inventoryCounter += inventorySpeed[_inventorySpeedIndex++];
 
 		if (_inventoryCounter > INVENTORY_HIDE || _inventorySpeedIndex > 5) {
 			_inventorySpeedIndex = 0;

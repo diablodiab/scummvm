@@ -136,7 +136,7 @@ struct Datum {	/* interpreter stack type */
 		reset();
 	}
 
-	Datum eval();
+	Datum eval() const;
 	double asFloat() const;
 	int asInt() const;
 	Common::String asString(bool printonly = false) const;
@@ -150,10 +150,14 @@ struct Datum {	/* interpreter stack type */
 
 struct ChunkReference {
 	Datum source;
+	ChunkType type;
+	int startChunk;
+	int endChunk;
 	int start;
 	int end;
 
-	ChunkReference(const Datum &src, uint s, uint e) : source(src), start(s), end(e) {}
+	ChunkReference(const Datum &src, ChunkType t, int sc, int ec, int s, int e)
+		: source(src), type(t), startChunk(sc), endChunk(ec), start(s), end(e) {}
 };
 
 struct PCell {
@@ -228,7 +232,7 @@ struct LingoArchive {
 	Common::String getName(uint16 id);
 
 	void addCode(const char *code, ScriptType type, uint16 id, const char *scriptName = nullptr);
-	void addCodeV4(Common::SeekableReadStreamEndian &stream, uint16 lctxIndex, const Common::String &archName);
+	void addCodeV4(Common::SeekableReadStreamEndian &stream, uint16 lctxIndex, const Common::String &archName, uint16 version);
 	void addNamesV4(Common::SeekableReadStreamEndian &stream);
 };
 
@@ -247,7 +251,7 @@ public:
 
 	ScriptContext *compileAnonymous(const char *code);
 	ScriptContext *compileLingo(const char *code, LingoArchive *archive, ScriptType type, uint16 id, const Common::String &scriptName, bool anonyomous = false);
-	ScriptContext *compileLingoV4(Common::SeekableReadStreamEndian &stream, LingoArchive *archive, const Common::String &archName);
+	ScriptContext *compileLingoV4(Common::SeekableReadStreamEndian &stream, LingoArchive *archive, const Common::String &archName, uint16 version);
 	void executeHandler(const Common::String &name);
 	void executeScript(ScriptType type, uint16 id);
 	void printStack(const char *s, uint pc);
@@ -295,8 +299,8 @@ public:
 	void pushContext(const Symbol funcSym, bool allowRetVal, Datum defaultRetVal);
 	void popContext();
 	void cleanLocalVars();
-	void varAssign(Datum &var, Datum &value, bool global = false, DatumHash *localvars = nullptr);
-	Datum varFetch(Datum &var, bool global = false, DatumHash *localvars = nullptr, bool silent = false);
+	void varAssign(const Datum &var, Datum &value, bool global = false, DatumHash *localvars = nullptr);
+	Datum varFetch(const Datum &var, bool global = false, DatumHash *localvars = nullptr, bool silent = false);
 	Datum findVarV4(int varType, const Datum &id);
 
 	int getAlignedType(const Datum &d1, const Datum &d2, bool numsOnly);

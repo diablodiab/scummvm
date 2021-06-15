@@ -46,34 +46,48 @@ struct DebugLevelComperator {
 
 } // end of anonymous namespace
 
+DebugManager::DebugManager() :
+	_debugChannelsEnabled(0) {
+	addDebugChannels(gDebugChannels);
+}
+
 bool DebugManager::addDebugChannel(uint32 channel, const String &name, const String &description) {
 	if (name.equalsIgnoreCase("all")) {
 		warning("Debug channel 'all' is reserved for internal use");
 		return false;
 	}
 
-	if (gDebugChannels.contains(name))
+	if (_debugChannels.contains(name))
 		warning("Duplicate declaration of engine debug channel '%s'", name.c_str());
 
-	for (DebugChannelMap::iterator i = gDebugChannels.begin(); i != gDebugChannels.end(); i++)
+	for (DebugChannelMap::iterator i = _debugChannels.begin(); i != _debugChannels.end(); ++i)
 		if (i->_value.channel == channel)
 			error("Duplicate engine debug channel id '%d' for flag '%s'", channel, name.c_str());
 
-	gDebugChannels[name] = DebugChannel(channel, name, description);
+	_debugChannels[name] = DebugChannel(channel, name, description);
 
 	return true;
 }
 
-void DebugManager::clearAllDebugChannels() {
-	gDebugChannelsEnabled = 0;
-	gDebugChannels.clear();
+void DebugManager::addAllDebugChannels(const DebugChannelDef *channels) {
+	removeAllDebugChannels();
+
+	if (channels) {
+		addDebugChannels(channels);
+	}
+}
+
+void DebugManager::removeAllDebugChannels() {
+	_debugChannelsEnabled = 0;
+	_debugChannels.clear();
+	addDebugChannels(gDebugChannels);
 }
 
 bool DebugManager::enableDebugChannel(const String &name) {
-	DebugChannelMap::iterator i = gDebugChannels.find(name);
+	DebugChannelMap::iterator i = _debugChannels.find(name);
 
-	if (i != gDebugChannels.end()) {
-		gDebugChannelsEnabled |= i->_value.channel;
+	if (i != _debugChannels.end()) {
+		_debugChannelsEnabled |= i->_value.channel;
 		i->_value.enabled = true;
 
 		return true;
@@ -83,15 +97,15 @@ bool DebugManager::enableDebugChannel(const String &name) {
 }
 
 bool DebugManager::enableDebugChannel(uint32 channel) {
-	gDebugChannelsEnabled |= channel;
+	_debugChannelsEnabled |= channel;
 	return true;
 }
 
 bool DebugManager::disableDebugChannel(const String &name) {
-	DebugChannelMap::iterator i = gDebugChannels.find(name);
+	DebugChannelMap::iterator i = _debugChannels.find(name);
 
-	if (i != gDebugChannels.end()) {
-		gDebugChannelsEnabled &= ~i->_value.channel;
+	if (i != _debugChannels.end()) {
+		_debugChannelsEnabled &= ~i->_value.channel;
 		i->_value.enabled = false;
 
 		return true;
@@ -101,13 +115,13 @@ bool DebugManager::disableDebugChannel(const String &name) {
 }
 
 bool DebugManager::disableDebugChannel(uint32 channel) {
-	gDebugChannelsEnabled &= ~channel;
+	_debugChannelsEnabled &= ~channel;
 	return true;
 }
 
-DebugManager::DebugChannelList DebugManager::listDebugChannels() {
+DebugManager::DebugChannelList DebugManager::getDebugChannels() {
 	DebugChannelList tmp;
-	for (DebugChannelMap::iterator i = gDebugChannels.begin(); i != gDebugChannels.end(); ++i)
+	for (DebugChannelMap::iterator i = _debugChannels.begin(); i != _debugChannels.end(); ++i)
 		tmp.push_back(i->_value);
 	sort(tmp.begin(), tmp.end(), DebugLevelComperator());
 
@@ -115,12 +129,12 @@ DebugManager::DebugChannelList DebugManager::listDebugChannels() {
 }
 
 void DebugManager::enableAllDebugChannels() {
-	for (DebugChannelMap::iterator i = gDebugChannels.begin(); i != gDebugChannels.end(); ++i)
+	for (DebugChannelMap::iterator i = _debugChannels.begin(); i != _debugChannels.end(); ++i)
 		enableDebugChannel(i->_value.name);
 }
 
 void DebugManager::disableAllDebugChannels() {
-	for (DebugChannelMap::iterator i = gDebugChannels.begin(); i != gDebugChannels.end(); ++i)
+	for (DebugChannelMap::iterator i = _debugChannels.begin(); i != _debugChannels.end(); ++i)
 		disableDebugChannel(i->_value.name);
 }
 
@@ -129,22 +143,13 @@ bool DebugManager::isDebugChannelEnabled(uint32 channel, bool enforce) {
 	if (gDebugLevel == 11 && enforce == false)
 		return true;
 	else
-		return (gDebugChannelsEnabled & channel) != 0;
+		return (_debugChannelsEnabled & channel) != 0;
 }
 
-void DebugManager::debugFlagsRegister(const DebugChannelDef *channels) {
-	if (!channels)
-		return;
-	for (uint i = 0; channels[i].channel != 0; i++) {
+void DebugManager::addDebugChannels(const DebugChannelDef *channels) {
+	for (uint i = 0; channels[i].channel != 0; ++i) {
 		addDebugChannel(channels[i].channel, channels[i].name, channels[i].description);
 	}
-}
-
-void DebugManager::debugFlagsClear() {
-	// first we clear all the debug channels
-	// then we add the global debug flags
-	clearAllDebugChannels();
-	debugFlagsRegister(globalDebugChannels);
 }
 
 } // End of namespace Common

@@ -20,10 +20,12 @@
  *
  */
 
+//include <string.h>
 #include "ags/shared/ac/common.h" // quit
 #include "ags/shared/game/interactions.h"
-#include "ags/shared/util/alignedstream.h"
+#include "ags/shared/util/aligned_stream.h"
 #include "ags/shared/util/math.h"
+#include "common/util.h"
 
 namespace AGS3 {
 
@@ -39,7 +41,7 @@ InteractionValue::InteractionValue() {
 }
 
 void InteractionValue::clear() {
-	Type = kInterValInvalid; // FIXME: can this be kInterValLiteralInt?
+	Type = kInterValInvalid;
 	Value = 0;
 	Extra = 0;
 }
@@ -76,9 +78,7 @@ void InteractionCommand::Assign(const InteractionCommand &ic, InteractionCommand
 
 void InteractionCommand::Reset() {
 	Type = 0;
-	for (uint i = 0; i < ARRAYSIZE(Data); i++) {
-		Data[i].clear();
-	}
+	for (uint8 i = 0; i < ARRAYSIZE(Data); i++) Data[i].clear();
 	Children.reset();
 	Parent = nullptr;
 }
@@ -246,8 +246,8 @@ Interaction *Interaction::CreateFromStream(Stream *in) {
 	if (evt_count > MAX_NEWINTERACTION_EVENTS)
 		quit("Can't deserialize interaction: too many events");
 
-	int32_t types[MAX_NEWINTERACTION_EVENTS];
-	int32_t load_response[MAX_NEWINTERACTION_EVENTS];
+	int types[MAX_NEWINTERACTION_EVENTS];
+	int load_response[MAX_NEWINTERACTION_EVENTS];
 	in->ReadArrayOfInt32(types, evt_count);
 	in->ReadArrayOfInt32(load_response, evt_count);
 
@@ -356,7 +356,7 @@ void InteractionVariable::Read(Stream *in) {
 }
 
 void InteractionVariable::Write(Shared::Stream *out) const {
-	out->Write(Name, INTER_VAR_NAME_LENGTH);
+	out->Write(Name.GetCStr(), INTER_VAR_NAME_LENGTH);
 	out->WriteInt8(Type);
 	out->WriteInt32(Value);
 }

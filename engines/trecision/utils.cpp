@@ -192,21 +192,14 @@ void TrecisionEngine::processTime() {
 	_curTime = readTime();
 
 	if (_curTime >= _nextRefresh) {
-		_textMgr->drawTexts();
-
 		if (_inventoryStatus == INV_PAINT || _inventoryStatus == INV_DEPAINT)
 			rollInventory(_inventoryStatus);
 
-		if (_inventoryStatus != INV_OFF && (
-			_inventoryRefreshStartIconOld != _inventoryRefreshStartIcon ||
-			_inventoryRefreshStartLineOld != _inventoryRefreshStartLine ||
-			_lightIconOld != _lightIcon)) {
+		if (_inventoryStatus != INV_OFF) {
 			refreshInventory(_inventoryRefreshStartIcon, _inventoryRefreshStartLine);
-			_inventoryRefreshStartIconOld = _inventoryRefreshStartIcon;
-			_inventoryRefreshStartLineOld = _inventoryRefreshStartLine;
-			_lightIconOld = _lightIcon;
 		}
 
+		_textMgr->drawTexts();
 		_graphicsMgr->paintScreen(false);
 		_textMgr->clearTextStack();
 
@@ -227,17 +220,13 @@ void TrecisionEngine::processMouse() {
 	if (!_graphicsMgr->isCursorVisible())
 		return;
 
-	if (_mouseLeftBtn && !maskMouse) {
+	if (_mouseLeftBtn) {
 		_scheduler->leftClick(mx, my);
-		maskMouse = true;
 		_mouseLeftBtn = false;
-	} else if (_mouseRightBtn && !maskMouse) {
+	} else if (_mouseRightBtn) {
 		_scheduler->rightClick(mx, my);
-		maskMouse = true;
 		_mouseRightBtn = false;
 	} else {
-		maskMouse = false;
-
 		if (!_flagScriptActive && _mouseMoved) {
 			processMouseMovement();
 			_mouseMoved = false;
@@ -297,21 +286,18 @@ int TrecisionEngine::getRoomObjectIndex(uint16 objectId) {
  * SDText
  ************************************************/
 void SDText::set(SDText *org) {
-	set(org->_rect, org->_subtitleRect, org->_textCol, org->_shadowCol, org->_text);
+	set(org->_rect, org->_subtitleRect, org->_textColor, org->_text);
 }
 
-void SDText::set(Common::Rect rect, Common::Rect subtitleRect, uint16 textCol, uint16 shadowCol, const Common::String &text) {
+void SDText::set(Common::Rect rect, Common::Rect subtitleRect, uint16 textCol, const Common::String &text) {
 	_rect = rect;
 	_subtitleRect = subtitleRect;
-	_textCol = textCol;
-	_shadowCol = shadowCol;
+	_textColor = textCol;
 	_text = text;
 
 	// Clean output buffer
-	for (int i = 0; i < MAXDTEXTLINES; ++i) {
-		for (int j = 0; j < MAXDTEXTCHARS; ++j)
-			_drawTextLines[i][j] = '\0';
-	}
+	for (int i = 0; i < MAXDTEXTLINES; ++i)
+		_drawTextLines[i] = "";
 }
 
 /**
@@ -323,7 +309,7 @@ uint16 SDText::calcHeight(TrecisionEngine *vm) {
 
 	uint8 curLine = 0;
 	if (vm->textLength(_text) <= _rect.width()) {
-		strcpy((char *)_drawTextLines[curLine], _text.c_str());
+		_drawTextLines[curLine] = _text;
 		return CARHEI;
 	}
 
@@ -338,13 +324,9 @@ uint16 SDText::calcHeight(TrecisionEngine *vm) {
 			if (vm->textLength(_text, curInit, a) <= _rect.width())
 				lastSpace = a;
 			else if (vm->textLength(_text, curInit, lastSpace) <= _rect.width()) {
-				uint16 b;
-				for (b = curInit; b < lastSpace; ++b)
-					_drawTextLines[curLine][b - curInit] = _text[b];
+				_drawTextLines[curLine] = _text.substr(curInit, lastSpace - curInit);
 
-				_drawTextLines[curLine][b - curInit] = '\0';
 				++curLine;
-
 				curInit = lastSpace + 1;
 
 				tmpDy += CARHEI;
@@ -353,33 +335,21 @@ uint16 SDText::calcHeight(TrecisionEngine *vm) {
 				return 0;
 		} else if (a == _text.size()) {
 			if (vm->textLength(_text, curInit, a) <= _rect.width()) {
-				uint16 b;
-				for (b = curInit; b < a; ++b)
-					_drawTextLines[curLine][b - curInit] = _text[b];
-				_drawTextLines[curLine][b - curInit] = '\0';
+				_drawTextLines[curLine] = _text.substr(curInit, a - curInit);
 
 				tmpDy += CARHEI;
-
 				return tmpDy;
 			}
 
 			if (vm->textLength(_text, curInit, lastSpace) <= _rect.width()) {
-				uint16 b;
-				for (b = curInit; b < lastSpace; ++b)
-					_drawTextLines[curLine][b - curInit] = _text[b];
+				_drawTextLines[curLine] = _text.substr(curInit, lastSpace - curInit);
 
-				_drawTextLines[curLine][b - curInit] = '\0';
 				++curLine;
-
 				curInit = lastSpace + 1;
 				tmpDy += CARHEI;
 
 				if (curInit < _text.size()) {
-					for (b = curInit; b < _text.size(); ++b)
-						_drawTextLines[curLine][b - curInit] = _text[b];
-
-					_drawTextLines[curLine][b - curInit] = '\0';
-
+					_drawTextLines[curLine] = _text.substr(curInit);
 					tmpDy += CARHEI;
 				}
 				return tmpDy;
@@ -390,13 +360,9 @@ uint16 SDText::calcHeight(TrecisionEngine *vm) {
 	return 0;
 }
 
-void SDText::draw(TrecisionEngine *vm, Graphics::Surface *externalSurface) {
-	uint16 tmpTextCol = _textCol;
-	uint16 tmpShadowCol = _shadowCol;
-	vm->_graphicsMgr->updatePixelFormat(&tmpTextCol, 1);
-	if (_shadowCol != MASKCOL)
-		vm->_graphicsMgr->updatePixelFormat(&tmpShadowCol, 1);
-
+void SDText::draw(TrecisionEngine *vm, bool hideLastChar, Graphics::Surface *externalSurface) {
+	uint16 textColor = vm->_graphicsMgr->convertToScreenFormat(_textColor);
+	
 	if (_text.empty())
 		return;
 
@@ -413,10 +379,10 @@ void SDText::draw(TrecisionEngine *vm, Graphics::Surface *externalSurface) {
 		for (uint index = 0; index < curText.size(); ++index) {
 			const byte curChar = curText[index];
 
-			if (index == curText.size() - 1 && vm->_blinkLastDTextChar != MASKCOL)
-				tmpTextCol = vm->_blinkLastDTextChar;
+			if (index == curText.size() - 1 && hideLastChar)
+				textColor = vm->_graphicsMgr->convertToScreenFormat(0);
 
-			vm->_graphicsMgr->drawChar(curChar, tmpShadowCol, tmpTextCol, line, _rect, _subtitleRect, inc, externalSurface);
+			vm->_graphicsMgr->drawChar(curChar, textColor, line, _rect, _subtitleRect, inc, externalSurface);
 
 			inc += vm->_graphicsMgr->getCharWidth(curChar);
 		}
@@ -427,7 +393,7 @@ int TrecisionEngine::floatComp(float f1, float f2) const {
 	static const float epsilon = 1.0e-05f;
 
 	const float diff = f1 - f2;
-	if (abs(diff) < epsilon)
+	if (ABS(diff) < epsilon)
 		// equality
 		return 0;
 

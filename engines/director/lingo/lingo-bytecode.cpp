@@ -372,9 +372,12 @@ void LC::cb_unk2() {
 }
 
 void LC::cb_delete() {
-	g_lingo->readInt();
-	g_lingo->printSTUBWithArglist("cb_delete", 9);
-	g_lingo->dropStack(9);
+	int varType = g_lingo->readInt();
+	Datum varID = g_lingo->pop();
+	Datum var = g_lingo->findVarV4(varType, varID);
+	Datum chunkRef = readChunkRef(var);
+	g_lingo->push(chunkRef);
+	LB::b_delete(1);
 }
 
 void LC::cb_field() {
@@ -679,8 +682,31 @@ void LC::cb_v4theentitypush() {
 			break;
 		case kTEAString:
 			{
-				/*Datum stringArg = */g_lingo->pop();
-				warning("cb_v4theentitypush: STUB: kTEAString");
+				Datum stringArg = g_lingo->pop();
+				ChunkType chunkType;
+				switch (entity) {
+				case kTheChars:
+					chunkType = kChunkChar;
+					break;
+				case kTheWords:
+					chunkType = kChunkWord;
+					break;
+				case kTheLines:
+					chunkType = kChunkLine;
+					break;
+				case kTheItems:
+					chunkType = kChunkItem;
+					break;
+				}
+				Datum chunkRef = LC::lastChunk(chunkType, stringArg);
+				switch (field) {
+				case kTheLast:
+					result = chunkRef.eval();
+					break;
+				case kTheNumber:
+					result = chunkRef.u.cref->startChunk;
+					break;
+				}
 			}
 			break;
 		case kTEAMenuIdItemId:
@@ -801,7 +827,7 @@ void LC::cb_zeropush() {
 	g_lingo->push(d);
 }
 
-ScriptContext *Lingo::compileLingoV4(Common::SeekableReadStreamEndian &stream, LingoArchive *archive, const Common::String &archName) {
+ScriptContext *Lingo::compileLingoV4(Common::SeekableReadStreamEndian &stream, LingoArchive *archive, const Common::String &archName, uint16 version) {
 	if (stream.size() < 0x5c) {
 		warning("Lscr header too small");
 		return nullptr;
@@ -990,7 +1016,7 @@ ScriptContext *Lingo::compileLingoV4(Common::SeekableReadStreamEndian &stream, L
 	for (uint16 i = 0; i < constsCount; i++) {
 		Datum constant;
 		uint32 constType = 0;
-		if (_vm->getVersion() >= 500) {
+		if (version >= kFileVer500) {
 			constType = stream.readUint32();
 		} else {
 			constType = (uint32)stream.readUint16();
@@ -1454,8 +1480,8 @@ ScriptContext *Lingo::compileLingoV4(Common::SeekableReadStreamEndian &stream, L
 	return sc;
 }
 
-void LingoArchive::addCodeV4(Common::SeekableReadStreamEndian &stream, uint16 lctxIndex, const Common::String &archName) {
-	ScriptContext *ctx = g_lingo->compileLingoV4(stream, this, archName);
+void LingoArchive::addCodeV4(Common::SeekableReadStreamEndian &stream, uint16 lctxIndex, const Common::String &archName, uint16 version) {
+	ScriptContext *ctx = g_lingo->compileLingoV4(stream, this, archName, version);
 	if (ctx) {
 		lctxContexts[lctxIndex] = ctx;
 		*ctx->_refCount += 1;

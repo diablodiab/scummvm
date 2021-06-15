@@ -142,7 +142,7 @@ void TextManager::characterContinueTalk() {
 
 	clearLastText();
 	if (ConfMan.getBool("subtitles"))
-		addText(pos, _subString[_curSubString], COLOR_OBJECT, MASKCOL);
+		addText(pos, _subString[_curSubString], COLOR_OBJECT);
 
 	if (!_vm->_flagDialogActive) {
 		if (_curSubString)
@@ -191,7 +191,7 @@ void TextManager::someoneContinueTalk() {
 
 	clearLastText();
 	if (ConfMan.getBool("subtitles"))
-		addText(pos, _subString[_curSubString], HYELLOW, MASKCOL);
+		addText(pos, _subString[_curSubString], HYELLOW);
 
 	if (_curSubString)
 		_lastFilename = Common::String::format("s%04d%c.wav", _curSentenceId, _curSubString + 'a');
@@ -299,7 +299,7 @@ void TextManager::showObjName(uint16 obj, bool show) {
 
 		if (_vm->_lastObj)
 			clearLastText();
-		addText(pos, desc.c_str(), COLOR_INVENTORY, MASKCOL);
+		addText(pos, desc.c_str(), COLOR_INVENTORY);
 	} else {
 		if (!obj || !show) {
 			clearLastText();
@@ -330,7 +330,7 @@ void TextManager::showObjName(uint16 obj, bool show) {
 		if (_vm->_lastObj)
 			clearLastText();
 		_vm->_lastObj = obj;
-		addText(pos, desc.c_str(), COLOR_OBJECT, MASKCOL);
+		addText(pos, desc.c_str(), COLOR_OBJECT);
 	}
 }
 
@@ -377,12 +377,11 @@ void TextManager::characterSayInAction(uint16 ss) {
 	characterContinueTalk();
 }
 
-void TextManager::addText(Common::Point pos, const char *text, uint16 textCol, uint16 shadowCol) {
+void TextManager::addText(Common::Point pos, const char *text, uint16 textCol) {
 	StackText t;
 	t._x = pos.x;
 	t._y = pos.y;
-	t._textCol = textCol;
-	t._shadowCol = shadowCol;
+	t._textColor = textCol;
 	t._clear = false;
 	t._text = text;
 
@@ -420,8 +419,7 @@ void TextManager::drawText(StackText *text) {
 	uint16 height = _curString.calcHeight(_vm);
 	_curString._subtitleRect = Common::Rect(_curString._rect.width(), height);
 	_curString._rect.setHeight(height);
-	_curString._textCol = text->_textCol;
-	_curString._shadowCol = text->_shadowCol;
+	_curString._textColor = text->_textColor;
 
 	if (_curString._rect.top <= height)
 		_curString._rect.top += height;

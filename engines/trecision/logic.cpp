@@ -22,14 +22,14 @@
 
 #include "common/config-manager.h"
 
-#include "trecision/struct.h"
-#include "trecision/3d.h"
 #include "trecision/actor.h"
 #include "trecision/defines.h"
 #include "trecision/dialog.h"
 #include "trecision/graphics.h"
 #include "trecision/logic.h"
-
+#include "trecision/pathfinding3d.h"
+#include "trecision/renderer3d.h"
+#include "trecision/struct.h"
 #include "trecision/scheduler.h"
 #include "trecision/sound.h"
 #include "trecision/text.h"
@@ -311,7 +311,7 @@ void LogicManager::startCharacterAnimations() {
 	else if (_vm->_curRoom == kRoom2B && (_vm->_oldRoom == kRoom2A))
 		_vm->startCharacterAction(a2B2ESCEPOZZO, 0, 2, 0);
 	else if (_vm->_curRoom == kRoom23A && (_vm->_oldRoom == kRoom21) && _vm->_room[kRoom23A].isDone())
-		_vm->startCharacterAction(aWALKIN, 0, 0, 0);
+		_vm->startCharacterAction(aWALKIN, 0, 0, _vm->_room[kRoom23A].isDone() ? 0 : 361);
 	else if (_vm->_curRoom == kRoom33 && _vm->_oldRoom == kRoom32) {
 		const uint16 roofAction = _vm->isObjectVisible(oBRUCIATURA33) ? a3311SALESCALE : a3313CHIUDEBOTOLA;
 		_vm->startCharacterAction(roofAction, 0, 0, 0);
@@ -437,11 +437,9 @@ void LogicManager::endChangeRoom() {
 		_vm->_flagInventoryLocked = true;
 	} else if (_vm->_curRoom == kRoom31P || _vm->_curRoom == kRoom35P) { // Screens with inventory
 		_vm->_flagShowCharacter = false;
-	} else if (_vm->_curRoom == kRoom23A && (_vm->_oldRoom == kRoom21) && !_vm->_room[kRoom23A].isDone())
-		_vm->_flagShowCharacter = false;
-	else if (_vm->_curRoom == kRoom31 && !_vm->_room[kRoom31].isDone())
+	} else if (_vm->_curRoom == kRoom31 && !_vm->_room[kRoom31].isDone())
 		_vm->_pathFind->setPosition(14);
-	else if ((_vm->_oldRoom == kRoom41D) && _vm->_inventoryObj[kItemPositioner].isFlagExtra()) {
+	else if (_vm->_oldRoom == kRoom41D && _vm->_inventoryObj[kItemPositioner].isFlagExtra()) {
 		_vm->_pathFind->setPosition(30);
 		_vm->_renderer->drawCharacter(CALCPOINTS);
 	}
@@ -471,9 +469,6 @@ void LogicManager::endChangeRoom() {
 	} else if (_vm->_curRoom == kRoom13CU) {
 		const uint16 closeupObjectId = _vm->isObjectVisible(oLETTERA13) ? oLETTERA13 : oPENPADA13;
 		_vm->_textMgr->characterSay(_vm->_obj[closeupObjectId]._examine);
-	}  else if (_vm->_curRoom == kRoom23A && (_vm->_oldRoom == kRoom21) && !_vm->_room[kRoom23A].isDone()) {
-		_vm->_flagShowCharacter = true;
-		_vm->startCharacterAction(aWALKIN, 0, 0, 361);
 	} else if (_vm->_curRoom == kRoom24 && !_vm->_room[kRoom24].isDone())
 		_vm->_textMgr->characterSay(381);
 	else if (_vm->_curRoom == kRoom2G && !_vm->_room[kRoom2G].isDone())
@@ -780,7 +775,7 @@ void LogicManager::useInventoryWithInventory() {
 		break;
 	}
 
-	if (itemUsed)
+	if (!itemUsed)
 		_vm->_textMgr->characterSay(_vm->_inventoryObj[_vm->_useWith[USED]]._action);
 	else
 		_vm->setInventoryStart(_vm->_iconBase, INVENTORY_SHOW);
@@ -3683,12 +3678,10 @@ void LogicManager::handleClickPositioner() {
 }
 
 void LogicManager::handleClickSnakeEscape() {
-	if (_vm->isObjectVisible(oSNAKEU52)) {
-		if (_vm->isGameArea(_vm->_mousePos) && !_vm->_flagUseWithStarted && _vm->_curObj != oSNAKEU52) {
-			_vm->startCharacterAction(a526, 0, 1, 0);
-			_vm->setObjectAnim(oSCAVO51, a516);
-			_vm->_snake52.set(_vm->_curMessage);
-		}
+	if (_vm->isObjectVisible(oSNAKEU52) && _vm->isGameArea(_vm->_mousePos) && !_vm->_flagUseWithStarted && _vm->_curObj != oSNAKEU52) {
+		_vm->startCharacterAction(a526, 0, 1, 0);
+		_vm->setObjectAnim(oSCAVO51, a516);
+		_vm->_snake52.set(_vm->_curMessage);
 	}
 }
 
@@ -3913,13 +3906,45 @@ void LogicManager::doSystemChangeRoom(uint16 room) {
 	_vm->_graphicsMgr->showCursor();
 
 	if (_vm->_curRoom == kRoom21) {
-		_vm->_logicMgr->setupAltRoom(kRoom21, _vm->_oldRoom == kRoom23A || _vm->_oldRoom == kRoom23B);
+		switch (_vm->_oldRoom) {
+		case kRoom22:
+			_vm->_logicMgr->setupAltRoom(kRoom21, false);
+			break;
+		case kRoom23A:
+		case kRoom23B:
+			_vm->_logicMgr->setupAltRoom(kRoom21, true);
+			break;
+		}
 	} else if (_vm->_curRoom == kRoom24) {
-		_vm->_logicMgr->setupAltRoom(kRoom24, _vm->_oldRoom == kRoom26);
+		switch (_vm->_oldRoom) {
+		case kRoom23A:
+		case kRoom23B:
+			_vm->_logicMgr->setupAltRoom(kRoom24, false);
+			break;
+		case kRoom26:
+			_vm->_logicMgr->setupAltRoom(kRoom24, true);
+			break;
+		}
 	} else if (_vm->_curRoom == kRoom2A) {
-		_vm->_logicMgr->setupAltRoom(kRoom2A, _vm->_oldRoom == kRoom25);
+		switch (_vm->_oldRoom) {
+		case kRoom25:
+			_vm->_logicMgr->setupAltRoom(kRoom2A, true);
+			break;
+		case kRoom2B:
+		case kRoom29:
+		case kRoom29L:
+			_vm->_logicMgr->setupAltRoom(kRoom2A, false);
+			break;
+		}
 	} else if (_vm->_curRoom == kRoom2B) {
-		_vm->_logicMgr->setupAltRoom(kRoom2B, _vm->_oldRoom == kRoom28);
+		switch (_vm->_oldRoom) {
+		case kRoom28:
+			_vm->_logicMgr->setupAltRoom(kRoom2B, true);
+			break;
+		case kRoom2A:
+			_vm->_logicMgr->setupAltRoom(kRoom2B, false);
+			break;
+		}
 	} else if (_vm->_room[_vm->_curRoom].hasExtra()) {
 		// for save/load
 		switch (_vm->_curRoom) {

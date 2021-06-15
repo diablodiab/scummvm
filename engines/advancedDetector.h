@@ -161,6 +161,14 @@ struct ADGameDescription {
 };
 
 /**
+ * struct which saved extra information for detected games
+ */
+struct ADDetectedGameExtraInfo {
+	Common::String gameName;			/*!< Extra info which saved game name */
+	Common::String targetID;			/*!< targetID which will be used on preferred target id */
+};
+
+/**
  * A game installation matching an AD game description.
  */
 struct ADDetectedGame {
@@ -378,7 +386,7 @@ protected:
 	 * An (optional) generic fallback detection function that is invoked
 	 * if the regular MD5-based detection failed to detect anything.
 	 */
-	virtual ADDetectedGame fallbackDetect(const FileMap &allFiles, const Common::FSList &fslist) const {
+	virtual ADDetectedGame fallbackDetect(const FileMap &allFiles, const Common::FSList &fslist, ADDetectedGameExtraInfo **extra = nullptr) const {
 		return ADDetectedGame();
 	}
 
@@ -432,7 +440,7 @@ protected:
 	bool getFileProperties(const FileMap &allFiles, const ADGameDescription &game, const Common::String fname, FileProperties &fileProps) const;
 
 	/** Convert an AD game description into the shared game description format. */
-	virtual DetectedGame toDetectedGame(const ADDetectedGame &adGame) const;
+	virtual DetectedGame toDetectedGame(const ADDetectedGame &adGame, ADDetectedGameExtraInfo *extraInfo = nullptr) const;
 
 	/** Check for pirated games in the given detected games */
 	bool cleanupPirated(ADDetectedGames &matched) const;
@@ -489,7 +497,7 @@ public:
 	 *
 	 * An example of how this is implemented can be found in the Wintermute Engine.
 	 */
-	virtual ADDetectedGame fallbackDetectExtern(uint md5Bytes, const FileMap &allFiles, const Common::FSList &fslist) const {
+	virtual ADDetectedGame fallbackDetectExtern(uint md5Bytes, const FileMap &allFiles, const Common::FSList &fslist, ADDetectedGameExtraInfo **extra = nullptr) const {
 		return ADDetectedGame();
 	}
 

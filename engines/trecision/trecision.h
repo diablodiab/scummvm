@@ -147,7 +147,7 @@ class TrecisionEngine : public Engine {
 	bool _gamePaused;
 	uint8 _curStack;
 
-	bool maskMouse;
+	Common::List<SSortTable> _sortTableReplay;
 
 public:
 	TrecisionEngine(OSystem *syst, const ADGameDescription *desc);
@@ -237,7 +237,6 @@ public:
 	SRoom _room[MAXROOMS];
 
 	Common::List<SSortTable> _sortTable;
-	Common::List<SSortTable> _sortTableReplay;
 
 	uint16 _curObj;
 	SObject _obj[MAXOBJ];
@@ -251,12 +250,11 @@ public:
 	Common::Array<byte> _cyberInventory;
 	uint8 _iconBase;
 	uint8 _inventoryStatus;
-	uint8 _lightIcon, _lightIconOld;
-	uint8 _inventoryRefreshStartIcon, _inventoryRefreshStartIconOld;
-	uint8 _inventoryRefreshStartLine, _inventoryRefreshStartLineOld;
+	uint8 _lightIcon;
+	uint8 _inventoryRefreshStartIcon;
+	uint8 _inventoryRefreshStartLine;
 	int16 _inventoryCounter;
 	bool  _flagInventoryLocked;
-	int16 _inventorySpeed[8];
 	uint8 _inventorySpeedIndex;
 	uint32 _inventoryScrollTime;
 	uint16 _lastInv;
@@ -318,14 +316,11 @@ public:
 	uint16 *_objPointers[MAXOBJINROOM];
 	uint8 *_maskPointers[MAXOBJINROOM];
 
-	uint16 _blinkLastDTextChar;
 	uint32 _curTime;
 	uint32 _characterSpeakTime;
 
-	int _actorPos;
 	int _cx, _cy;
 
-	int _forcedActorPos;
 	uint8 _textStatus;
 
 	uint32 _pauseStartTime;

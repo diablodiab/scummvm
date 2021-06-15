@@ -56,7 +56,9 @@ void c_starts();
 
 void c_intersects();
 void c_within();
-Datum chunkRef(ChunkType type, int startChunk, int endChunk, const Datum &src);
+Datum chunkRef(ChunkType type, int startChunk, int endChunk, const Datum &src, bool returnLast = false);
+Datum lastChunk(ChunkType type, const Datum &src);
+Datum readChunkRef(const Datum &src);
 void c_of();
 void c_charOf();
 void c_charToOf();

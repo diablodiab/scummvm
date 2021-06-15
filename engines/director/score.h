@@ -68,7 +68,7 @@ public:
 
 	Movie *getMovie() const { return _movie; }
 
-	void loadFrames(Common::SeekableReadStreamEndian &stream);
+	void loadFrames(Common::SeekableReadStreamEndian &stream, uint16 version);
 	void loadLabels(Common::SeekableReadStreamEndian &stream);
 	void loadActions(Common::SeekableReadStreamEndian &stream);
 
@@ -105,6 +105,7 @@ public:
 	uint16 getActiveSpriteIDFromPos(Common::Point pos);
 	bool checkSpriteIntersection(uint16 spriteId, Common::Point pos);
 	Common::List<Channel *> getSpriteIntersections(const Common::Rect &r);
+	uint16 getSpriteIdByMemberId(uint16 id);
 
 	bool renderTransition(uint16 frameId);
 	void renderFrame(uint16 frameId, RenderMode mode = kRenderModeNormal);

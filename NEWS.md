@@ -20,7 +20,8 @@ For a more comprehensive changelog of the latest experimental code, see:
    - Added support for Spanish Blue Force.
    - Added support for Spanish Ringworld.
    - Added support for Spanish Amazon: Guardians of Eden.
-   - Added support for AGS Games versions 2.5+
+   - Added support for AGS Games versions 2.5+.
+   - Added support for Nightlong: Union City Conspiracy.
 
  New ports:
    - The Nintendo DS port got a major rewrite.
@@ -101,6 +102,7 @@ For a more comprehensive changelog of the latest experimental code, see:
    - Added optional trimming to 200 pixels for some FM-TOWNS games, so aspect-ratio correction is possible.
    - Fixed audio distortion in Loom for PC-Engine.
    - Added support for the high resolution font and cursor in the Macintosh version of Loom.
+   - Added support for Japanese Mac version of The Dig.
 
  Tinsel:
    - Enabled the Return to Launcher feature.

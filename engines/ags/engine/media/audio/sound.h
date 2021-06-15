@@ -30,17 +30,17 @@
 #define AGS_ENGINE_MEDIA_AUDIO_SOUND_H
 
 #include "ags/engine/ac/asset_helper.h"
-#include "ags/engine/media/audio/soundclip.h"
+#include "ags/engine/media/audio/sound_clip.h"
 
 namespace AGS3 {
 
-SOUNDCLIP *my_load_wave(const AssetPath &asset_name, int voll, int loop);
+SOUNDCLIP *my_load_wave(const AssetPath &asset_name, int voll, bool loop);
 SOUNDCLIP *my_load_mp3(const AssetPath &asset_name, int voll);
 SOUNDCLIP *my_load_static_mp3(const AssetPath &asset_name, int voll, bool loop);
 SOUNDCLIP *my_load_static_ogg(const AssetPath &asset_name, int voll, bool loop);
 SOUNDCLIP *my_load_ogg(const AssetPath &asset_name, int voll);
-SOUNDCLIP *my_load_midi(const AssetPath &asset_name, bool repeat);
-SOUNDCLIP *my_load_mod(const AssetPath &asset_name, bool repeat);
+SOUNDCLIP *my_load_midi(const AssetPath &asset_name, bool loop);
+SOUNDCLIP *my_load_mod(const AssetPath &asset_name, bool loop);
 
 } // namespace AGS3
 

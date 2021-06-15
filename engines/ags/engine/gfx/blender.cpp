@@ -20,10 +20,9 @@
  *
  */
 
-#include "ags/shared/core/types.h"
 #include "ags/engine/gfx/blender.h"
-#include "ags/shared/util/wgt2allg.h"
-#include "ags/lib/allegro/color.h"
+#include "ags/lib/allegro.h"
+#include "ags/shared/core/types.h"
 
 namespace AGS3 {
 
@@ -43,10 +42,6 @@ void set_argb2argb_blender(int alpha) {
 
 void set_opaque_alpha_blender() {
 	set_blender_mode(kOpaqueBlenderMode, 0, 0, 0, 0);
-}
-
-void set_argb2any_blender() {
-	set_blender_mode(kArgbToArgbBlender, 0, 0, 0, 0xff);
 }
 
 } // namespace AGS3

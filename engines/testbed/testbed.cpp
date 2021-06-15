@@ -32,7 +32,6 @@
 
 #include "engines/util.h"
 
-#include "testbed/achievements.h"
 #include "testbed/events.h"
 #include "testbed/fs.h"
 #include "testbed/graphics.h"
@@ -171,8 +170,6 @@ void TestbedEngine::pushTestsuites(Common::Array<Testsuite *> &testsuiteList) {
 
 TestbedEngine::~TestbedEngine() {
 	ConfParams.deleteWriteStream();
-	// Remove all of our debug levels here
-	DebugMan.clearAllDebugChannels();
 
 	for (Common::Array<Testsuite *>::const_iterator i = _testsuiteList.begin(); i != _testsuiteList.end(); ++i) {
 		delete (*i);
@@ -224,7 +221,10 @@ Common::Error TestbedEngine::run() {
 	initGraphics(320, 200);
 
 	// Initialize achievements manager
-	AchMan.setActiveDomain(getAchievementsInfo(ConfMan.getActiveDomainName()));
+	Common::AchievementsInfo info;
+	info.platform = Common::UNK_ACHIEVEMENTS;
+	info.appId = "testbed";
+	AchMan.setActiveDomain(info);
 
 	// As of now we are using GUI::MessageDialog for interaction, Test if it works.
 	// interactive mode could also be modified by a config parameter "non-interactive=1"

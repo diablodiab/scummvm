@@ -23,14 +23,15 @@
 #include "common/scummsys.h"
 #include "graphics/scaler.h"
 
-#include "trecision/anim.h"
-#include "trecision/scheduler.h"
-#include "trecision/3d.h"
 #include "trecision/actor.h"
-#include "trecision/dialog.h"
-#include "trecision/logic.h"
-#include "trecision/graphics.h"
+#include "trecision/anim.h"
 #include "trecision/defines.h"
+#include "trecision/dialog.h"
+#include "trecision/graphics.h"
+#include "trecision/logic.h"
+#include "trecision/pathfinding3d.h"
+#include "trecision/renderer3d.h"
+#include "trecision/scheduler.h"
 #include "trecision/trecision.h"
 #include "trecision/text.h"
 #include "trecision/video.h"
@@ -107,7 +108,6 @@ bool TrecisionEngine::quitPrompt() {
 		Common::Rect(0, TOP - 20, MAXX, CARHEI + (TOP - 20)),
 		Common::Rect(0, 0, MAXX, CARHEI),
 		MOUSECOL,
-		MASKCOL,
 		_sysText[kMessageConfirmExit]
 	);
 	drawText.draw(this);
@@ -131,7 +131,6 @@ void TrecisionEngine::demoOver() {
 		Common::Rect(0, TOP - 20, MAXX, CARHEI + (TOP - 20)),
 		Common::Rect(0, 0, MAXX, CARHEI),
 		MOUSECOL,
-		MASKCOL,
 		_sysText[kMessageDemoOver]
 	);
 	drawText.draw(this);
@@ -392,8 +391,18 @@ void TrecisionEngine::changeRoom(uint16 room, uint16 action, byte position) {
 
 	_logicMgr->endChangeRoom();
 
+	// WORKAROUND: Set position *again*. Fixes entering some rooms
+	// (e.g. kRoom23A, kRoom2D, kRoom28).
+	// The first two checks have been duplicated from endChangeRoom()
+	if (_curRoom == kRoom31 && !_room[kRoom31].isDone())
+		_pathFind->setPosition(14);
+	else if (_oldRoom == kRoom41D && _inventoryObj[kItemPositioner].isFlagExtra())
+		_pathFind->setPosition(30);
+	else
+		_pathFind->setPosition(position);
+
 	_room[_curRoom].setDone(true);            // Visited
-	_renderer->drawCharacter(CALCPOINTS);    // for right _actorPos entrance
+	_renderer->drawCharacter(CALCPOINTS);     // for right _actorPos entrance
 }
 
 void TrecisionEngine::doIdle() {
@@ -441,7 +450,6 @@ void TrecisionEngine::doIdle() {
 			dataSave();
 			showInventoryName(NO_OBJECTS, false);
 			showIconName();
-			_inventoryRefreshStartIconOld = _inventoryRefreshStartLineOld = _lightIconOld = 0xFF;
 			refreshInventory(_inventoryRefreshStartIcon, _inventoryRefreshStartLine);
 		}
 		break;
@@ -453,7 +461,6 @@ void TrecisionEngine::doIdle() {
 			if (!dataLoad()) {
 				showInventoryName(NO_OBJECTS, false);
 				showIconName();
-				_inventoryRefreshStartIconOld = _inventoryRefreshStartLineOld = _lightIconOld = 0xFF;
 				refreshInventory(_inventoryRefreshStartIcon, _inventoryRefreshStartLine);
 			}
 		}

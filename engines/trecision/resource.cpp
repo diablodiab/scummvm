@@ -29,15 +29,15 @@
 #include "common/substream.h"
 #include "gui/saveload.h"
 
-#include "trecision/trecision.h"
-#include "trecision/anim.h"
 #include "trecision/actor.h"
-#include "trecision/3d.h"
 #include "trecision/defines.h"
 #include "trecision/dialog.h"
 #include "trecision/graphics.h"
-#include "trecision/video.h"
+#include "trecision/pathfinding3d.h"
+#include "trecision/renderer3d.h"
+#include "trecision/trecision.h"
 #include "trecision/sound.h"
+#include "trecision/video.h"
 
 namespace Trecision {
 
@@ -152,9 +152,7 @@ void TrecisionEngine::readObject(Common::SeekableReadStream *stream, uint16 objI
 		delete[] _objPointers[objIndex];
 		_objPointers[objIndex] = new uint16[size];
 		for (uint32 i = 0; i < size; ++i)
-			_objPointers[objIndex][i] = stream->readUint16LE();
-
-		_graphicsMgr->updatePixelFormat(_objPointers[objIndex], size);
+			_objPointers[objIndex][i] = _graphicsMgr->convertToScreenFormat(stream->readUint16LE());
 	}
 
 	if (obj->isModeMask()) {
@@ -164,9 +162,7 @@ void TrecisionEngine::readObject(Common::SeekableReadStream *stream, uint16 objI
 		delete[] _objPointers[objIndex];
 		_objPointers[objIndex] = new uint16[size];
 		for (uint32 i = 0; i < size; ++i)
-			_objPointers[objIndex][i] = stream->readUint16LE();
-
-		_graphicsMgr->updatePixelFormat(_objPointers[objIndex], size);
+			_objPointers[objIndex][i] = _graphicsMgr->convertToScreenFormat(stream->readUint16LE());
 
 		size = stream->readUint32LE();
 		delete[] _maskPointers[objIndex];

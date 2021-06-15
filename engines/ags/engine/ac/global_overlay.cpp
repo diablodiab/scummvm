@@ -24,24 +24,22 @@
 #include "ags/shared/ac/common.h"
 #include "ags/engine/ac/display.h"
 #include "ags/engine/ac/draw.h"
-#include "ags/shared/ac/gamesetupstruct.h"
-#include "ags/engine/ac/gamestate.h"
+#include "ags/shared/ac/game_setup_struct.h"
+#include "ags/engine/ac/game_state.h"
 #include "ags/engine/ac/global_translation.h"
 #include "ags/engine/ac/overlay.h"
 #include "ags/engine/ac/runtime_defines.h"
-#include "ags/engine/ac/screenoverlay.h"
+#include "ags/engine/ac/screen_overlay.h"
 #include "ags/engine/ac/string.h"
-#include "ags/shared/ac/spritecache.h"
+#include "ags/shared/ac/sprite_cache.h"
 #include "ags/engine/ac/system.h"
 #include "ags/shared/gfx/bitmap.h"
-#include "ags/globals.h"
+#include "ags/shared/util/wgt2_allg.h"
 
 namespace AGS3 {
 
 using namespace Shared;
 using namespace Engine;
-
-
 
 void RemoveOverlay(int ovrid) {
 	if (find_overlay_of_type(ovrid) < 0) quit("!RemoveOverlay: invalid overlay id passed");
@@ -55,7 +53,7 @@ int CreateGraphicOverlay(int xx, int yy, int slott, int trans) {
 	wputblock(screeno, 0, 0, _GP(spriteset)[slott], trans);
 	bool hasAlpha = (_GP(game).SpriteInfos[slott].Flags & SPF_ALPHACHANNEL) != 0;
 	int nse = add_screen_overlay(xx, yy, OVER_CUSTOM, screeno, hasAlpha);
-	return _GP(screenover)[nse].type;
+	return _G(screenover)[nse].type;
 }
 
 int CreateTextOverlayCore(int xx, int yy, int wii, int fontid, int text_color, const char *text, int disp_type, int allowShrink) {
@@ -71,7 +69,7 @@ int CreateTextOverlay(int xx, int yy, int wii, int fontid, int text_color, const
 	if (xx != OVR_AUTOPLACE) {
 		data_to_game_coords(&xx, &yy);
 		wii = data_to_game_coord(wii);
-	} else // allow DisplaySpeechBackground to be shrunk
+	} else  // allow DisplaySpeechBackground to be shrunk
 		allowShrink = 1;
 
 	return CreateTextOverlayCore(xx, yy, wii, fontid, text_color, text, disp_type, allowShrink);
@@ -89,8 +87,8 @@ void MoveOverlay(int ovrid, int newx, int newy) {
 
 	int ovri = find_overlay_of_type(ovrid);
 	if (ovri < 0) quit("!MoveOverlay: invalid overlay ID specified");
-	_GP(screenover)[ovri].x = newx;
-	_GP(screenover)[ovri].y = newy;
+	_G(screenover)[ovri].x = newx;
+	_G(screenover)[ovri].y = newy;
 }
 
 int IsOverlayValid(int ovrid) {

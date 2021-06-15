@@ -20,55 +20,186 @@
  *
  */
 
+#include "common/events.h"
+#include "ags/engine/ac/sys_events.h"
+//include <deque>
 #include "ags/shared/core/platform.h"
 #include "ags/shared/ac/common.h"
-#include "ags/shared/ac/gamesetupstruct.h"
-#include "ags/engine/ac/gamestate.h"
-#include "ags/engine/ac/keycode.h"
+#include "ags/shared/ac/game_setup_struct.h"
+#include "ags/shared/ac/keycode.h"
 #include "ags/engine/ac/mouse.h"
-#include "ags/engine/ac/sys_events.h"
-#include "ags/engine/device/mousew32.h"
-#include "ags/engine/platform/base/agsplatformdriver.h"
 #include "ags/engine/ac/timer.h"
-#include "ags/globals.h"
+#include "ags/engine/device/mouse_w32.h"
+#include "ags/engine/platform/base/ags_platform_driver.h"
+#include "ags/engine/main/engine.h"
 #include "ags/ags.h"
 #include "ags/events.h"
+#include "ags/globals.h"
+
+// TODO: Replace me
+typedef int SDL_Scancode;
+
 
 namespace AGS3 {
+
+// TODO: check later, if this may be useful in other places (then move to header)
+enum eAGSMouseButtonMask {
+	MouseBitLeft = 0x01,
+	MouseBitRight = 0x02,
+	MouseBitMiddle = 0x04,
+	MouseBitX1 = 0x08,
+	MouseBitX2 = 0x10
+};
 
 using namespace AGS::Shared;
 using namespace AGS::Engine;
 
-extern volatile unsigned long globalTimerCounter;
 extern void domouse(int str);
-extern int mgetbutton();
-extern int misbuttondown(int buno);
+const int MB_ARRAY[3] = { MouseBitLeft, MouseBitRight, MouseBitMiddle };
+static void(*_on_quit_callback)(void) = nullptr;
+static void(*_on_switchin_callback)(void) = nullptr;
+static void(*_on_switchout_callback)(void) = nullptr;
 
-int ags_kbhit() {
-	return keypressed();
+// ----------------------------------------------------------------------------
+// KEYBOARD INPUT
+// ----------------------------------------------------------------------------
+
+bool ags_keyevent_ready() {
+	return ::AGS::g_events->keyEventPending();
 }
 
-int ags_iskeypressed(int keycode) {
-	if (keycode >= 0 && keycode < __allegro_KEY_MAX) {
-		return ::AGS::g_events->isKeyPressed((AllegroKbdKeycode)keycode);
+Common::Event ags_get_next_keyevent() {
+	return ::AGS::g_events->getPendingKeyEvent();
+}
+
+int ags_iskeydown(eAGSKeyCode ags_key) {
+	return ::AGS::g_events->isKeyPressed(ags_key);
+}
+
+void ags_simulate_keypress(eAGSKeyCode ags_key) {
+	Common::KeyCode keycode[3];
+	if (!::AGS::EventsManager::ags_key_to_scancode(ags_key, keycode))
+		return;
+
+	// Push a key event to the event queue; note that this won't affect the key states array
+	Common::Event e;
+	e.type = Common::EVENT_KEYDOWN;
+	e.kbd.keycode = keycode[0];
+	e.kbd.ascii = (e.kbd.keycode >= 32 && e.kbd.keycode <= 127) ? e.kbd.keycode : 0;
+
+	::AGS::g_events->pushKeyboardEvent(e);
+}
+
+// ----------------------------------------------------------------------------
+// MOUSE INPUT
+// ----------------------------------------------------------------------------
+
+static int scummvm_button_to_mask(Common::EventType type) {
+	switch (type) {
+	case Common::EVENT_LBUTTONDOWN:
+	case Common::EVENT_LBUTTONUP:
+		return MouseBitLeft;
+	case Common::EVENT_RBUTTONDOWN:
+	case Common::EVENT_RBUTTONUP:
+		return MouseBitRight;
+	case Common::EVENT_MBUTTONDOWN:
+	case Common::EVENT_MBUTTONUP:
+		return MouseBitMiddle;
+	default:
+		return 0;
 	}
+}
+
+// Returns accumulated mouse button state and clears internal cache by timer
+static int mouse_button_poll() {
+	auto now = AGS_Clock::now();
+	int result = _G(mouse_button_state) | _G(mouse_accum_button_state);
+	if (now >= _G(mouse_clear_at_time)) {
+		_G(mouse_accum_button_state) = 0;
+		_G(mouse_clear_at_time) = now + std::chrono::milliseconds(50);
+	}
+	return result;
+}
+
+static void on_mouse_motion(const Common::Event &event) {
+	_G(sys_mouse_x) = event.mouse.x;
+	_G(sys_mouse_y) = event.mouse.y;
+	_G(mouse_accum_relx) += event.relMouse.x;
+	_G(mouse_accum_rely) += event.relMouse.y;
+}
+
+static void on_mouse_button(const Common::Event &event) {
+	_G(sys_mouse_x) = event.mouse.x;
+	_G(sys_mouse_y) = event.mouse.y;
+
+	if (event.type == Common::EVENT_LBUTTONDOWN ||
+			event.type == Common::EVENT_RBUTTONDOWN ||
+			event.type == Common::EVENT_MBUTTONDOWN) {
+		_G(mouse_button_state) |= scummvm_button_to_mask(event.type);
+		_G(mouse_accum_button_state) |= scummvm_button_to_mask(event.type);
+	} else {
+		_G(mouse_button_state) &= ~scummvm_button_to_mask(event.type);
+	}
+}
+
+static void on_mouse_wheel(const Common::Event &event) {
+	if (event.type == Common::EVENT_WHEELDOWN)
+		_G(sys_mouse_z)++;
+	else
+		_G(sys_mouse_z)--;
+}
+
+int mgetbutton() {
+	int toret = MouseNone;
+	int butis = mouse_button_poll();
+
+	if ((butis > 0) & (_G(butwas) > 0))
+		return MouseNone;  // don't allow holding button down
+
+	if (butis & MouseBitLeft)
+		toret = MouseLeft;
+	else if (butis & MouseBitRight)
+		toret = MouseRight;
+	else if (butis & MouseBitMiddle)
+		toret = MouseMiddle;
+
+	_G(butwas) = butis;
+	return toret;
+
+	// TODO: presumably this was a hack for 1-button Mac mouse;
+	// is this still necessary?
+	// find an elegant way to reimplement this; e.g. allow to configure key->mouse mappings?!
+#define AGS_SIMULATE_RIGHT_CLICK (AGS_PLATFORM_OS_MACOS)
+#if defined (AGS_SIMULATE_RIGHT_CLICK__FIXME)
+	// j Ctrl-left click should be right-click
+	if (ags_iskeypressed(__allegro_KEY_LCONTROL) || ags_iskeypressed(__allegro_KEY_RCONTROL)) {
+		toret = RIGHT;
+	}
+#endif
 	return 0;
 }
 
-int ags_misbuttondown(int but) {
-	return misbuttondown(but);
+bool ags_misbuttondown(int but) {
+	return (mouse_button_poll() & MB_ARRAY[but]) != 0;
 }
 
 int ags_mgetbutton() {
 	int result;
 
-	if (_G(pluginSimulatedClick) > NONE) {
+	if (_G(pluginSimulatedClick) > MouseNone) {
 		result = _G(pluginSimulatedClick);
-		_G(pluginSimulatedClick) = NONE;
+		_G(pluginSimulatedClick) = MouseNone;
 	} else {
 		result = mgetbutton();
 	}
 	return result;
+}
+
+void ags_mouse_get_relxy(int &x, int &y) {
+	x = _G(mouse_accum_relx);
+	y = _G(mouse_accum_rely);
+	_G(mouse_accum_relx) = 0;
+	_G(mouse_accum_rely) = 0;
 }
 
 void ags_domouse(int what) {
@@ -80,112 +211,85 @@ void ags_domouse(int what) {
 }
 
 int ags_check_mouse_wheel() {
-	int result = 0;
-	if ((_G(mouse_z) != _G(mouse_z_was)) && (_GP(game).options[OPT_MOUSEWHEEL] != 0)) {
-		if (_G(mouse_z) > _G(mouse_z_was))
-			result = 1;
-		else
-			result = -1;
-		_G(mouse_z_was) = _G(mouse_z);
+	if (_GP(game).options[OPT_MOUSEWHEEL] == 0) {
+		return 0;
 	}
+	if (_G(sys_mouse_z) == _G(mouse_z_was)) {
+		return 0;
+	}
+
+	int result = 0;
+	if (_G(sys_mouse_z) > _G(mouse_z_was))
+		result = 1;   // eMouseWheelNorth
+	else
+		result = -1;  // eMouseWheelSouth
+	_G(mouse_z_was) = _G(sys_mouse_z);
 	return result;
 }
 
-int ags_getch() {
-	const int read_key_value = readkey();
-	int gott = read_key_value;
-	const int scancode = ((gott >> 8) & 0x00ff);
-	const int ascii = (gott & 0x00ff);
 
-	bool is_extended = (ascii == EXTENDED_KEY_CODE);
-
-	if (gott == READKEY_CODE_ALT_TAB) {
-		// Alt+Tab, it gets stuck down unless we do this
-		gott = AGS_KEYCODE_ALT_TAB;
-	}
-#if AGS_PLATFORM_OS_MACOS
-	else if (scancode == __allegro_KEY_BACKSPACE) {
-		gott = eAGSKeyCodeBackspace;
-	}
-#endif
-	else if (is_extended) {
-
-		// I believe we rely on a lot of keys being converted to ASCII, which is why
-		// the complete scan code list is not here.
-
-		switch (scancode) {
-		case __allegro_KEY_F1: gott = eAGSKeyCodeF1; break;
-		case __allegro_KEY_F2: gott = eAGSKeyCodeF2; break;
-		case __allegro_KEY_F3: gott = eAGSKeyCodeF3; break;
-		case __allegro_KEY_F4: gott = eAGSKeyCodeF4; break;
-		case __allegro_KEY_F5: gott = eAGSKeyCodeF5; break;
-		case __allegro_KEY_F6: gott = eAGSKeyCodeF6; break;
-		case __allegro_KEY_F7: gott = eAGSKeyCodeF7; break;
-		case __allegro_KEY_F8: gott = eAGSKeyCodeF8; break;
-		case __allegro_KEY_F9: gott = eAGSKeyCodeF9; break;
-		case __allegro_KEY_F10: gott = eAGSKeyCodeF10; break;
-		case __allegro_KEY_F11: gott = eAGSKeyCodeF11; break;
-		case __allegro_KEY_F12: gott = eAGSKeyCodeF12; break;
-
-		case __allegro_KEY_INSERT: gott = eAGSKeyCodeInsert; break;
-		case __allegro_KEY_DEL: gott = eAGSKeyCodeDelete; break;
-		case __allegro_KEY_HOME: gott = eAGSKeyCodeHome; break;
-		case __allegro_KEY_END: gott = eAGSKeyCodeEnd; break;
-		case __allegro_KEY_PGUP: gott = eAGSKeyCodePageUp; break;
-		case __allegro_KEY_PGDN: gott = eAGSKeyCodePageDown; break;
-		case __allegro_KEY_LEFT: gott = eAGSKeyCodeLeftArrow; break;
-		case __allegro_KEY_RIGHT: gott = eAGSKeyCodeRightArrow; break;
-		case __allegro_KEY_UP: gott = eAGSKeyCodeUpArrow; break;
-		case __allegro_KEY_DOWN: gott = eAGSKeyCodeDownArrow; break;
-
-		case __allegro_KEY_0_PAD: gott = eAGSKeyCodeInsert; break;
-		case __allegro_KEY_1_PAD: gott = eAGSKeyCodeEnd; break;
-		case __allegro_KEY_2_PAD: gott = eAGSKeyCodeDownArrow; break;
-		case __allegro_KEY_3_PAD: gott = eAGSKeyCodePageDown; break;
-		case __allegro_KEY_4_PAD: gott = eAGSKeyCodeLeftArrow; break;
-		case __allegro_KEY_5_PAD: gott = eAGSKeyCodeNumPad5; break;
-		case __allegro_KEY_6_PAD: gott = eAGSKeyCodeRightArrow; break;
-		case __allegro_KEY_7_PAD: gott = eAGSKeyCodeHome; break;
-		case __allegro_KEY_8_PAD: gott = eAGSKeyCodeUpArrow; break;
-		case __allegro_KEY_9_PAD: gott = eAGSKeyCodePageUp; break;
-		case __allegro_KEY_DEL_PAD: gott = eAGSKeyCodeDelete; break;
-
-		default:
-			// no meaningful mappings
-			// this is how we accidentally got the alt-key mappings
-			gott = scancode + AGS_EXT_KEY_SHIFT;
-		}
-	} else {
-		// this includes ascii characters and ctrl-A-Z
-		gott = ascii;
-	}
-
-	// Alt+X, abort (but only once game is loaded)
-	if ((gott == _GP(play).abort_key) && (_G(displayed_room) >= 0)) {
-		_G(check_dynamic_sprites_at_exit) = false;
-		quit("!|");
-	}
-
-	//sprintf(message, "Keypress: %d", gott);
-	//Debug::Printf(message);
-
-	return gott;
-}
 
 void ags_clear_input_buffer() {
-	while (!SHOULD_QUIT && ags_kbhit())
-		ags_getch();
+	::AGS::g_events->clearEvents();
+	_G(mouse_accum_relx) = 0;
+	_G(mouse_accum_rely) = 0;
+	_G(mouse_button_state) = 0;
+	_G(mouse_accum_button_state) = 0;
+	_G(mouse_clear_at_time) = AGS_Clock::now() + std::chrono::milliseconds(50);
+}
 
-	while (!SHOULD_QUIT && mgetbutton() != NONE) {
+// TODO: this is an awful function that should be removed eventually.
+// Must replace with proper updateable game state.
+void ags_wait_until_keypress() {
+	do {
+		sys_evt_process_pending();
+		_G(platform)->YieldCPU();
+	} while (!SHOULD_QUIT && !ags_keyevent_ready());
+	ags_clear_input_buffer();
+}
+
+
+// ----------------------------------------------------------------------------
+// EVENTS
+// ----------------------------------------------------------------------------
+
+void sys_evt_set_quit_callback(void(*proc)(void)) {
+	_on_quit_callback = proc;
+}
+
+void sys_evt_set_focus_callbacks(void(*switch_in)(void), void(*switch_out)(void)) {
+	_on_switchin_callback = switch_in;
+	_on_switchout_callback = switch_out;
+}
+
+static void sys_process_event(const Common::Event &event) {
+	switch (event.type) {
+	case Common::EVENT_MOUSEMOVE:
+		on_mouse_motion(event);
+		break;
+	case Common::EVENT_LBUTTONDOWN:
+	case Common::EVENT_RBUTTONDOWN:
+	case Common::EVENT_MBUTTONDOWN:
+	case Common::EVENT_LBUTTONUP:
+	case Common::EVENT_RBUTTONUP:
+	case Common::EVENT_MBUTTONUP:
+		on_mouse_button(event);
+		break;
+	case Common::EVENT_WHEELDOWN:
+	case Common::EVENT_WHEELUP:
+		on_mouse_wheel(event);
+		break;
+	default:
+		break;
 	}
 }
 
-void ags_wait_until_keypress() {
-	while (!SHOULD_QUIT && !ags_kbhit()) {
-		_G(platform)->YieldCPU();
-	}
+void sys_evt_process_pending(void) {
+	::AGS::g_events->pollEvents();
+	Common::Event e;
 
-	ags_getch();
+	while ((e = ::AGS::g_events->readEvent()).type != Common::EVENT_INVALID)
+		sys_process_event(e);
 }
 
 } // namespace AGS3

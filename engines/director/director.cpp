@@ -34,6 +34,15 @@
 #include "director/sound.h"
 #include "director/window.h"
 #include "director/lingo/lingo.h"
+#include "director/detection.h"
+
+/**
+ * When detection is compiled dynamically, directory globs end up in detection plugin and
+ * engine cannot link to them so duplicate them in the engine in this case
+ */
+#ifndef DETECTION_STATIC
+#include "director/detection_paths.h"
+#endif
 
 namespace Director {
 
@@ -77,14 +86,13 @@ DirectorEngine::DirectorEngine(OSystem *syst, const DirectorGameDescription *gam
 	// Meet Mediaband could have up to 5 levels of directories
 	SearchMan.addDirectory(_gameDataDir.getPath(), _gameDataDir, 0, 5);
 
-	SearchMan.addSubDirectoryMatching(_gameDataDir, "data");
-	SearchMan.addSubDirectoryMatching(_gameDataDir, "install");
-	SearchMan.addSubDirectoryMatching(_gameDataDir, "main");		// Meet Mediaband
-	SearchMan.addSubDirectoryMatching(_gameDataDir, "l_zone");
-	SearchMan.addSubDirectoryMatching(_gameDataDir, "win_data", 0, 2);	// L-ZONE
+	for (uint i = 0; Director::directoryGlobs[i]; i++) {
+		Common::String directoryGlob = directoryGlobs[i];
+		SearchMan.addSubDirectoryMatching(_gameDataDir, directoryGlob);
+	}
 
 	_colorDepth = 8;	// 256-color
-	_machineType = 9; // Macintosh IIci
+	_machineType = 9;	// Macintosh IIci
 	_playbackPaused = false;
 	_skipFrameAdvance = false;
 	_centerStage = true;

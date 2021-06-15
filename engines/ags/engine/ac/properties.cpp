@@ -21,17 +21,17 @@
  */
 
 #include "ags/shared/ac/common.h"
-#include "ags/shared/ac/gamesetupstruct.h"
+#include "ags/shared/ac/game_setup_struct.h"
 #include "ags/engine/ac/properties.h"
 #include "ags/engine/ac/string.h"
-#include "ags/engine/ac/dynobj/scriptstring.h"
-#include "ags/engine/script/runtimescriptvalue.h"
+#include "ags/engine/ac/dynobj/script_string.h"
+#include "ags/engine/script/runtime_script_value.h"
 #include "ags/shared/util/string_utils.h"
-#include "ags/globals.h"
 
 namespace AGS3 {
 
 using namespace AGS::Shared;
+
 
 
 
@@ -77,7 +77,7 @@ void get_text_property(const StringIMap &st_prop, const StringIMap &rt_prop, con
 		return;
 
 	String val = get_property_value(st_prop, rt_prop, property, desc.DefaultValue);
-	strcpy(bufer, val);
+	strcpy(bufer, val.GetCStr());
 }
 
 const char *get_text_property_dynamic_string(const StringIMap &st_prop, const StringIMap &rt_prop, const char *property) {
@@ -86,7 +86,7 @@ const char *get_text_property_dynamic_string(const StringIMap &st_prop, const St
 		return nullptr;
 
 	String val = get_property_value(st_prop, rt_prop, property, desc.DefaultValue);
-	return CreateNewScriptString(val);
+	return CreateNewScriptString(val.GetCStr());
 }
 
 bool set_int_property(StringIMap &rt_prop, const char *property, int value) {

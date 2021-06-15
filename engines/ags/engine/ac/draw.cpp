@@ -26,67 +26,57 @@
 #include "ags/shared/core/platform.h"
 #include "ags/shared/ac/common.h"
 #include "ags/shared/util/compress.h"
+#include "ags/shared/util/wgt2_allg.h"
 #include "ags/shared/ac/view.h"
-#include "ags/engine/ac/charactercache.h"
-#include "ags/engine/ac/characterextras.h"
-#include "ags/shared/ac/characterinfo.h"
+#include "ags/engine/ac/character_cache.h"
+#include "ags/engine/ac/character_extras.h"
+#include "ags/shared/ac/character_info.h"
 #include "ags/engine/ac/display.h"
 #include "ags/engine/ac/draw.h"
 #include "ags/engine/ac/draw_software.h"
-#include "ags/engine/ac/gamesetup.h"
-#include "ags/shared/ac/gamesetupstruct.h"
-#include "ags/engine/ac/gamestate.h"
+#include "ags/engine/ac/game_setup.h"
+#include "ags/shared/ac/game_setup_struct.h"
+#include "ags/engine/ac/game_state.h"
 #include "ags/engine/ac/global_game.h"
 #include "ags/engine/ac/global_gui.h"
 #include "ags/engine/ac/global_region.h"
 #include "ags/engine/ac/gui.h"
 #include "ags/engine/ac/mouse.h"
-#include "ags/engine/ac/objectcache.h"
+#include "ags/engine/ac/object_cache.h"
 #include "ags/engine/ac/overlay.h"
 #include "ags/engine/ac/sys_events.h"
-#include "ags/engine/ac/roomobject.h"
-#include "ags/engine/ac/roomstatus.h"
+#include "ags/engine/ac/room_object.h"
+#include "ags/engine/ac/room_status.h"
 #include "ags/engine/ac/runtime_defines.h"
-#include "ags/engine/ac/screenoverlay.h"
+#include "ags/engine/ac/screen_overlay.h"
 #include "ags/engine/ac/sprite.h"
-#include "ags/engine/ac/spritelistentry.h"
+#include "ags/engine/ac/sprite_list_entry.h"
 #include "ags/engine/ac/string.h"
 #include "ags/engine/ac/system.h"
-#include "ags/engine/ac/viewframe.h"
-#include "ags/engine/ac/walkablearea.h"
-#include "ags/engine/ac/walkbehind.h"
-#include "ags/engine/ac/dynobj/scriptsystem.h"
+#include "ags/engine/ac/view_frame.h"
+#include "ags/engine/ac/walkable_area.h"
+#include "ags/engine/ac/walk_behind.h"
+#include "ags/engine/ac/dynobj/script_system.h"
 #include "ags/engine/debugging/debugger.h"
 #include "ags/engine/debugging/debug_log.h"
 #include "ags/shared/font/fonts.h"
-#include "ags/shared/gui/guimain.h"
-#include "ags/engine/platform/base/agsplatformdriver.h"
-#include "ags/plugins/agsplugin.h"
+#include "ags/shared/gui/gui_main.h"
+#include "ags/engine/platform/base/ags_platform_driver.h"
+#include "ags/plugins/ags_plugin.h"
 #include "ags/plugins/plugin_engine.h"
-#include "ags/shared/ac/spritecache.h"
+#include "ags/shared/ac/sprite_cache.h"
 #include "ags/engine/gfx/gfx_util.h"
-#include "ags/engine/gfx/graphicsdriver.h"
-#include "ags/engine/gfx/ali3dexception.h"
+#include "ags/engine/gfx/graphics_driver.h"
 #include "ags/engine/gfx/blender.h"
 #include "ags/engine/media/audio/audio_system.h"
 #include "ags/engine/ac/game.h"
+#include "ags/ags.h"
 #include "ags/globals.h"
 
 namespace AGS3 {
 
 using namespace AGS::Shared;
 using namespace AGS::Engine;
-
-#if AGS_PLATFORM_OS_ANDROID
-//include <sys/stat.h>
-//include <android/log.h>
-
-extern "C" void android_render();
-#endif
-
-#if AGS_PLATFORM_OS_IOS
-extern "C" void ios_render();
-#endif
 
 SpriteListEntry::SpriteListEntry()
 	: bmp(nullptr)
@@ -99,6 +89,8 @@ SpriteListEntry::SpriteListEntry()
 void setpal() {
 	set_palette_range(_G(palette), 0, 255, 0);
 }
+
+int _places_r = 3, _places_g = 2, _places_b = 3;
 
 // convert RGB to BGR for strange graphics cards
 Bitmap *convert_16_to_16bgr(Bitmap *tempbl) {
@@ -116,9 +108,9 @@ Bitmap *convert_16_to_16bgr(Bitmap *tempbl) {
 				ds = _rgb_scale_6[(c >> 5) & 0x3F];
 				r = _rgb_scale_5[(c >> 11) & 0x1F];
 				// allegro assumes 5-6-5 for 16-bit
-				p16[x] = (((r >> _G(places_r)) << _G(_rgb_r_shift_16)) |
-				          ((ds >> _G(places_g)) << _G(_rgb_g_shift_16)) |
-				          ((b >> _G(places_b)) << _G(_rgb_b_shift_16)));
+				p16[x] = (((r >> _places_r) << _G(_rgb_r_shift_16)) |
+				          ((ds >> _places_g) << _G(_rgb_g_shift_16)) |
+				          ((b >> _places_b) << _G(_rgb_b_shift_16)));
 
 			}
 		}
@@ -159,12 +151,12 @@ Bitmap *convert_32_to_32bgr(Bitmap *tempbl) {
 // could copy them to texture without additional changes.
 // AGS own OpenGL renderer tries to sync its behavior with the former one.
 //
-// TODO: make _G(gfxDriver)->GetCompatibleBitmapFormat describe all necessary
+// TODO: make gfxDriver->GetCompatibleBitmapFormat describe all necessary
 // conversions, so that we did not have to guess.
 //
 Bitmap *AdjustBitmapForUseWithDisplayMode(Bitmap *bitmap, bool has_alpha) {
 	const int bmp_col_depth = bitmap->GetColorDepth();
-	//const int sys_col_depth = System_GetColorDepth();
+	// const int sys_col_depth = System_GetColorDepth();
 	const int game_col_depth = _GP(game).GetColorDepth();
 	Bitmap *new_bitmap = bitmap;
 
@@ -356,15 +348,18 @@ AGS_INLINE void defgame_to_finalgame_coords(int &x, int &y) {
 void create_blank_image(int coldepth) {
 	// this is the first time that we try to use the graphics driver,
 	// so it's the most likey place for a crash
-//	try {
-		Bitmap *blank = BitmapHelper::CreateBitmap(16, 16, coldepth);
-		blank = ReplaceBitmapWithSupportedFormat(blank);
-		blank->Clear();
-		_G(blankImage) = _G(gfxDriver)->CreateDDBFromBitmap(blank, false, true);
-		_G(blankSidebarImage) = _G(gfxDriver)->CreateDDBFromBitmap(blank, false, true);
-		delete blank;
-/*	} catch (Ali3DException gfxException) {
-		quit((char *)gfxException._message);
+	//try
+	//{
+	Bitmap *blank = BitmapHelper::CreateBitmap(16, 16, coldepth);
+	blank = ReplaceBitmapWithSupportedFormat(blank);
+	blank->Clear();
+	_G(blankImage) = _G(gfxDriver)->CreateDDBFromBitmap(blank, false, true);
+	_G(blankSidebarImage) = _G(gfxDriver)->CreateDDBFromBitmap(blank, false, true);
+	delete blank;
+	/*}
+	catch (Ali3DException gfxException)
+	{
+	    quit((char*)gfxException._message);
 	}*/
 }
 
@@ -509,7 +504,7 @@ void detect_roomviewport_overlaps(size_t z_index) {
 		const int this_id = this_view->GetID();
 		bool is_overlap = false;
 		if (!this_view->IsVisible()) continue;
-		for (size_t z_index2 = 0; z_index2 < z_index; ++z_index) {
+		for (size_t z_index2 = 0; z_index2 < z_index; ++z_index2) {
 			if (!viewports[z_index2]->IsVisible()) continue;
 			if (AreRectsIntersecting(this_view->GetRect(), viewports[z_index2]->GetRect())) {
 				is_overlap = true;
@@ -570,7 +565,7 @@ void mark_current_background_dirty() {
 
 
 void draw_and_invalidate_text(Bitmap *ds, int x1, int y1, int font, color_t text_color, const char *text) {
-	wouttext_outline(ds, x1, y1, font, text_color, (const char *)text);
+	wouttext_outline(ds, x1, y1, font, text_color, text);
 	invalidate_rect(x1, y1, x1 + wgettextwidth_compensate(text, font), y1 + getfontheight_outlined(font) + get_fixed_pixel_size(1), false);
 }
 
@@ -612,24 +607,27 @@ void render_to_screen() {
 
 	bool succeeded = false;
 	while (!succeeded) {
-//		try {
-			// For software renderer, need to blacken upper part of the game frame when shaking screen moves image down
-			const Rect &viewport = _GP(play).GetMainViewport();
-			if (_GP(play).shake_screen_yoff > 0 && !_G(gfxDriver)->RequiresFullRedrawEachFrame())
-				_G(gfxDriver)->ClearRectangle(viewport.Left, viewport.Top, viewport.GetWidth() - 1, _GP(play).shake_screen_yoff, nullptr);
-			_G(gfxDriver)->Render(0, _GP(play).shake_screen_yoff, (GlobalFlipType)_GP(play).screen_flipped);
+		//     try
+		//     {
+		// For software renderer, need to blacken upper part of the game frame when shaking screen moves image down
+		const Rect &viewport = _GP(play).GetMainViewport();
+		if (_GP(play).shake_screen_yoff > 0 && !_G(gfxDriver)->RequiresFullRedrawEachFrame())
+			_G(gfxDriver)->ClearRectangle(viewport.Left, viewport.Top, viewport.GetWidth() - 1, _GP(play).shake_screen_yoff, nullptr);
+		_G(gfxDriver)->Render(0, _GP(play).shake_screen_yoff, (GlobalFlipType)_GP(play).screen_flipped);
 
 #if AGS_PLATFORM_OS_ANDROID
-			if (_GP(game).color_depth == 1)
-				android_render();
+		if (_GP(game).color_depth == 1)
+			android_render();
 #elif AGS_PLATFORM_OS_IOS
-			if (_GP(game).color_depth == 1)
-				ios_render();
+		if (_GP(game).color_depth == 1)
+			ios_render();
 #endif
 
-			succeeded = true;
-/*		} catch (Ali3DFullscreenLostException) {
-			_G(platform)->Delay(500);
+		succeeded = true;
+		/*}
+		catch (Ali3DFullscreenLostException)
+		{
+		    platform->Delay(500);
 		}*/
 	}
 }
@@ -661,7 +659,7 @@ void putpixel_compensate(Bitmap *ds, int xx, int yy, int col) {
 
 
 void draw_sprite_support_alpha(Bitmap *ds, bool ds_has_alpha, int xpos, int ypos, Bitmap *image, bool src_has_alpha,
-							   BlendMode blend_mode, int alpha) {
+                               BlendMode blend_mode, int alpha) {
 	if (alpha <= 0)
 		return;
 
@@ -678,7 +676,7 @@ void draw_sprite_support_alpha(Bitmap *ds, bool ds_has_alpha, int xpos, int ypos
 }
 
 void draw_sprite_slot_support_alpha(Bitmap *ds, bool ds_has_alpha, int xpos, int ypos, int src_slot,
-									BlendMode blend_mode, int alpha) {
+                                    BlendMode blend_mode, int alpha) {
 	draw_sprite_support_alpha(ds, ds_has_alpha, xpos, ypos, _GP(spriteset)[src_slot], (_GP(game).SpriteInfos[src_slot].Flags & SPF_ALPHACHANNEL) != 0,
 	                          blend_mode, alpha);
 }
@@ -988,9 +986,9 @@ Bitmap *recycle_bitmap(Bitmap *bimp, int coldep, int wid, int hit, bool make_tra
 // tint_amnt will be set to 0 if there is no tint enabled
 // if this is the case, then light_lev holds the light level (0=none)
 void get_local_tint(int xpp, int ypp, int nolight,
-					int *tint_amnt, int *tint_r, int *tint_g,
-					int *tint_b, int *tint_lit,
-					int *light_lev) {
+                    int *tint_amnt, int *tint_r, int *tint_g,
+                    int *tint_b, int *tint_lit,
+                    int *light_lev) {
 
 	int tint_level = 0, light_level = 0;
 	int tint_amount = 0;
@@ -1069,12 +1067,12 @@ void get_local_tint(int xpp, int ypp, int nolight,
 
 
 
-// Applies the specified RGB Tint or Light Level to the _G(actsps)
+// Applies the specified RGB Tint or Light Level to the actsps
 // sprite indexed with actspsindex
 void apply_tint_or_light(int actspsindex, int light_level,
-						 int tint_amount, int tint_red, int tint_green,
-						 int tint_blue, int tint_light, int coldept,
-						 Bitmap *blitFrom) {
+                         int tint_amount, int tint_red, int tint_green,
+                         int tint_blue, int tint_light, int coldept,
+                         Bitmap *blitFrom) {
 
 // In a 256-colour game, we cannot do tinting or lightening
 // (but we can do darkening, if light_level < 0)
@@ -1135,13 +1133,13 @@ void apply_tint_or_light(int actspsindex, int light_level,
 
 }
 
-// Draws the specified 'sppic' sprite onto _G(actsps)[useindx] at the
+// Draws the specified 'sppic' sprite onto actsps[useindx] at the
 // specified width and height, and flips the sprite if necessary.
-// Returns 1 if something was drawn to _G(actsps); returns 0 if no
+// Returns 1 if something was drawn to actsps; returns 0 if no
 // scaling or stretching was required, in which case nothing was done
 int scale_and_flip_sprite(int useindx, int coldept, int zoom_level,
-						  int sppic, int newwidth, int newheight,
-						  int isMirrored) {
+                          int sppic, int newwidth, int newheight,
+                          int isMirrored) {
 
 	int actsps_used = 1;
 
@@ -1215,8 +1213,8 @@ int scale_and_flip_sprite(int useindx, int coldept, int zoom_level,
 
 
 
-// create the _G(actsps)[aa] image with the object drawn correctly
-// returns 1 if nothing at all has changed and _G(actsps) is still
+// create the actsps[aa] image with the object drawn correctly
+// returns 1 if nothing at all has changed and actsps is still
 // intact from last time; 0 otherwise
 int construct_object_gfx(int aa, int *drawnWidth, int *drawnHeight, bool alwaysUseSoftware) {
 	int useindx = aa;
@@ -1234,20 +1232,22 @@ int construct_object_gfx(int aa, int *drawnWidth, int *drawnHeight, bool alwaysU
 	int zoom_level = 100;
 
 	// calculate the zoom level
-	if ((_G(objs)[aa].flags & OBJF_USEROOMSCALING) == 0) {
-		zoom_level = _G(objs)[aa].zoom;
-	} else {
+	if (_G(objs)[aa].flags & OBJF_USEROOMSCALING) {
 		int onarea = get_walkable_area_at_location(_G(objs)[aa].x, _G(objs)[aa].y);
+
 		if ((onarea <= 0) && (_GP(thisroom).WalkAreas[0].ScalingFar == 0)) {
 			// just off the edge of an area -- use the scaling we had
 			// while on the area
-			zoom_level = _G(objs)[aa].zoom;
+			zoom_level = _G(objs)[aa].last_zoom;
 		} else
 			zoom_level = get_area_scaling(onarea, _G(objs)[aa].x, _G(objs)[aa].y);
+
+		if (zoom_level != 100)
+			scale_sprite_size(_G(objs)[aa].num, zoom_level, &sprwidth, &sprheight);
+
 	}
-	if (zoom_level != 100)
-		scale_sprite_size(_G(objs)[aa].num, zoom_level, &sprwidth, &sprheight);
-	_G(objs)[aa].zoom = zoom_level;
+	// save the zoom level for next time
+	_G(objs)[aa].last_zoom = zoom_level;
 
 	// save width/height into parameters if requested
 	if (drawnWidth)
@@ -1283,7 +1283,7 @@ int construct_object_gfx(int aa, int *drawnWidth, int *drawnHeight, bool alwaysU
 
 	// check whether the image should be flipped
 	int isMirrored = 0;
-	if ((_G(objs)[aa].view >= 0) &&
+	if ((_G(objs)[aa].view != (uint16_t)-1) &&
 	        (_G(views)[_G(objs)[aa].view].loops[_G(objs)[aa].loop].frames[_G(objs)[aa].frame].pic == _G(objs)[aa].num) &&
 	        ((_G(views)[_G(objs)[aa].view].loops[_G(objs)[aa].loop].frames[_G(objs)[aa].frame].flags & VFLG_FLIPSPRITE) != 0)) {
 		isMirrored = 1;
@@ -1348,7 +1348,7 @@ int construct_object_gfx(int aa, int *drawnWidth, int *drawnHeight, bool alwaysU
 		actspsUsed = scale_and_flip_sprite(useindx, coldept, zoom_level,
 		                                   _G(objs)[aa].num, sprwidth, sprheight, isMirrored);
 	} else {
-		// ensure _G(actsps) exists
+		// ensure actsps exists
 		_G(actsps)[useindx] = recycle_bitmap(_G(actsps)[useindx], coldept, _GP(game).SpriteInfos[_G(objs)[aa].num].Width, _GP(game).SpriteInfos[_G(objs)[aa].num].Height);
 	}
 
@@ -1415,7 +1415,7 @@ void prepare_objects_for_drawing() {
 				usebasel += _GP(thisroom).Height;
 			}
 		} else if (_G(walkBehindMethod) == DrawAsSeparateCharSprite) {
-			sort_out_char_sprite_walk_behind(useindx, atxp, atyp, usebasel, _G(objs)[aa].zoom, _G(objs)[aa].last_width, _G(objs)[aa].last_height);
+			sort_out_char_sprite_walk_behind(useindx, atxp, atyp, usebasel, _G(objs)[aa].last_zoom, _G(objs)[aa].last_width, _G(objs)[aa].last_height);
 		} else if ((!actspsIntact) && (_G(walkBehindMethod) == DrawOverCharSprite)) {
 			sort_out_walk_behinds(_G(actsps)[useindx], atxp, atyp, usebasel);
 		}
@@ -1537,12 +1537,10 @@ void prepare_characters_for_drawing() {
 		onarea = get_walkable_area_at_character(aa);
 		_G(our_eip) = 332;
 
-		// calculate the zoom level
 		if (chin->flags & CHF_MANUALSCALING)  // character ignores scaling
 			zoom_level = _G(charextra)[aa].zoom;
 		else if ((onarea <= 0) && (_GP(thisroom).WalkAreas[0].ScalingFar == 0)) {
 			zoom_level = _G(charextra)[aa].zoom;
-			// NOTE: room objects don't have this fix
 			if (zoom_level == 0)
 				zoom_level = 100;
 		} else
@@ -1605,7 +1603,7 @@ void prepare_characters_for_drawing() {
 		           (_G(gfxDriver)->HasAcceleratedTransform())) {
 			usingCachedImage = true;
 		} else if (_G(charcache)[aa].inUse) {
-			//destroy_bitmap (_G(charcache)[aa].image);
+			//destroy_bitmap (charcache[aa].image);
 			_G(charcache)[aa].inUse = 0;
 		}
 
@@ -1646,7 +1644,7 @@ void prepare_characters_for_drawing() {
 		// If cache needs to be re-drawn
 		if (!_G(charcache)[aa].inUse) {
 
-			// create the base sprite in _G(actsps)[useindx], which will
+			// create the base sprite in actsps[useindx], which will
 			// be scaled and/or flipped, as appropriate
 			int actspsUsed = 0;
 			if (!_G(gfxDriver)->HasAcceleratedTransform()) {
@@ -1654,7 +1652,7 @@ void prepare_characters_for_drawing() {
 				                 useindx, coldept, zoom_level, sppic,
 				                 newwidth, newheight, isMirrored);
 			} else {
-				// ensure _G(actsps) exists
+				// ensure actsps exists
 				_G(actsps)[useindx] = recycle_bitmap(_G(actsps)[useindx], coldept, _GP(game).SpriteInfos[sppic].Width, _GP(game).SpriteInfos[sppic].Height);
 			}
 
@@ -1865,18 +1863,20 @@ void draw_fps(const Rect &viewport) {
 
 // Draw GUI and overlays of all kinds, anything outside the room space
 void draw_gui_and_overlays() {
+	int gg;
+
 	if (pl_any_want_hook(AGSE_PREGUIDRAW))
 		add_thing_to_draw(nullptr, AGSE_PREGUIDRAW, 0, TRANS_RUN_PLUGIN, false);
 
 	// draw overlays, except text boxes and portraits
-	for (const auto &over : _GP(screenover)) {
+	for (gg = 0; gg < _G(numscreenover); gg++) {
 		// complete overlay draw in non-transparent mode
-		if (over.type == OVER_COMPLETE)
-			add_thing_to_draw(over.bmp, over.x, over.y, TRANS_OPAQUE, false);
-		else if (over.type != OVER_TEXTMSG && over.type != OVER_PICTURE) {
+		if (_G(screenover)[gg].type == OVER_COMPLETE)
+			add_thing_to_draw(_G(screenover)[gg].bmp, _G(screenover)[gg].x, _G(screenover)[gg].y, TRANS_OPAQUE, false);
+		else if (_G(screenover)[gg].type != OVER_TEXTMSG && _G(screenover)[gg].type != OVER_PICTURE) {
 			int tdxp, tdyp;
-			get_overlay_position(over, &tdxp, &tdyp);
-			add_thing_to_draw(over.bmp, tdxp, tdyp, 0, over.hasAlphaChannel);
+			get_overlay_position(_G(screenover)[gg], &tdxp, &tdyp);
+			add_thing_to_draw(_G(screenover)[gg].bmp, tdxp, tdyp, 0, _G(screenover)[gg].hasAlphaChannel);
 		}
 	}
 
@@ -1890,14 +1890,18 @@ void draw_gui_and_overlays() {
 			quit("!The player.activeinv variable has been corrupted, probably as a result\n"
 			     "of an incorrect assignment in the game script.");
 		}
-		if (_G(playerchar)->activeinv < 1) _G(gui_inv_pic) = -1;
-		else _G(gui_inv_pic) = _GP(game).invinfo[_G(playerchar)->activeinv].pic;
+		if (_G(playerchar)->activeinv < 1)
+			_G(gui_inv_pic) = -1;
+		else
+			_G(gui_inv_pic) = _GP(game).invinfo[_G(playerchar)->activeinv].pic;
 		_G(our_eip) = 37;
-		if (_G(guis_need_update)) {
-			_G(guis_need_update) = 0;
+		{
 			for (aa = 0; aa < _GP(game).numgui; aa++) {
 				if (!_GP(guis)[aa].IsDisplayed()) continue;
+				if (!_GP(guis)[aa].HasChanged()) continue;
+				if (_GP(guis)[aa].Transparency == 255) continue;
 
+				_GP(guis)[aa].ClearChanged();
 				if (_G(guibg)[aa] == nullptr)
 					recreate_guibg_image(&_GP(guis)[aa]);
 
@@ -1928,9 +1932,10 @@ void draw_gui_and_overlays() {
 		}
 		_G(our_eip) = 38;
 		// Draw the GUIs
-		for (int gg = 0; gg < _GP(game).numgui; gg++) {
+		for (gg = 0; gg < _GP(game).numgui; gg++) {
 			aa = _GP(play).gui_draw_order[gg];
 			if (!_GP(guis)[aa].IsDisplayed()) continue;
+			if (_GP(guis)[aa].Transparency == 255) continue;
 
 			// Don't draw GUI if "GUIs Turn Off When Disabled"
 			if ((_GP(game).options[OPT_DISABLEOFF] == 3) &&
@@ -1948,11 +1953,11 @@ void draw_gui_and_overlays() {
 	}
 
 	// draw speech and portraits (so that they appear over GUIs)
-	for (const auto &over : _GP(screenover)) {
-		if (over.type == OVER_TEXTMSG || over.type == OVER_PICTURE) {
+	for (gg = 0; gg < _G(numscreenover); gg++) {
+		if (_G(screenover)[gg].type == OVER_TEXTMSG || _G(screenover)[gg].type == OVER_PICTURE) {
 			int tdxp, tdyp;
-			get_overlay_position(over, &tdxp, &tdyp);
-			add_thing_to_draw(over.bmp, tdxp, tdyp, 0, false);
+			get_overlay_position(_G(screenover)[gg], &tdxp, &tdyp);
+			add_thing_to_draw(_G(screenover)[gg].bmp, tdxp, tdyp, 0, false);
 		}
 	}
 
@@ -2144,7 +2149,8 @@ void construct_game_screen_overlay(bool draw_mouse) {
 
 	// Stage: mouse cursor
 	if (draw_mouse && !_GP(play).mouse_cursor_hidden && _GP(play).screen_is_faded_out == 0) {
-		_G(gfxDriver)->DrawSprite(_G(mousex) - _G(hotx), _G(mousey) - _G(hoty), _G(mouseCursor));
+		_G(gfxDriver)->DrawSprite(_G(mousex) - _G(hotx), _G(mousey) - _G(hoty),
+		                          _G(mouseCursor));
 		invalidate_sprite(_G(mousex) - _G(hotx), _G(mousey) - _G(hoty), _G(mouseCursor), false);
 	}
 
@@ -2183,7 +2189,7 @@ void construct_engine_overlay() {
 		_G(debugConsoleBuffer)->FillRect(Rect(0, 0, viewport.GetWidth() - 1, barheight), draw_color);
 		color_t text_color = _G(debugConsoleBuffer)->GetCompatibleColor(16);
 		for (int jj = _G(first_debug_line); jj != _G(last_debug_line); jj = (jj + 1) % DEBUG_CONSOLE_NUMLINES) {
-			wouttextxy(_G(debugConsoleBuffer), 1, ypp, font, text_color, _G(debug_line)[jj]);
+			wouttextxy(_G(debugConsoleBuffer), 1, ypp, font, text_color, _G(debug_line)[jj].GetCStr());
 			ypp += txtspacing;
 		}
 
@@ -2232,7 +2238,7 @@ void render_graphics(IDriverDependantBitmap *extraBitmap, int extraX, int extraY
 	construct_game_screen_overlay(true);
 	render_to_screen();
 
-	if (!_GP(play).screen_is_faded_out) {
+	if (!SHOULD_QUIT && !_GP(play).screen_is_faded_out) {
 		// always update the palette, regardless of whether the plugin
 		// vetos the screen update
 		if (_G(bg_just_changed)) {

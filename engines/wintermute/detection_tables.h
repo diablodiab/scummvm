@@ -31,7 +31,7 @@ static const PlainGameDescriptor wintermuteGames[] = {
 	{"8squares",        "Eight Squares in The Garden"},
 	{"actualdest",      "Actual Destination"},
 	{"agustin",         "Boredom of Agustin Cordes"},
-	{"alavi",           "Informer Alavi - Murder of Miss Rojan"},
+	{"alavi",           "Alavi Detective - Murder of Miss Rojan"},
 	{"alimardan1",      "Alimardan's Mischief"},
 	{"alimardan2",      "Alimardan Meets Merlin"},
 	{"alphapolaris",    "Alpha Polaris"},
@@ -101,6 +101,7 @@ static const PlainGameDescriptor wintermuteGames[] = {
 	{"machumayu",       "Machu Mayu"},
 	{"mentalrepairs",   "Mental Repairs Inc"},
 	{"mirage",          "Mirage"},
+	{"miskatonic1",     "Miskatonic. Part One"},
 	{"msos",            "Monday Starts on Saturday"},
 	{"mythguff",        "Myth: A Guff's Tale"},
 	{"nighttrain",      "Night Train"},
@@ -254,23 +255,31 @@ static const WMEGameDescription gameDescriptions[] = {
 	WME_WINENTRY("actualdest", "",
 		WME_ENTRY1s("data.dcp", "6926f44b26f21ceb1d840eaab9aeb510", 9081740), Common::EN_ANY, ADGF_UNSTABLE, WME_1_8_11),
 
-	// Informer Alavi - Murder of Miss Rojan (Persian) (Beta version -old version-, between 1387/12 to 1392/6)
+	// Alavi Detective - Murder of Miss Rojan (Persian) (Beta version -old version-, between 1387/12 to 1392/6)
 	WME_WINENTRY("alavi", "Beta version",
 		WME_ENTRY1s("data.dcp", "587b46baa3f82dfe09bdb51f01231fa2", 37191939), Common::FA_IRN, ADGF_UNSTABLE | ADGF_DEMO | GF_3D, WME_ANDISHE_VARAN),
 
-	// Informer Alavi - Murder of Miss Rojan (Persian) (Try version, between 1388/8)
+	// Alavi Detective - Murder of Miss Rojan (Persian) (Try version, between 1388/8)
 	WME_WINENTRY("alavi", "Try version",
 		WME_ENTRY1s("data.dcp", "07b847ebafbf8e58daa341d60598c84b", 36628230), Common::FA_IRN, ADGF_UNSTABLE | ADGF_DEMO | GF_3D, WME_ANDISHE_VARAN),
 
-	// Alimardan's Mischief
+	// Alavi Detective - Murder of Miss Rojan (Persian)
+	WME_WINENTRY("alavi", "",
+		WME_ENTRY1s("data.dcp", "bffb07282d27b6c5351ed4fce92db4da", 516186290), Common::FA_IRN, ADGF_UNSTABLE | GF_3D, WME_ANDISHE_VARAN),
+
+	// Alimardan's Mischief (Persian)
+	WME_WINENTRY("alimardan1", "",
+		WME_ENTRY1s("data.dcp", "ab1aa5f3d6d5f10d3f131a78be80bf34", 1747086434), Common::FA_IRN, ADGF_UNSTABLE, WME_1_9_1),
+
+	// Alimardan's Mischief (English)
 	WME_WINENTRY("alimardan1", "",
 		WME_ENTRY1s("data.dcp", "55c28b8d4f49120f980d237951a6c73f", 1834957694), Common::EN_ANY, ADGF_UNSTABLE, WME_1_9_1),
 
-	// Alimardan's Mischief (Steam, August 2017)
+	// Alimardan's Mischief (Steam, August 2017) (English)
 	WME_WINENTRY("alimardan1", "",
 		WME_ENTRY1s("data.dcp", "ef27d8483d6f19d5398fc81ea05e5320", 1258766332), Common::EN_ANY, ADGF_UNSTABLE, WME_1_9_3),
 
-	// Alimardan's Mischief (Steam, October 2017)
+	// Alimardan's Mischief (Steam, October 2017) (English)
 	WME_WINENTRY("alimardan1", "",
 		WME_ENTRY1s("data.dcp", "d74f56d9ce3b7442b921393af7fb6167", 1258761838), Common::EN_ANY, ADGF_UNSTABLE, WME_1_9_3),
 
@@ -942,11 +951,15 @@ static const WMEGameDescription gameDescriptions[] = {
 	WME_WINENTRY("findinghope", "",
 		WME_ENTRY1s("default.game", "57db79e9de62b9d1c7a335822f6242ff", 742), Common::RU_RUS, ADGF_UNSTABLE, WME_1_9_1),
 
-	// Forgotten Sound 1 - Revelation (Steam, January 2018)
+	// Forgotten Sound 1 - Revelation (Persian)
+	WME_WINENTRY("forgottensound1", "",
+		WME_ENTRY1s("data.dcp", "1c5871ad711430663b1848f0f2362b44", 2030321701), Common::FA_IRN, ADGF_UNSTABLE | GF_3D, WME_1_9_1),
+
+	// Forgotten Sound 1 - Revelation (Steam, January 2018) (English)
 	WME_WINENTRY("forgottensound1", "",
 		WME_ENTRY1s("data.dcp", "01b8b2b4c55c2d83071f5730269cb313", 937507449), Common::EN_ANY, ADGF_UNSTABLE | GF_3D, WME_1_9_3),
 
-	// Forgotten Sound 2 - Destiny (Steam, January 2018)
+	// Forgotten Sound 2 - Destiny (Steam, January 2018) (English)
 	WME_WINENTRY("forgottensound2", "",
 		WME_ENTRY1s("data.dcp", "d743f4ffee2a7cc939e314f29a1a0cd6", 1244439717), Common::EN_ANY, ADGF_UNSTABLE | GF_3D, WME_1_9_3),
 
@@ -1255,12 +1268,12 @@ static const WMEGameDescription gameDescriptions[] = {
 	WME_WINENTRY("framed", "Beta",
 		WME_ENTRY1s("data.dcp", "e7259fb36f2c6f9f28242291e0c3de98", 34690568), Common::EN_ANY, ADGF_UNSTABLE | ADGF_DEMO, WME_1_8_11),
 
-	// Ghost in the Sheet (Engligh, v1.00)
+	// Ghost in the Sheet (English, v1.00)
 	WME_WINENTRY("ghostsheet", "",
 		WME_ENTRY2s("english.dcp", "f53acdc5510aa184f6f968e38d8c9ad7", 12008908,
 					"data.dcp", "5e7f7d98680825bb81fca11e5493c1ad", 168658), Common::EN_ANY, ADGF_UNSTABLE, WME_1_8_0),
 
-	// Ghost in the Sheet (Engligh, BigFish)
+	// Ghost in the Sheet (BigFish) (English)
 	WME_WINENTRY("ghostsheet", "",
 		WME_ENTRY2s("english.dcp", "e6d0aad2c89996bcabe416105a3d6d3a", 12221017,
 					"data.dcp", "b2f8b05328e4881e15e98e845b63f451", 168003), Common::EN_ANY, ADGF_UNSTABLE, WME_1_8_0),
@@ -1621,6 +1634,10 @@ static const WMEGameDescription gameDescriptions[] = {
 	WME_WINENTRY("mirage", "",
 		WME_ENTRY1s("data.dcp", "d230b0b99c0aa77b9ecd094d8ee5573b", 17844056), Common::EN_ANY, ADGF_UNSTABLE, WME_1_8_11),
 
+	// Miskatonic. Part One
+	WME_WINENTRY("miskatonic1", "",
+		WME_ENTRY1s("Miskatonic.exe", "21d1ed0375f64c13688e2d082ed1aaa1", 340306712), Common::EN_ANY, ADGF_UNSTABLE, WME_1_9_1),
+
 	// Monday Starts on Saturday
 	WME_WINENTRY("msos", "",
 		WME_ENTRY1s("data.dcp", "2aa5ab924b05c9539a5a118bc263c2f8", 1049803074), Common::RU_RUS, ADGF_UNSTABLE, WME_1_9_1),
@@ -1740,6 +1757,10 @@ static const WMEGameDescription gameDescriptions[] = {
 	// Project Lonely Robot (Beta)
 	WME_WINENTRY("lonelyrobot", "Beta",
 		WME_ENTRY1s("data.dcp", "a0cf7ad5bab957416dcda454e9f28ef0", 3420120), Common::EN_ANY, ADGF_UNSTABLE | ADGF_DEMO, WME_1_9_0),
+
+	// Qajary Cat (Persian)
+	WME_WINENTRY("qajarycat", "",
+		WME_ENTRY1s("data.dcp", "f2b6bf3daf6324e58042f214cdc075ca", 1782529732), Common::FA_IRN, ADGF_UNSTABLE, WME_1_9_1),
 
 	// Qajary Cat (Steam, November 2017) (English)
 	WME_WINENTRY("qajarycat", "",
@@ -4485,6 +4506,11 @@ static const WMEGameDescription gameDescriptions[] = {
 					"data_hd.dcp", "05ce36b4c7b947c503496a1d895671e5", 197431006,
 					"i18n_ru_strings.dcp", "ebf28ca1475b3be9754a323966807683", 45546), Common::RU_RUS, ADGF_UNSTABLE | GF_IGNORE_SD_FILES | GF_3D, WME_1_9_3),
 
+	// Shadows on the Vatican - Act I: Greed (Legacy Version) (NewTech) (Persian)
+	// NOTE: this game distribution contained unpacked game files instead of usual game.dcp package
+	WME_WINENTRY("sotv1", "Legacy Version",
+		WME_ENTRY1s("default.game", "2631e8ba12cdd7ef08c5ee72391ad703", 968), Common::FA_IRN, ADGF_UNSTABLE | GF_3D, WME_1_9_1),
+
 	// Shadows on the Vatican - Act II: Wrath (Legacy Version) (Steam, Oct 26th 2015) (English)
 	WME_WINENTRY("sotv2", "Legacy Version",
 		WME_ENTRY3s("data.dcp", "cfea0d6c7e4a96627d16887c3480266a", 273132663,
@@ -5176,11 +5202,15 @@ static const WMEGameDescription gameDescriptions[] = {
 	WME_WINENTRY("tanya2", "",
 		WME_ENTRY1s("data.dcp", "9c15f14990f630177e063da885d03e6d", 936959767), Common::RU_RUS, ADGF_UNSTABLE, WME_1_8_3),
 
-	// Murder In Tehran's Alleys 1933 (Steam, June 2017)
+	// Murder In Tehran's Alleys 1933 (Persian)
+	WME_WINENTRY("tehran1933", "",
+		WME_ENTRY1s("data.dcp", "0ab314e014b5e9d45411fee436d98dfd", 1921736252), Common::FA_IRN, ADGF_UNSTABLE | GF_3D, WME_1_9_1),
+
+	// Murder In Tehran's Alleys 1933 (Steam, June 2017) (English)
 	WME_WINENTRY("tehran1933", "",
 		WME_ENTRY1s("data.dcp", "7d74999f8a926bce367b2f851a06bc1c", 890506879), Common::EN_ANY, ADGF_UNSTABLE | GF_3D, WME_1_9_3),
 
-	// Murder In Tehran's Alleys 2016 (Steam, June 2017)
+	// Murder In Tehran's Alleys 2016 (Steam, June 2017) (English)
 	WME_WINENTRY("tehran2016", "",
 		WME_ENTRY1s("data.dcp", "952346c4d7a08986688b3cc583215d33", 1163612836), Common::EN_ANY, ADGF_UNSTABLE | GF_3D, WME_1_9_3),
 
@@ -5293,7 +5323,7 @@ static const WMEGameDescription gameDescriptions[] = {
 	WME_WINENTRY("war", "",
 		WME_ENTRY1s("data.dcp", "003e317cda6d0137bbd5e5d7f089ee4d", 32591890), Common::EN_ANY, ADGF_UNSTABLE, WME_1_9_1),
 
-	// The Way Of Love: Sub Zero (Engligh)
+	// The Way Of Love: Sub Zero (English)
 	WME_WINENTRY("wayoflove", "",
 		WME_ENTRY2s("data.dcp", "201d74cce6b89ce6d5b61a24b5e88809", 1224687223,
 					"language.dcp", "97ae6c028be982ca419416fab77efc76", 663912), Common::EN_ANY, ADGF_UNSTABLE | GF_3D, WME_1_9_3),

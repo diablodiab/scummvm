@@ -24,7 +24,6 @@
 #include "ags/shared/util/math.h"
 #include "ags/shared/util/string_utils.h"
 #include "ags/shared/util/stream.h"
-#include "ags/lib/allegro/error.h"
 #include "ags/globals.h"
 
 namespace AGS3 {
@@ -58,7 +57,7 @@ StrUtil::ConversionError StrUtil::StringToInt(const String &s, int &val, int def
 	if (!s.GetCStr())
 		return StrUtil::kFailed;
 	char *stop_ptr;
-	_G(errnum) = AL_NOERROR;
+	_G(errnum) = 0;
 	long lval = strtol(s.GetCStr(), &stop_ptr, 0);
 	if (stop_ptr != s.GetCStr() + s.GetLength())
 		return StrUtil::kFailed;
@@ -66,6 +65,41 @@ StrUtil::ConversionError StrUtil::StringToInt(const String &s, int &val, int def
 		return StrUtil::kOutOfRange;
 	val = (int)lval;
 	return StrUtil::kNoError;
+}
+
+String StrUtil::Unescape(const String &s) {
+	size_t at = s.FindChar('\\');
+	if (at == String::npos)
+		return s; // no unescaping necessary, return original string
+	char *buf = new char[s.GetLength()];
+	strncpy(buf, s.GetCStr(), at);
+	char *pb = buf + at;
+	for (const char *ptr = s.GetCStr() + at; *ptr; ++ptr) {
+		if (*ptr != '\\') {
+			*(pb++) = *ptr;
+			continue;
+		}
+
+		char next = *(++ptr);
+		switch (next) {
+		case 'a':  *(pb++) = '\a'; break;
+		case 'b':  *(pb++) = '\b'; break;
+		case 'f':  *(pb++) = '\f'; break;
+		case 'n':  *(pb++) = '\n'; break;
+		case 'r':  *(pb++) = '\r'; break;
+		case 't':  *(pb++) = '\t'; break;
+		case 'v':  *(pb++) = '\v'; break;
+		case '\\': *(pb++) = '\\'; break;
+		case '\'': *(pb++) = '\''; break;
+		case '\"': *(pb++) = '\"'; break;
+		case '\?': *(pb++) = '\?'; break;
+		default: *(pb++) = next; break;
+		}
+	}
+	*pb = 0;
+	String dst(buf);
+	delete buf;
+	return dst;
 }
 
 String StrUtil::ReadString(Stream *in) {
@@ -115,6 +149,12 @@ void StrUtil::WriteString(const String &s, Stream *out) {
 
 void StrUtil::WriteString(const char *cstr, Stream *out) {
 	size_t len = strlen(cstr);
+	out->WriteInt32(len);
+	if (len > 0)
+		out->Write(cstr, len);
+}
+
+void StrUtil::WriteString(const char *cstr, size_t len, Stream *out) {
 	out->WriteInt32(len);
 	if (len > 0)
 		out->Write(cstr, len);

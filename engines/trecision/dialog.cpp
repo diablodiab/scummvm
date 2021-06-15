@@ -20,17 +20,50 @@
  *
  */
 
-#include "trecision/3d.h"
 #include "trecision/actor.h"
 #include "trecision/defines.h"
 #include "trecision/dialog.h"
-#include "trecision/logic.h"
 #include "trecision/graphics.h"
+#include "trecision/logic.h"
+#include "trecision/pathfinding3d.h"
 #include "trecision/text.h"
 #include "trecision/trecision.h"
 #include "trecision/video.h"
 
 namespace Trecision {
+void Dialog::clear() {
+	_flag = 0;
+	_interlocutor = 0;
+	memset(_startAnim, 0, 14);
+	_startLen = 0;
+	_firstChoice = 0;
+	_choiceNumb = 0;
+	for (uint16 i = 0; i < MAXNEWSMKPAL; ++i)
+		_newPal[i] = 0;
+}
+
+void DialogSubTitle::clear() {
+	_sentence = 0;
+	_x = _y = 0;
+	_color = 0;
+	_startFrame = 0;
+	_length = 0;
+}
+
+void DialogChoice::clear() {
+	_flag = 0;
+	_sentenceIndex = 0;
+	_firstSubTitle = _subTitleNumb = 0;
+	for (int i = 0; i < MAXDISPCHOICES; ++i) {
+		_on[i] = _off[i] = 0;
+	}
+	
+	_startFrame = 0;
+	_nextDialog = 0;
+}
+
+/**************************************************************/
+
 DialogManager::DialogManager(TrecisionEngine *vm) : _vm(vm) {
 	_curDialog = 0;
 	_curChoice = 0;
@@ -38,6 +71,18 @@ DialogManager::DialogManager(TrecisionEngine *vm) : _vm(vm) {
 	_curDispChoice = 0;
 	_curPos = -1;
 	_lastPos = -1;
+
+	for (int i = 0; i < MAXDIALOG; ++i)
+		_dialog[i].clear();
+
+	for (int i = 0; i < MAXCHOICE; ++i)
+		_choice[i].clear();
+
+	for (int i = 0; i < MAXSUBTITLES; ++i)
+		_subTitles[i].clear();
+
+	for (int i = 0; i < MAXDISPCHOICES; ++i)
+		_dispChoice[i] = 0;
 }
 
 DialogManager::~DialogManager() {}
@@ -48,7 +93,6 @@ void DialogManager::dialogPrint(int x, int y, int c, const Common::String &txt) 
 		Common::Rect(x, y, _vm->textLength(txt) + x, y),
 		Common::Rect(0, 0, MAXX, MAXY),
 		c,
-		MASKCOL,
 		txt
 	);
 	curChoice.draw(_vm);
@@ -592,7 +636,7 @@ void DialogManager::dialogHandler(int numFrame) {
 			++_curSubTitle;
 			_vm->_drawText._rect.left = _subTitles[i]._x;
 			_vm->_drawText._rect.top = _subTitles[i]._y;
-			_vm->_drawText._textCol = _subTitles[i]._color;
+			_vm->_drawText._textColor = _subTitles[i]._color;
 			_vm->_drawText._text = _vm->_sentence[_subTitles[i]._sentence];
 		}
 	}

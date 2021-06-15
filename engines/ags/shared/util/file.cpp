@@ -22,8 +22,8 @@
 
 #include "ags/shared/core/platform.h"
 #include "ags/shared/util/stdio_compat.h"
-#include "ags/shared/util/filestream.h"
-#include "ags/shared/util/bufferedstream.h"
+#include "ags/shared/util/file_stream.h"
+#include "ags/shared/util/buffered_stream.h"
 #include "ags/shared/util/file.h"
 #include "ags/shared/util/directory.h"
 #include "common/file.h"
@@ -43,7 +43,7 @@ soff_t File::GetFileSize(const String &filename) {
 bool File::TestReadFile(const String &filename) {
 	if (filename.IsEmpty())
 		return false;
-	return ags_file_exists(filename.GetNullableCStr());
+	return ags_file_exists(filename.GetCStr());
 }
 
 bool File::TestWriteFile(const String &filename) {
@@ -55,9 +55,11 @@ bool File::TestWriteFile(const String &filename) {
 bool File::TestCreateFile(const String &filename) {
 	if (filename.IsEmpty())
 		return false;
-	Common::DumpFile df;
-	bool result = df.open(getFSNode(filename.GetNullableCStr()));
-	df.close();
+
+	Common::OutSaveFile *sf = g_system->getSavefileManager()->openForSaving(filename);
+	bool result = sf != nullptr;
+	delete sf;
+
 	return result;
 }
 
@@ -128,18 +130,18 @@ String File::GetCMode(FileOpenMode open_mode, FileWorkMode work_mode) {
 
 Stream *File::OpenFile(const String &filename, FileOpenMode open_mode, FileWorkMode work_mode) {
 	FileStream *fs = nullptr;
-//	try {
-		if (work_mode == kFile_Read) // NOTE: BufferedStream does not work correctly in the write mode
-			fs = new BufferedStream(filename, open_mode, work_mode);
-		else
-			fs = new FileStream(filename, open_mode, work_mode);
- 		if (fs != nullptr && !fs->IsValid()) {
-			delete fs;
-			fs = nullptr;
-		}
-//	} catch (std::runtime_error) {
-//		fs = nullptr;
-//	}
+	//  try {
+	if (work_mode == kFile_Read) // NOTE: BufferedStream does not work correctly in the write mode
+		fs = new BufferedStream(filename, open_mode, work_mode);
+	else
+		fs = new FileStream(filename, open_mode, work_mode);
+	if (fs != nullptr && !fs->IsValid()) {
+		delete fs;
+		fs = nullptr;
+	}
+	//  } catch (std::runtime_error) {
+	//      fs = nullptr;
+	//  }
 
 	return fs;
 }

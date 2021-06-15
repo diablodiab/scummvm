@@ -99,6 +99,7 @@ MystOptionsWidget::MystOptionsWidget(GuiObject *boss, const Common::String &name
 		_zipModeCheckbox(nullptr),
 		_transitionsCheckbox(nullptr),
 		_mystFlyByCheckbox(nullptr),
+		_spaceshipFuzzyLogicCheckbox(nullptr),
 		_languagePopUp(nullptr),
 		_dropPageButton(nullptr),
 		_showMapButton(nullptr),
@@ -109,14 +110,28 @@ MystOptionsWidget::MystOptionsWidget(GuiObject *boss, const Common::String &name
 
 	if (!isDemo) {
 		// I18N: Option for fast scene switching
-		_zipModeCheckbox = new GUI::CheckboxWidget(widgetsBoss(), "MystGameOptionsDialog.ZipMode", _("~Z~ip Mode Activated"));
+		_zipModeCheckbox = new GUI::CheckboxWidget(widgetsBoss(), "MystGameOptionsDialog.ZipMode", _("~Z~ip Mode Activated"),
+																_("When activated, clicking on an item or area with the lightning bolt cursor takes you directly there, skipping intermediate screens. You can only 'Zip' to a precise area you’ve already been."));
 	}
 
-	_transitionsCheckbox = new GUI::CheckboxWidget(widgetsBoss(), "MystGameOptionsDialog.Transistions", _("~T~ransitions Enabled"));
+	_transitionsCheckbox = new GUI::CheckboxWidget(widgetsBoss(), "MystGameOptionsDialog.Transistions", _("~T~ransitions Enabled"),
+																_("Toggle screen transitions on or off. Turning off screen transitions will enable you to navigate more quickly through the game."));
 
 	if (isME) {
 		_mystFlyByCheckbox = new GUI::CheckboxWidget(widgetsBoss(), "MystGameOptionsDialog.PlayMystFlyBy", _("Play the Myst fly by movie"),
-		                                             _("The Myst fly by movie was not played by the original engine."));
+																  _("The Myst fly by movie was not played by the original engine."));
+	}
+
+	if (!isDemo) {
+		/**
+		 * I18N:
+		 * This Option is for hard-of-hearing.
+		 * It makes it easier to solve the spaceship puzzle.
+		 * Normally game uses strict binary logic here.
+		 * We change it to use fuzzy logic.
+		 * By default the option is off.
+		 */
+		_spaceshipFuzzyLogicCheckbox = new GUI::CheckboxWidget(widgetsBoss(), "MystGameOptionsDialog.FuzzyMode", _("~F~uzzy Logic in SpaceShip Active"));
 	}
 
 	if (isInGame()) {
@@ -161,6 +176,7 @@ void MystOptionsWidget::defineLayout(GUI::ThemeEval &layouts, const Common::Stri
 	                .addWidget("ZipMode", "Checkbox")
 	                .addWidget("Transistions", "Checkbox")
 	                .addWidget("PlayMystFlyBy", "Checkbox")
+	                .addWidget("FuzzyMode", "Checkbox")
 	                .addLayout(GUI::ThemeLayout::kLayoutHorizontal)
 	                    .addPadding(0, 0, 0, 0)
 	                    .addWidget("LanguageDesc", "OptionsLabel")
@@ -191,6 +207,10 @@ void MystOptionsWidget::load() {
 
 	if (_mystFlyByCheckbox) {
 		_mystFlyByCheckbox->setState(ConfMan.getBool("playmystflyby", _domain));
+	}
+
+	if (_spaceshipFuzzyLogicCheckbox) {
+		_spaceshipFuzzyLogicCheckbox->setState(ConfMan.getBool("fuzzy_logic", _domain));
 	}
 
 	if (_languagePopUp) {
@@ -227,6 +247,10 @@ bool MystOptionsWidget::save() {
 
 	if (_mystFlyByCheckbox) {
 		ConfMan.setBool("playmystflyby", _mystFlyByCheckbox->getState(), _domain);
+	}
+
+	if (_spaceshipFuzzyLogicCheckbox) {
+		ConfMan.setBool("fuzzy_logic", _spaceshipFuzzyLogicCheckbox->getState(), _domain);
 	}
 
 	if (_languagePopUp) {

@@ -152,7 +152,7 @@ ScriptManager::ScriptManager(AsylumEngine *engine) : _vm(engine) {
 	ADD_OPCODE(SelectInventoryItem);
 	ADD_OPCODE(JumpIfInventoryItemNotSelected);
 	ADD_OPCODE(ChangeScene);
-	ADD_OPCODE(UpdateActor);
+	ADD_OPCODE(Interact);
 	ADD_OPCODE(PlayMovie);
 	ADD_OPCODE(StopAllObjectsSounds);
 	ADD_OPCODE(StopProcessing);
@@ -194,7 +194,7 @@ ScriptManager::ScriptManager(AsylumEngine *engine) : _vm(engine) {
 	ADD_OPCODE(SetActorField944);
 	ADD_OPCODE(SetScriptField1BB0);
 	ADD_OPCODE(OnScriptField1BB0);
-	ADD_OPCODE(Interact);
+	ADD_OPCODE(WalkToActor);
 	ADD_OPCODE(SetResourcePalette);
 	ADD_OPCODE(SetObjectFrameIndexAndFlags);
 	ADD_OPCODE(SetObjectFlags);
@@ -205,7 +205,7 @@ ScriptManager::ScriptManager(AsylumEngine *engine) : _vm(engine) {
 	ADD_OPCODE(ClearActorFields);
 	ADD_OPCODE(SetObjectLastFrameIndex);
 	ADD_OPCODE(SetActionAreaFlags);
-	ADD_OPCODE(UpdatePlayerChapter9);
+	ADD_OPCODE(MorphActor);
 	ADD_OPCODE(ShowMenu);
 	ADD_OPCODE(UpdateGlobalFlags);
 
@@ -600,7 +600,7 @@ IMPLEMENT_OPCODE(HideActor)
 	Actor *actor = getScene()->getActor(cmd->param1);
 
 	actor->hide();
-	actor->updateDirection();
+	actor->updateReflectionData();
 END_OPCODE
 
 //////////////////////////////////////////////////////////////////////////
@@ -609,7 +609,7 @@ IMPLEMENT_OPCODE(ShowActor)
 	Actor *actor = getScene()->getActor(cmd->param1);
 
 	actor->show();
-	actor->updateDirection();
+	actor->updateReflectionData();
 	actor->setLastScreenUpdate(_vm->getTick());
 END_OPCODE
 
@@ -632,7 +632,7 @@ END_OPCODE
 IMPLEMENT_OPCODE(DisableActor)
 	Actor *actor = getScene()->getActor(cmd->param1);
 
-	actor->updateStatus(kActorStatusDisabled);
+	actor->changeStatus(kActorStatusDisabled);
 END_OPCODE
 
 //////////////////////////////////////////////////////////////////////////
@@ -694,7 +694,7 @@ IMPLEMENT_OPCODE(JumpActorSpeech)
 	Actor *actor = getScene()->getActor(cmd->param1);
 
 	// Actor goes to position (param2, param3)
-	if (actor->process(Common::Point((int16)cmd->param2, (int16)cmd->param3)))
+	if (actor->canReach(Common::Point((int16)cmd->param2, (int16)cmd->param3)))
 		return;
 
 	_currentQueueEntry->currentLine = cmd->param4;
@@ -712,11 +712,11 @@ IMPLEMENT_OPCODE(JumpAndSetDirection)
 		if (cmd->param5 != 2) {
 
 			if (cmd->param2 == -1 || cmd->param3 == -1) {
-				actor->updateFromDirection((ActorDirection)cmd->param4);
+				actor->changeDirection((ActorDirection)cmd->param4);
 			} else if ((actor->getPoint1()->x + actor->getPoint2()->x) == cmd->param2 && (actor->getPoint1()->y + actor->getPoint2()->y) == cmd->param3) {
-				actor->updateFromDirection((ActorDirection)cmd->param4);
+				actor->changeDirection((ActorDirection)cmd->param4);
 			} else {
-				actor->processStatus((int16)cmd->param2, (int16)cmd->param3, (bool)cmd->param6);
+				actor->forceTo((int16)cmd->param2, (int16)cmd->param3, (bool)cmd->param6);
 
 				if (cmd->param5 == 1) {
 					cmd->param5 = 2;
@@ -728,7 +728,7 @@ IMPLEMENT_OPCODE(JumpAndSetDirection)
 			_processNextEntry = false;
 
 			if ((actor->getPoint1()->x + actor->getPoint2()->x) == cmd->param2 && (actor->getPoint1()->y + actor->getPoint2()->y) == cmd->param3)
-				actor->updateFromDirection((ActorDirection)cmd->param4);
+				actor->changeDirection((ActorDirection)cmd->param4);
 		}
 	} else {
 		if (cmd->param5 == 2)
@@ -935,7 +935,7 @@ END_OPCODE
 // Opcode 0x2B
 IMPLEMENT_OPCODE(ChangeScene)
 	uint32 tick = _vm->getTick();
-	getScene()->getActor(0)->updateStatus(kActorStatusDisabled);
+	getScene()->getActor(0)->changeStatus(kActorStatusDisabled);
 	resetQueue();
 
 	// Fade screen to black
@@ -955,7 +955,7 @@ END_OPCODE
 
 //////////////////////////////////////////////////////////////////////////
 // Opcode 0x2C
-IMPLEMENT_OPCODE(UpdateActor)
+IMPLEMENT_OPCODE(Interact)
 	Actor *player = getScene()->getActor();
 	Actor *actor = getScene()->getActor(_currentQueueEntry->actorIndex);
 	Common::Point playerPoint((int16)(player->getPoint1()->x + player->getPoint2()->x), (int16)(player->getPoint1()->y + player->getPoint2()->y));
@@ -976,7 +976,7 @@ IMPLEMENT_OPCODE(UpdateActor)
 		case kActorStatusEnabled2:
 			return;
 
-		case kActorStatusPickupItem:
+		case kActorStatusStoppedInteracting:
 			actor->enable();
 			break;
 
@@ -984,8 +984,8 @@ IMPLEMENT_OPCODE(UpdateActor)
 			// We want to continue processing and not go into the default case
 			break;
 
-		case kActorStatus20:
-			actor->updateStatus(kActorStatusEnabled2);
+		case kActorStatusStoppedHitting:
+			actor->changeStatus(kActorStatusEnabled2);
 		}
 
 		cmd->param3 = 0;
@@ -1013,7 +1013,7 @@ IMPLEMENT_OPCODE(UpdateActor)
 		actor->setFrameCount(GraphicResource::getFrameCount(_vm, id));
 		actor->setFrameIndex(0);
 		actor->setDirection(direction);
-		actor->updateStatus(actor->getStatus() <= kActorStatus11 ? kActorStatusInteracting : kActorStatusHittingPumpkin);
+		actor->changeStatus(actor->getStatus() <= kActorStatus11 ? kActorStatusInteracting : kActorStatusHittingPumpkin);
 
 		cmd->param3 = 2;
 		_processNextEntry = true;
@@ -1415,8 +1415,8 @@ IMPLEMENT_OPCODE(PlaySpeechScene2)
 		cmd->param5 = 2;
 
 		if (cmd->param7) {
-			getSharedData()->setFlag(kFlag1, false);
-			getSharedData()->setFlag(kFlag2, false);
+			getSharedData()->setFlag(kFlag1, true);
+			getSharedData()->setFlag(kFlag2, true);
 		}
 
 		_processNextEntry = true;
@@ -1497,7 +1497,7 @@ IMPLEMENT_OPCODE(PlaySoundUpdateObject)
 		getSpeech()->play(MAKE_RESOURCE(kResourcePackSpeech, 515 + cmd->param1), MAKE_RESOURCE(kResourcePackText, 1290 + cmd->param1));
 
 		if (cmd->param2) {
-			getScene()->getActor(cmd->param5)->updateStatus(kActorStatus8);
+			getScene()->getActor(cmd->param5)->changeStatus(kActorStatus8);
 			cmd->param6 = 1;
 			_processNextEntry = true;
 		} else {
@@ -1719,7 +1719,7 @@ END_OPCODE
 
 //////////////////////////////////////////////////////////////////////////
 // Opcode 0x56
-IMPLEMENT_OPCODE(Interact)
+IMPLEMENT_OPCODE(WalkToActor)
 	Actor *player = getScene()->getActor(), *actor = getScene()->getActor((ActorIndex)cmd->param1);
 
 	if (cmd->param2 == 2) {
@@ -1735,7 +1735,7 @@ IMPLEMENT_OPCODE(Interact)
 		if ((player->getPoint1()->x + player->getPoint2()->x == cmd->param6)
 		 && (player->getPoint1()->y + player->getPoint2()->y == cmd->param7)) {
 			player->faceTarget((uint32)cmd->param1, kDirectionFromActor);
-			actor->updateFromDirection((ActorDirection)((player->getDirection() + 4) & 7));
+			actor->changeDirection((ActorDirection)((player->getDirection() + 4) & 7));
 		} else {
 			_currentQueueEntry->currentLine = cmd->param3;
 		}
@@ -1745,8 +1745,8 @@ IMPLEMENT_OPCODE(Interact)
 		if (actor->getStatus() == kActorStatusWalkingTo || actor->getStatus() == kActorStatusWalkingTo2)
 			return;
 
-		if (actor->canInteract(&point, &cmd->param4)) {
-			player->processStatus(point.x, point.y, (bool)cmd->param4);
+		if (actor->aNicePlaceToTalk(&point, &cmd->param4)) {
+			player->forceTo(point.x, point.y, (bool)cmd->param4);
 			cmd->param6 = point.x;
 			cmd->param7 = point.y;
 
@@ -1837,7 +1837,7 @@ END_OPCODE
 IMPLEMENT_OPCODE(ProcessActor)
 	Actor *actor = getScene()->getActor(cmd->param1);
 
-	actor->processNext(cmd->param2, cmd->param3, (ActorDirection)cmd->param4, Common::Point((int16)cmd->param5, (int16)cmd->param6), (bool)cmd->param7, Common::Point((int16)cmd->param8, (int16)cmd->param9));
+	actor->setupReflectionData(cmd->param2, cmd->param3, (ActorDirection)cmd->param4, Common::Point((int16)cmd->param5, (int16)cmd->param6), (bool)cmd->param7, Common::Point((int16)cmd->param8, (int16)cmd->param9));
 END_OPCODE
 
 //////////////////////////////////////////////////////////////////////////
@@ -1875,7 +1875,7 @@ END_OPCODE
 
 //////////////////////////////////////////////////////////////////////////
 // Opcode 0x61
-IMPLEMENT_OPCODE(UpdatePlayerChapter9)
+IMPLEMENT_OPCODE(MorphActor)
 	if (cmd->param2) {
 		if (getWorld()->nextPlayer == kActorInvalid) {
 			_processNextEntry = false;
@@ -1884,7 +1884,7 @@ IMPLEMENT_OPCODE(UpdatePlayerChapter9)
 			_processNextEntry = true;
 		}
 	} else {
-		Actor::updatePlayerChapter9(_vm, cmd->param1);
+		Actor::morphInto(_vm, cmd->param1);
 		cmd->param2 = 1;
 		_processNextEntry = true;
 	}

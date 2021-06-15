@@ -29,15 +29,15 @@
 #include "ags/shared/ac/game_version.h"
 #include "ags/engine/ac/system.h"
 #include "ags/shared/font/fonts.h"
-#include "ags/shared/gui/guimain.h"
-#include "ags/shared/gui/guibutton.h"
-#include "ags/shared/gui/guilabel.h"
-#include "ags/shared/gui/guilistbox.h"
-#include "ags/shared/gui/guitextbox.h"
-#include "ags/shared/ac/gamesetupstruct.h"
+#include "ags/shared/gui/gui_main.h"
+#include "ags/shared/gui/gui_button.h"
+#include "ags/shared/gui/gui_label.h"
+#include "ags/shared/gui/gui_listbox.h"
+#include "ags/shared/gui/gui_textbox.h"
+#include "ags/shared/ac/game_setup_struct.h"
 #include "ags/engine/ac/global_translation.h"
 #include "ags/engine/ac/string.h"
-#include "ags/shared/ac/spritecache.h"
+#include "ags/shared/ac/sprite_cache.h"
 #include "ags/shared/gfx/bitmap.h"
 #include "ags/engine/gfx/blender.h"
 #include "ags/globals.h"
@@ -53,7 +53,7 @@ extern void replace_macro_tokens(const char *, String &);
 extern void ensure_text_valid_for_font(char *, int);
 //
 
- // in ac_runningame
+// in ac_runningame
 
 
 bool GUIMain::HasAlphaChannel() const {
@@ -67,17 +67,17 @@ bool GUIMain::HasAlphaChannel() const {
 	}
 	// transparent background, enable alpha blending
 	return _GP(game).GetColorDepth() >= 24 &&
-		// transparent background have alpha channel only since 3.2.0;
-		// "classic" gui rendering mode historically had non-alpha transparent backgrounds
-		// (3.2.0 broke the compatibility, now we restore it)
-		_G(loaded_game_file_version) >= kGameVersion_320 && _GP(game).options[OPT_NEWGUIALPHA] != kGuiAlphaRender_Legacy;
+	       // transparent background have alpha channel only since 3.2.0;
+	       // "classic" gui rendering mode historically had non-alpha transparent backgrounds
+	       // (3.2.0 broke the compatibility, now we restore it)
+	       _G(loaded_game_file_version) >= kGameVersion_320 && _GP(game).options[OPT_NEWGUIALPHA] != kGuiAlphaRender_Legacy;
 }
 
 //=============================================================================
 // Engine-specific implementation split out of acgui.h
 //=============================================================================
 
-void check_font(int32_t *fontnum) {
+void check_font(int *fontnum) {
 	// do nothing
 }
 
@@ -114,20 +114,24 @@ bool GUIObject::IsClickable() const {
 	return (Flags & kGUICtrl_Clickable) != 0;
 }
 
+void GUIObject::NotifyParentChanged() {
+	_GP(guis)[ParentId].MarkChanged();
+}
+
 void GUILabel::PrepareTextToDraw() {
-	replace_macro_tokens(Flags & kGUICtrl_Translated ? String(get_translation(Text)) : Text, _textToDraw);
+	replace_macro_tokens((Flags & kGUICtrl_Translated) ? get_translation(Text.GetCStr()) : Text.GetCStr(), _textToDraw);
 }
 
 size_t GUILabel::SplitLinesForDrawing(SplitLines &lines) {
 	// Use the engine's word wrap tool, to have hebrew-style writing and other features
-	return break_up_text_into_lines(_textToDraw, lines, Width, Font);
+	return break_up_text_into_lines(_textToDraw.GetCStr(), lines, Width, Font);
 }
 
 void GUITextBox::DrawTextBoxContents(Bitmap *ds, color_t text_color) {
-	wouttext_outline(ds, X + 1 + get_fixed_pixel_size(1), Y + 1 + get_fixed_pixel_size(1), Font, text_color, Text);
+	wouttext_outline(ds, X + 1 + get_fixed_pixel_size(1), Y + 1 + get_fixed_pixel_size(1), Font, text_color, Text.GetCStr());
 	if (IsGUIEnabled(this)) {
 		// draw a cursor
-		int draw_at_x = wgettextwidth(Text, Font) + X + 3;
+		int draw_at_x = wgettextwidth(Text.GetCStr(), Font) + X + 3;
 		int draw_at_y = Y + 1 + getfontheight(Font);
 		ds->DrawRect(Rect(draw_at_x, draw_at_y, draw_at_x + get_fixed_pixel_size(5), draw_at_y + (get_fixed_pixel_size(1) - 1)), text_color);
 	}
@@ -143,14 +147,14 @@ void GUIListBox::DrawItemsUnfix() {
 
 void GUIListBox::PrepareTextToDraw(const String &text) {
 	if (Flags & kGUICtrl_Translated)
-		_textToDraw = get_translation(text);
+		_textToDraw = get_translation(text.GetCStr());
 	else
 		_textToDraw = text;
 }
 
 void GUIButton::PrepareTextToDraw() {
 	if (Flags & kGUICtrl_Translated)
-		_textToDraw = get_translation(_text);
+		_textToDraw = get_translation(_text.GetCStr());
 	else
 		_textToDraw = _text;
 }

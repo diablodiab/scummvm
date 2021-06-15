@@ -304,30 +304,33 @@ void Score::update() {
 			_activeFade = 0;
 	}
 
-	if (_movie->_videoPlayback) {
-		renderFrame(_currentFrame);
-	}
-
 	if (!debugChannelSet(-1, kDebugFast)) {
+		bool keepWaiting = false;
+
 		if (_waitForChannel) {
-			if (_soundManager->isChannelActive(_waitForChannel))
-				return;
-
-			_waitForChannel = 0;
-		}
-
-		if (_waitForClick) {
+			if (_soundManager->isChannelActive(_waitForChannel)) {
+				keepWaiting = true; 
+			} else {
+				_waitForChannel = 0;
+			}
+		} else if (_waitForClick) {
 			if (g_system->getMillis() >= _nextFrameTime + 1000) {
 				_waitForClickCursor = !_waitForClickCursor;
 				_vm->setCursor(kCursorDefault);
 				_vm->setCursor(_waitForClickCursor ? kCursorMouseDown : kCursorMouseUp);
 				_nextFrameTime = g_system->getMillis();
 			}
-			return;
+			keepWaiting = true;
+		} else if (g_system->getMillis() < _nextFrameTime && !_nextFrame) {
+			keepWaiting = true;
 		}
 
-		if (g_system->getMillis() < _nextFrameTime && !_nextFrame)
+		if (keepWaiting) {
+			if (_movie->_videoPlayback) {
+				renderFrame(_currentFrame);
+			}
 			return;
+		}
 	}
 
 	// For previous frame
@@ -611,6 +614,14 @@ Common::List<Channel *> Score::getSpriteIntersections(const Common::Rect &r) {
 	return intersections;
 }
 
+uint16 Score::getSpriteIdByMemberId(uint16 id) {
+	for (uint i = 0; i < _channels.size(); i++)
+		if (_channels[i]->_sprite->_castId == id)
+			return i;
+
+	return 0;
+}
+
 Sprite *Score::getSpriteById(uint16 id) {
 	Channel *channel = getChannelById(id);
 
@@ -640,7 +651,7 @@ void Score::playSoundChannel(uint16 frameId) {
 	sound->playCastMember(frame->_sound2, 2, false);
 }
 
-void Score::loadFrames(Common::SeekableReadStreamEndian &stream) {
+void Score::loadFrames(Common::SeekableReadStreamEndian &stream, uint16 version) {
 	debugC(1, kDebugLoading, "****** Loading frames VWSC");
 
 	//stream.hexdump(stream.size());
@@ -648,20 +659,20 @@ void Score::loadFrames(Common::SeekableReadStreamEndian &stream) {
 	uint32 size = stream.readUint32();
 	size -= 4;
 
-	if (_vm->getVersion() < 400) {
+	if (version < kFileVer400) {
 		_numChannelsDisplayed = 30;
-	} else if (_vm->getVersion() >= 400 && _vm->getVersion() < 500) {
+	} else if (version >= kFileVer400 && version < kFileVer500) {
 		uint32 frame1Offset = stream.readUint32();
 		uint32 numFrames = stream.readUint32();
-		uint16 version = stream.readUint16();
+		uint16 framesVersion = stream.readUint16();
 		uint16 spriteRecordSize = stream.readUint16();
 		uint16 numChannels = stream.readUint16();
 		size -= 14;
 
-		if (version > 13) {
+		if (framesVersion > 13) {
 			_numChannelsDisplayed = stream.readUint16();
 		} else {
-			if (version <= 7)	// Director5
+			if (framesVersion <= 7)	// Director5
 				_numChannelsDisplayed = 48;
 			else
 				_numChannelsDisplayed = 120;	// D6
@@ -672,9 +683,9 @@ void Score::loadFrames(Common::SeekableReadStreamEndian &stream) {
 		size -= 2;
 
 		warning("STUB: Score::loadFrames. frame1Offset: %x numFrames: %x version: %x spriteRecordSize: %x numChannels: %x numChannelsDisplayed: %x",
-			frame1Offset, numFrames, version, spriteRecordSize, numChannels, _numChannelsDisplayed);
+			frame1Offset, numFrames, framesVersion, spriteRecordSize, numChannels, _numChannelsDisplayed);
 		// Unknown, some bytes - constant (refer to contuinity).
-	} else if (_vm->getVersion() >= 500) {
+	} else if (version >= kFileVer500) {
 		//what data is up the top of D5 VWSC?
 		uint32 unk1 = stream.readUint32();
 		uint32 unk2 = stream.readUint32();
@@ -750,7 +761,7 @@ void Score::loadFrames(Common::SeekableReadStreamEndian &stream) {
 
 			Common::MemoryReadStreamEndian *str = new Common::MemoryReadStreamEndian(channelData, ARRAYSIZE(channelData), stream.isBE());
 			// str->hexdump(str->size(), 32);
-			frame->readChannels(str);
+			frame->readChannels(str, version);
 			delete str;
 
 			debugC(8, kDebugLoading, "Score::loadFrames(): Frame %d actionId: %d", _frames.size(), frame->_actionId);

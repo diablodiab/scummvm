@@ -392,7 +392,7 @@ private:
 	DECLARE_OPCODE(SelectInventoryItem);
 	DECLARE_OPCODE(JumpIfInventoryItemNotSelected);
 	DECLARE_OPCODE(ChangeScene);
-	DECLARE_OPCODE(UpdateActor);
+	DECLARE_OPCODE(Interact);
 	DECLARE_OPCODE(PlayMovie);
 	DECLARE_OPCODE(StopAllObjectsSounds);
 	DECLARE_OPCODE(StopProcessing);
@@ -434,7 +434,7 @@ private:
 	DECLARE_OPCODE(SetActorField944);
 	DECLARE_OPCODE(SetScriptField1BB0);
 	DECLARE_OPCODE(OnScriptField1BB0);
-	DECLARE_OPCODE(Interact);
+	DECLARE_OPCODE(WalkToActor);
 	DECLARE_OPCODE(SetResourcePalette);
 	DECLARE_OPCODE(SetObjectFrameIndexAndFlags);
 	DECLARE_OPCODE(SetObjectFlags);
@@ -445,7 +445,7 @@ private:
 	DECLARE_OPCODE(ClearActorFields);
 	DECLARE_OPCODE(SetObjectLastFrameIndex);
 	DECLARE_OPCODE(SetActionAreaFlags);
-	DECLARE_OPCODE(UpdatePlayerChapter9);
+	DECLARE_OPCODE(MorphActor);
 	DECLARE_OPCODE(ShowMenu);
 	DECLARE_OPCODE(UpdateGlobalFlags);
 

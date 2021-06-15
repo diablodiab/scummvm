@@ -20,13 +20,13 @@
  *
  */
 
+#include "common/file.h"
+#include "graphics/fonts/ttf.h"
 #include "ags/lib/alfont/alfont.h"
 #include "ags/ags.h"
 #include "ags/globals.h"
-#include "ags/shared/ac/gamesetupstruct.h"
+#include "ags/shared/ac/game_setup_struct.h"
 #include "ags/engine/ac/display.h"
-#include "common/file.h"
-#include "graphics/fonts/ttf.h"
 
 namespace AGS3 {
 

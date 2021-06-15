@@ -23,14 +23,22 @@
 #ifndef AGS_SHARED_AC_COMMON_H
 #define AGS_SHARED_AC_COMMON_H
 
+#include "ags/shared/util/string.h"
+
 namespace AGS3 {
 
 // These are the project-dependent functions, they are defined both in Engine.App and AGS.Native.
+void quit(const AGS::Shared::String &str);
 void quit(const char *);
 void quitprintf(const char *fmt, ...);
 void update_polled_stuff_if_runtime();
 void set_our_eip(int eip);
 int  get_our_eip();
+
+extern const char *game_file_sig;
+
+// archive attributes to search for - al_findfirst breaks with 0
+#define FA_SEARCH -1
 
 } // namespace AGS3
 

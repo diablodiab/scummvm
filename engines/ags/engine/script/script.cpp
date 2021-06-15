@@ -20,14 +20,15 @@
  *
  */
 
+//include <string.h>
 #include "ags/engine/script/script.h"
 #include "ags/shared/ac/common.h"
 #include "ags/engine/ac/character.h"
 #include "ags/engine/ac/dialog.h"
 #include "ags/engine/ac/event.h"
 #include "ags/engine/ac/game.h"
-#include "ags/shared/ac/gamesetupstruct.h"
-#include "ags/engine/ac/gamestate.h"
+#include "ags/shared/ac/game_setup_struct.h"
+#include "ags/engine/ac/game_state.h"
 #include "ags/engine/ac/global_audio.h"
 #include "ags/engine/ac/global_character.h"
 #include "ags/engine/ac/global_dialog.h"
@@ -37,10 +38,11 @@
 #include "ags/engine/ac/global_hotspot.h"
 #include "ags/engine/ac/global_object.h"
 #include "ags/engine/ac/global_room.h"
-#include "ags/engine/ac/invwindow.h"
+#include "ags/engine/ac/inv_window.h"
 #include "ags/engine/ac/mouse.h"
 #include "ags/engine/ac/room.h"
-#include "ags/engine/ac/roomobject.h"
+#include "ags/engine/ac/room_object.h"
+#include "ags/shared/gui/gui_main.h"
 #include "ags/shared/script/cc_error.h"
 #include "ags/shared/script/cc_options.h"
 #include "ags/engine/debugging/debugger.h"
@@ -117,13 +119,13 @@ void run_function_on_non_blocking_thread(NonBlockingScriptFunction *funcToRun) {
 int run_interaction_event(Interaction *nint, int evnt, int chkAny, int isInv) {
 
 	if (evnt < 0 || (size_t)evnt >= nint->Events.size() ||
-		(nint->Events[evnt].Response.get() == nullptr) || (nint->Events[evnt].Response->Cmds.size() == 0)) {
+	        (nint->Events[evnt].Response.get() == nullptr) || (nint->Events[evnt].Response->Cmds.size() == 0)) {
 		// no response defined for this event
 		// If there is a response for "Any Click", then abort now so as to
 		// run that instead
 		if (chkAny < 0);
 		else if ((size_t)chkAny < nint->Events.size() &&
-			(nint->Events[chkAny].Response.get() != nullptr) && (nint->Events[chkAny].Response->Cmds.size() > 0))
+		         (nint->Events[chkAny].Response.get() != nullptr) && (nint->Events[chkAny].Response->Cmds.size() > 0))
 			return 0;
 
 		// Otherwise, run unhandled_event
@@ -181,10 +183,10 @@ int run_interaction_script(InteractionScripts *nint, int evnt, int chkAny, int i
 
 	if ((strstr(_G(evblockbasename), "character") != nullptr) || (strstr(_G(evblockbasename), "inventory") != nullptr)) {
 		// Character or Inventory (global script)
-		QueueScriptFunction(kScInstGame, nint->ScriptFuncNames[evnt]);
+		QueueScriptFunction(kScInstGame, nint->ScriptFuncNames[evnt].GetCStr());
 	} else {
 		// Other (room script)
-		QueueScriptFunction(kScInstRoom, nint->ScriptFuncNames[evnt]);
+		QueueScriptFunction(kScInstRoom, nint->ScriptFuncNames[evnt].GetCStr());
 	}
 
 	int retval = 0;
@@ -310,8 +312,6 @@ int PrepareTextScript(ccInstance *sci, const char **tsname) {
 		_G(ccErrorString) = "script is already in execution";
 		return -3;
 	}
-
-	assert(_G(num_scripts) < MAX_SCRIPT_AT_ONCE);
 	_G(scripts)[_G(num_scripts)].init();
 	_G(scripts)[_G(num_scripts)].inst = sci;
 	// CHECKME: this conditional block will never run, because
@@ -338,12 +338,12 @@ int PrepareTextScript(ccInstance *sci, const char **tsname) {
 
 int RunScriptFunctionIfExists(ccInstance *sci, const char *tsname, int numParam, const RuntimeScriptValue *params) {
 	int oldRestoreCount = _G(gameHasBeenRestored);
-	// First, save the current _G(ccError) state
+	// First, save the current ccError state
 	// This is necessary because we might be attempting
 	// to run Script B, while Script A is still running in the
 	// background.
 	// If CallInstance here has an error, it would otherwise
-	// also abort Script A because _G(ccError) is a global variable.
+	// also abort Script A because ccError is a global variable.
 	int cachedCcError = _G(ccError);
 	_G(ccError) = 0;
 
@@ -401,7 +401,7 @@ int RunTextScript(ccInstance *sci, const char *tsname) {
 				RunScriptFunctionIfExists(_GP(moduleInst)[kk], tsname, 0, nullptr);
 
 			if ((room_changes_was != _GP(play).room_changes) ||
-				(restore_game_count_was != _G(gameHasBeenRestored)))
+			        (restore_game_count_was != _G(gameHasBeenRestored)))
 				return 0;
 		}
 	}
@@ -440,8 +440,10 @@ int RunTextScript2IParam(ccInstance *sci, const char *tsname, const RuntimeScrip
 	}
 
 	// response to a button click, better update guis
-	if (ags_strnicmp(tsname, "interface_click", 15) == 0)
-		_G(guis_need_update) = 1;
+	if (ags_strnicmp(tsname, "interface_click", 15) == 0) {
+		// interface_click(int interface, int button)
+		_GP(guis)[iparam.IValue].MarkChanged();
+	}
 
 	return RunScriptFunctionIfExists(sci, tsname, 2, params);
 }
@@ -546,7 +548,7 @@ void post_script_cleanup() {
 	for (jj = 0; jj < copyof.numanother; jj++) {
 		old_room_number = _G(displayed_room);
 		QueuedScript &script = copyof.ScFnQueue[jj];
-		RunScriptFunction(script.Instance, script.FnName, script.ParamCount, script.Param1, script.Param2);
+		RunScriptFunction(script.Instance, script.FnName.GetCStr(), script.ParamCount, script.Param1, script.Param2);
 		if (script.Instance == kScInstRoom && script.ParamCount == 1) {
 			// some bogus hack for "on_call" event handler
 			_GP(play).roomscript_finished = 1;
@@ -592,11 +594,11 @@ InteractionVariable *get_interaction_variable(int varindx) {
 InteractionVariable *FindGraphicalVariable(const char *varName) {
 	int ii;
 	for (ii = 0; ii < _G(numGlobalVars); ii++) {
-		if (ags_stricmp(_G(globalvars)[ii].Name, varName) == 0)
+		if (_G(globalvars)[ii].Name.CompareNoCase(varName) == 0)
 			return &_G(globalvars)[ii];
 	}
 	for (size_t i = 0; i < _GP(thisroom).LocalVariables.size(); ++i) {
-		if (ags_stricmp(_GP(thisroom).LocalVariables[i].Name, varName) == 0)
+		if (_GP(thisroom).LocalVariables[i].Name.CompareNoCase(varName) == 0)
 			return &_GP(thisroom).LocalVariables[i];
 	}
 	return nullptr;
@@ -635,8 +637,7 @@ int run_interaction_commandlist(InteractionCommandList *nicl, int *timesrun, int
 		switch (nicl->Cmds[i].Type) {
 		case 0:  // Do nothing
 			break;
-		case 1:
-		{ // Run script
+		case 1: { // Run script
 			TempEip tempip(4001);
 			RuntimeScriptValue rval_null;
 			if ((strstr(_G(evblockbasename), "character") != nullptr) || (strstr(_G(evblockbasename), "inventory") != nullptr)) {
@@ -654,9 +655,8 @@ int run_interaction_commandlist(InteractionCommandList *nicl, int *timesrun, int
 		case 2:  // Add score (first time)
 			if (timesrun[0] > 0)
 				break;
-			timesrun[0]++;
+			timesrun[0] ++;
 			// fall through
-
 		case 3:  // Add score
 			GiveScore(IPARAM1);
 			break;
@@ -677,8 +677,7 @@ int run_interaction_commandlist(InteractionCommandList *nicl, int *timesrun, int
 		case 8:  // Play Flic
 			play_flc_file(IPARAM1, IPARAM2);
 			break;
-		case 9:
-		{ // Run Dialog
+		case 9: { // Run Dialog
 			int roomWas = _GP(play).room_changes;
 			RunDialog(IPARAM1);
 			// if they changed room within the dialog script,
@@ -871,8 +870,8 @@ void run_unhandled_event(int evnt) {
 		evtype = 4;
 	if ((evtype == 1) & ((evnt == 0) | (evnt == 5) | (evnt == 6)))
 		;  // character stands on hotspot, mouse moves over hotspot, any click
-	else if ((evtype == 2) & (evnt == 4)); // any click on object
-	else if ((evtype == 3) & (evnt == 4)); // any click on character
+	else if ((evtype == 2) & (evnt == 4));  // any click on object
+	else if ((evtype == 3) & (evnt == 4));  // any click on character
 	else if (evtype > 0) {
 		can_run_delayed_command();
 

@@ -38,14 +38,16 @@
 #include "ags/shared/script/script_common.h"
 #include "ags/shared/script/cc_error.h"
 #include "ags/shared/script/cc_options.h"
-#include "ags/engine/script/systemimports.h"
-#include "ags/plugins/agsplugin.h"
-#include "ags/engine/ac/dynobj/cc_dynamicarray.h"
-#include "ags/engine/ac/statobj/staticobject.h"
+#include "ags/engine/ac/dynobj/cc_dynamic_array.h"
+#include "ags/engine/script/system_imports.h"
+#include "ags/engine/ac/statobj/static_object.h"
+#include "ags/plugins/ags_plugin.h"
 #include "ags/plugins/plugin_base.h"
 #include "ags/globals.h"
 
 namespace AGS3 {
+
+static const char ccRunnerCopyright[] = "ScriptExecuter32 v" SCOM_VERSIONSTR " (c) 2001 Chris Jones";
 
 bool ccAddExternalStaticFunction(const String &name, ScriptAPIFunction *pfn) {
 	return _GP(simp).add(name, RuntimeScriptValue().SetStaticFunction(pfn), nullptr) == 0;

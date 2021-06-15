@@ -778,8 +778,6 @@ void BladeRunnerEngine::initChapterAndScene() {
 }
 
 void BladeRunnerEngine::shutdown() {
-	DebugMan.clearAllDebugChannels();
-
 	_mixer->stopAll();
 
 	// BLADE.INI as updated here
@@ -1367,14 +1365,23 @@ void BladeRunnerEngine::handleKeyUp(Common::Event &event) {
 }
 
 void BladeRunnerEngine::handleKeyDown(Common::Event &event) {
-	if (_vqaIsPlaying && (event.kbd.keycode == Common::KEYCODE_ESCAPE || event.kbd.keycode == Common::KEYCODE_RETURN)) {
+	if (_vqaIsPlaying && event.kbd.keycode == Common::KEYCODE_ESCAPE) {
+		// Note: Do not use Return key to skip a VQA cutscene - Original also only uses the Esc key here
+		//       While no glitches were attirubuted to using Return for skipping cutscenes
+		//       it's ultimately better to have the original behavior here
+		//       and not have a key skipping multiple stuff at the same time.
 		_vqaStopIsRequested = true;
 		_vqaIsPlaying = false;
 
 		return;
 	}
 
-	if (_actorIsSpeaking && (event.kbd.keycode == Common::KEYCODE_ESCAPE || event.kbd.keycode == Common::KEYCODE_RETURN)) {
+	if (_actorIsSpeaking && event.kbd.keycode == Common::KEYCODE_RETURN) {
+		// Note: Do not use Esc key to skip dialogue - Original also only uses the Return key here
+		//       Using Esc to skip dialogue causes a few bad glitches such as:
+		//        - Kia dialogue will blink fast after last line spoken is skipped
+		//        - In certain sequences (eg. Zuben dumping soup on McCoy) the frames won't play correctly
+		//          and that may lead to dead end situation (for the Zuben example, the scene is locked with no exits enabled).
 		_actorSpeakStopIsRequested = true;
 		_actorIsSpeaking = false;
 
@@ -2117,8 +2124,8 @@ void BladeRunnerEngine::playerDied() {
 	_gameFlags->reset(kFlagKIAPrivacyAddon);
 
 	_ambientSounds->removeAllNonLoopingSounds(true);
-	_ambientSounds->removeAllLoopingSounds(4);
-	_music->stop(4);
+	_ambientSounds->removeAllLoopingSounds(4u);
+	_music->stop(4u);
 	_audioSpeech->stopSpeech();
 #endif // BLADERUNNER_ORIGINAL_BUGS
 
@@ -2223,9 +2230,9 @@ bool BladeRunnerEngine::loadGame(Common::SeekableReadStream &stream, int version
 	_music->stop(2);
 #else
 	// loading into another game that also has music would
-	// two music tracks to overlap and none was stopped
-	_ambientSounds->removeAllLoopingSounds(0);
-	_music->stop(0);
+	// cause two music tracks to overlap and none was stopped
+	_ambientSounds->removeAllLoopingSounds(0u);
+	_music->stop(0u);
 #endif // BLADERUNNER_ORIGINAL_BUGS
 	_audioSpeech->stopSpeech();
 	_actorDialogueQueue->flush(true, false);

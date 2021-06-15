@@ -26,21 +26,22 @@
 //
 //=============================================================================
 
-#include "ags/engine/media/audio/audiodefines.h"
+#include "ags/engine/media/audio/audio_defines.h"
 #include "ags/engine/media/audio/sound.h"
-#include "ags/engine/media/audio/soundcache.h"
-#include "ags/engine/media/audio/soundclip.h"
-#include "ags/engine/media/audio/clip_mymidi.h"
+#include "ags/engine/media/audio/sound_clip.h"
+#include "ags/engine/media/audio/clip_my_midi.h"
+#include "ags/shared/core/asset_manager.h"
 #include "audio/mods/mod_xm_s3m.h"
 #include "audio/mods/protracker.h"
 #include "audio/decoders/mp3.h"
 #include "audio/decoders/vorbis.h"
 #include "audio/decoders/wave.h"
+#include "ags/globals.h"
 
 namespace AGS3 {
 
-SOUNDCLIP *my_load_wave(const AssetPath &asset_name, int voll, int loop) {
-	Common::SeekableReadStream *data = get_cached_sound(asset_name);
+SOUNDCLIP *my_load_wave(const AssetPath &asset_name, int voll, bool loop) {
+	Common::SeekableReadStream *data = _GP(AssetMgr)->OpenAssetStream(asset_name.Name, asset_name.Filter);
 	if (data) {
 		Audio::AudioStream *audioStream = Audio::makeWAVStream(data, DisposeAfterUse::YES);
 		return new SoundClipWave<MUS_WAVE>(audioStream, voll, loop);
@@ -51,7 +52,7 @@ SOUNDCLIP *my_load_wave(const AssetPath &asset_name, int voll, int loop) {
 
 SOUNDCLIP *my_load_static_mp3(const AssetPath &asset_name, int voll, bool loop) {
 #ifdef USE_MAD
-	Common::SeekableReadStream *data = get_cached_sound(asset_name);
+	Common::SeekableReadStream *data = _GP(AssetMgr)->OpenAssetStream(asset_name.Name, asset_name.Filter);
 	if (data) {
 		Audio::AudioStream *audioStream = Audio::makeMP3Stream(data, DisposeAfterUse::YES);
 		return new SoundClipWave<MUS_MP3>(audioStream, voll, false);
@@ -69,7 +70,7 @@ SOUNDCLIP *my_load_mp3(const AssetPath &asset_name, int voll) {
 
 SOUNDCLIP *my_load_static_ogg(const AssetPath &asset_name, int voll, bool loop) {
 #ifdef USE_VORBIS
-	Common::SeekableReadStream *data = get_cached_sound(asset_name);
+	Common::SeekableReadStream *data = _GP(AssetMgr)->OpenAssetStream(asset_name.Name, asset_name.Filter);
 	if (data) {
 		Audio::AudioStream *audioStream = Audio::makeVorbisStream(data, DisposeAfterUse::YES);
 		return new SoundClipWave<MUS_OGG>(audioStream, voll, loop);
@@ -85,26 +86,26 @@ SOUNDCLIP *my_load_ogg(const AssetPath &asset_name, int voll) {
 	return my_load_static_ogg(asset_name, voll, false);
 }
 
-SOUNDCLIP *my_load_midi(const AssetPath &asset_name, bool repeat) {
-	Common::SeekableReadStream *data = get_cached_sound(asset_name);
+SOUNDCLIP *my_load_midi(const AssetPath &asset_name, bool loop) {
+	Common::SeekableReadStream *data = _GP(AssetMgr)->OpenAssetStream(asset_name.Name, asset_name.Filter);
 	if (data) {
-		return new MYMIDI(data, repeat);
+		return new MYMIDI(data, loop);
 	} else {
 		return nullptr;
 	}
 }
 
-SOUNDCLIP *my_load_mod(const AssetPath &asset_name, bool repeat) {
-	Common::SeekableReadStream *data = get_cached_sound(asset_name);
+SOUNDCLIP *my_load_mod(const AssetPath &asset_name, bool loop) {
+	Common::SeekableReadStream *data = _GP(AssetMgr)->OpenAssetStream(asset_name.Name, asset_name.Filter);
 	if (data) {
 		// determine the file extension
-		size_t lastDot = asset_name.second.FindCharReverse('.');
-		if (lastDot == AGS::Shared::String::npos || lastDot == asset_name.second.GetLength() - 1) {
+		size_t lastDot = asset_name.Filter.FindCharReverse('.');
+		if (lastDot == AGS::Shared::String::npos || lastDot == asset_name.Filter.GetLength() - 1) {
 			delete data;
 			return nullptr;
 		}
 		// get the first char of the extensin
-		char charAfterDot = toupper(asset_name.second[lastDot + 1]);
+		char charAfterDot = toupper(asset_name.Filter[lastDot + 1]);
 
 		// use the appropriate loader
 		Audio::AudioStream *audioStream = nullptr;
@@ -125,7 +126,7 @@ SOUNDCLIP *my_load_mod(const AssetPath &asset_name, bool repeat) {
 			return nullptr;
 		}
 
-		return new SoundClipWave<MUS_MOD>(audioStream, 255, repeat);
+		return new SoundClipWave<MUS_MOD>(audioStream, 255, loop);
 	} else {
 		return nullptr;
 	}

@@ -20,13 +20,14 @@
  *
  */
 
+#include "common/config-manager.h"
 #include "ags/engine/ac/asset_helper.h"
-#include "ags/shared/ac/audiocliptype.h"
+#include "ags/shared/ac/audio_clip_type.h"
 #include "ags/engine/ac/file.h"
 #include "ags/shared/ac/common.h"
 #include "ags/engine/ac/game.h"
-#include "ags/engine/ac/gamesetup.h"
-#include "ags/shared/ac/gamesetupstruct.h"
+#include "ags/engine/ac/game_setup.h"
+#include "ags/shared/ac/game_setup_struct.h"
 #include "ags/engine/ac/global_file.h"
 #include "ags/engine/ac/path_helper.h"
 #include "ags/engine/ac/runtime_defines.h"
@@ -34,10 +35,9 @@
 #include "ags/engine/debugging/debug_log.h"
 #include "ags/engine/debugging/debugger.h"
 #include "ags/shared/util/misc.h"
-#include "ags/engine/platform/base/agsplatformdriver.h"
+#include "ags/engine/platform/base/ags_platform_driver.h"
 #include "ags/shared/util/stream.h"
-#include "ags/shared/util/filestream.h"
-#include "ags/shared/core/assetmanager.h"
+#include "ags/shared/core/asset_manager.h"
 #include "ags/shared/core/asset.h"
 #include "ags/engine/main/engine.h"
 #include "ags/engine/main/game_file.h"
@@ -48,11 +48,9 @@
 #include "ags/shared/debugging/out.h"
 #include "ags/engine/script/script_api.h"
 #include "ags/engine/script/script_runtime.h"
-#include "ags/engine/ac/dynobj/scriptstring.h"
-#include "ags/globals.h"
+#include "ags/engine/ac/dynobj/script_string.h"
 #include "ags/ags.h"
-#include "common/config-manager.h"
-#include "common/debug.h"
+#include "ags/globals.h"
 
 namespace AGS3 {
 
@@ -75,10 +73,10 @@ int File_Delete(const char *fnmm) {
 	if (!ResolveScriptPath(fnmm, false, rp))
 		return 0;
 
-	if (File::DeleteFile(rp.FullPath))
+	if (::remove(rp.FullPath.GetCStr()) == 0)
 		return 1;
 	if (_G(errnum) == AL_ENOENT && !rp.AltPath.IsEmpty() && rp.AltPath.Compare(rp.FullPath) != 0)
-		return File::DeleteFile(rp.AltPath) ? 1 : 0;
+		return ::remove(rp.AltPath.GetCStr()) == 0 ? 1 : 0;
 	return 0;
 }
 
@@ -208,6 +206,7 @@ const char *GameInstallRootToken = "$INSTALLDIR$";
 const char *UserSavedgamesRootToken = "$MYDOCS$";
 const char *GameSavedgamesDirToken = "$SAVEGAMEDIR$";
 const char *GameDataDirToken = "$APPDATADIR$";
+const char *UserConfigFileToken = "$CONFIGFILE$";
 
 void FixupFilename(char *filename) {
 	const char *illegal = _G(platform)->GetIllegalFileChars();
@@ -222,50 +221,69 @@ void FixupFilename(char *filename) {
 	}
 }
 
-// Tests if there is a special path token in the beginning of the given path;
-// if there is and there is no slash between token and the rest of the string,
-// then assigns new string that has such slash.
-// Returns TRUE if the new string was created, and FALSE if the path was good.
-bool FixSlashAfterToken(const String &path, const String &token, String &new_path) {
-	if (path.CompareLeft(token) == 0 && path.GetLength() > token.GetLength() &&
-		path[token.GetLength()] != '/') {
-		new_path = String::FromFormat("%s/%s", token.GetCStr(), path.Mid(token.GetLength()).GetCStr());
-		return true;
-	}
-	return false;
-}
-
-String FixSlashAfterToken(const String &path) {
-	String fixed_path = path;
-	Path::FixupPath(fixed_path);
-	if (FixSlashAfterToken(fixed_path, GameInstallRootToken, fixed_path) ||
-		FixSlashAfterToken(fixed_path, UserSavedgamesRootToken, fixed_path) ||
-		FixSlashAfterToken(fixed_path, GameSavedgamesDirToken, fixed_path) ||
-		FixSlashAfterToken(fixed_path, GameDataDirToken, fixed_path))
-		return fixed_path;
+String PathFromInstallDir(const String &path) {
+	if (Path::IsRelativePath(path))
+		return Path::ConcatPaths(_GP(ResPaths).DataDir, path);
 	return path;
 }
 
-String MakeSpecialSubDir(const String &sp_dir) {
-	if (is_relative_filename(sp_dir))
-		return sp_dir;
-	String full_path = sp_dir;
-	if (full_path.GetLast() != '/' && full_path.GetLast() != '\\')
-		full_path.AppendChar('/');
-	full_path.Append(_GP(game).saveGameFolderName);
-	Directory::CreateDirectory(full_path);
-	return full_path;
+String PreparePathForWriting(const FSLocation &fsloc, const String &filename) {
+	if (Directory::CreateAllDirectories(fsloc.BaseDir, fsloc.FullDir))
+		return Path::ConcatPaths(fsloc.FullDir, filename);
+	return "";
 }
 
-String MakeAppDataPath() {
-	return "./";
+FSLocation GetGlobalUserConfigDir() {
+	String dir = _G(platform)->GetUserGlobalConfigDirectory();
+	if (Path::IsRelativePath(dir)) // relative dir is resolved relative to the game data dir
+		return FSLocation(_GP(ResPaths).DataDir, Path::ConcatPaths(_GP(ResPaths).DataDir, dir));
+	return FSLocation(dir, dir);
+}
+
+FSLocation GetGameUserConfigDir() {
+	String dir = _G(platform)->GetUserConfigDirectory();
+	if (Path::IsRelativePath(dir)) // relative dir is resolved relative to the game data dir
+		return FSLocation(_GP(ResPaths).DataDir, Path::ConcatPaths(_GP(ResPaths).DataDir, dir));
+	else if (_GP(usetup).local_user_conf) // directive to use game dir location
+		return FSLocation(_GP(ResPaths).DataDir);
+	// For absolute dir, we assume it's a special directory prepared for AGS engine
+	// and therefore amend it with a game own subdir
+	return FSLocation(dir, Path::ConcatPaths(dir, _GP(game).saveGameFolderName));
+}
+
+// A helper function that deduces a data directory either using default system location,
+// or user option from config. In case of a default location a path is appended with
+// game's "save folder" name, which is meant to separate files from different games.
+static FSLocation MakeGameDataDir(const String &default_dir, const String &user_option) {
+	if (user_option.IsEmpty()) {
+		String dir = default_dir;
+		if (Path::IsRelativePath(dir)) // relative dir is resolved relative to the game data dir
+			return FSLocation(_GP(ResPaths).DataDir, Path::ConcatPaths(_GP(ResPaths).DataDir, dir));
+		// For absolute dir, we assume it's a special directory prepared for AGS engine
+		// and therefore amend it with a game own subdir
+		return FSLocation(dir, Path::ConcatPaths(dir, _GP(game).saveGameFolderName));
+	}
+	// If this location is set up by user config, then use it as is (resolving relative path if necessary)
+	String dir = user_option;
+	if (Path::IsSameOrSubDir(_GP(ResPaths).DataDir, dir)) // check if it's inside game dir
+		return FSLocation(_GP(ResPaths).DataDir, Path::MakeRelativePath(_GP(ResPaths).DataDir, dir));
+	dir = Path::MakeAbsolutePath(dir);
+	return FSLocation(dir, dir);
+}
+
+FSLocation GetGameAppDataDir() {
+	return MakeGameDataDir(_G(platform)->GetAllUsersDataDirectory(), _GP(usetup).shared_data_dir);
+}
+
+FSLocation GetGameUserDataDir() {
+	return MakeGameDataDir(_G(platform)->GetUserSavedgamesDirectory(), _GP(usetup).user_data_dir);
 }
 
 bool ResolveScriptPath(const String &orig_sc_path, bool read_only, ResolvedPath &rp) {
 	debugC(::AGS::kDebugFilePath, "ResolveScriptPath(%s)", orig_sc_path.GetCStr());
 	rp = ResolvedPath();
 
-	bool is_absolute = !is_relative_filename(orig_sc_path);
+	bool is_absolute = !is_relative_filename(orig_sc_path.GetCStr());
 	if (is_absolute && !read_only) {
 		debug_script_warn("Attempt to access file '%s' denied (cannot write to absolute path)", orig_sc_path.GetCStr());
 		return false;
@@ -276,24 +294,9 @@ bool ResolveScriptPath(const String &orig_sc_path, bool read_only, ResolvedPath 
 		debugC(::AGS::kDebugFilePath, "Full path detected");
 		return true;
 	}
-	/*
-	if (read_only) {
-		// For reading files, first try as a save file, then fall back
-		// in the game folder. This handles cases where some games like
-		// The Blackwell Legacy write to files in the game folder
-		rp.BaseDir = SAVE_FOLDER_PREFIX;
-		rp.FullPath = String::FromFormat("%s%s", SAVE_FOLDER_PREFIX,
-			orig_sc_path.GetNullableCStr());
-		rp.AltPath = orig_sc_path;
-	} else {
-		// For writing files, always use as save files
-		rp.BaseDir = SAVE_FOLDER_PREFIX;
-		rp.FullPath = String::FromFormat("%s%s", SAVE_FOLDER_PREFIX,
-			orig_sc_path.GetNullableCStr());
-	}
-	*/
-	String sc_path = FixSlashAfterToken(orig_sc_path);
-	String parent_dir;
+
+	String sc_path = orig_sc_path;
+	FSLocation parent_dir;
 	String child_path;
 	String alt_path;
 	if (sc_path.CompareLeft(GameInstallRootToken) == 0) {
@@ -302,15 +305,14 @@ bool ResolveScriptPath(const String &orig_sc_path, bool read_only, ResolvedPath 
 				sc_path.GetCStr());
 			return false;
 		}
-		parent_dir = get_install_dir();
-		parent_dir.AppendChar('/');
+		parent_dir = FSLocation(_GP(ResPaths).DataDir);
 		child_path = sc_path.Mid(strlen(GameInstallRootToken));
 	} else if (sc_path.CompareLeft(GameSavedgamesDirToken) == 0) {
 		parent_dir = get_save_game_directory();
 		child_path = sc_path.Mid(strlen(GameSavedgamesDirToken));
 #if AGS_PLATFORM_SCUMMVM
 		// Remap "agsgame.*"
-		const char  *agsSavePrefix = "/agssave.";
+		const char *agsSavePrefix = "/agssave.";
 		if (child_path.CompareLeft(agsSavePrefix) == 0) {
 			debugC(::AGS::kDebugFilePath, "Remapping agssave.* to ScummVM savegame files");
 			String suffix = child_path.Mid(strlen(agsSavePrefix));
@@ -325,7 +327,7 @@ bool ResolveScriptPath(const String &orig_sc_path, bool read_only, ResolvedPath 
 		}
 #endif
 	} else if (sc_path.CompareLeft(GameDataDirToken) == 0) {
-		parent_dir = MakeAppDataPath();
+		parent_dir = GetGameAppDataDir();
 		child_path = sc_path.Mid(strlen(GameDataDirToken));
 	} else {
 		child_path = sc_path;
@@ -335,11 +337,10 @@ bool ResolveScriptPath(const String &orig_sc_path, bool read_only, ResolvedPath 
 		// preference to any save file with a given name before looking in the
 		// game folder. This for example fixes an issue with The Blackwell Legacy,
 		// which wants to create a new prog.bwl in the game folder
-		parent_dir = SAVE_FOLDER_PREFIX;
+		parent_dir = FSLocation(SAVE_FOLDER_PREFIX);
 
 		if (read_only) {
-			alt_path = String::FromFormat("%s/%s", get_install_dir().GetCStr(),
-				sc_path.GetCStr());
+			alt_path = sc_path;
 		}
 	}
 
@@ -351,7 +352,7 @@ bool ResolveScriptPath(const String &orig_sc_path, bool read_only, ResolvedPath 
 #if AGS_PLATFORM_SCUMMVM
 	// For files on savepath, always ensure it starts with the game target prefix to avoid
 	// conflicts (as we usually have the same save dir for all games).
-	if (parent_dir == SAVE_FOLDER_PREFIX) {
+	if (parent_dir.BaseDir == SAVE_FOLDER_PREFIX) {
 		debugC(::AGS::kDebugFilePath, "Adding ScummVM game target prefix");
 		String gameTarget = ConfMan.getActiveDomainName();
 		if (child_path.CompareLeft(gameTarget) != 0)
@@ -359,15 +360,16 @@ bool ResolveScriptPath(const String &orig_sc_path, bool read_only, ResolvedPath 
 	}
 #endif
 
-	String full_path = String::FromFormat("%s%s", parent_dir.GetCStr(), child_path.GetCStr());
+	String full_path = String::FromFormat("%s%s", parent_dir.BaseDir.GetCStr(), child_path.GetCStr());
 	// don't allow write operations for relative paths outside game dir
 	if (!read_only) {
-		if (!Path::IsSameOrSubDir(parent_dir, full_path)) {
+		if (!Path::IsSameOrSubDir(parent_dir.FullDir, full_path)) {
 			debug_script_warn("Attempt to access file '%s' denied (outside of game directory)", sc_path.GetCStr());
 			return false;
 		}
 	}
-	rp.BaseDir = parent_dir;
+
+	rp.BaseDir = parent_dir.BaseDir;
 	rp.FullPath = full_path;
 	rp.AltPath = alt_path;
 
@@ -389,20 +391,11 @@ bool ResolveWritePathAndCreateDirs(const String &sc_path, ResolvedPath &rp) {
 }
 
 Stream *LocateAsset(const AssetPath &path, size_t &asset_size) {
-	String assetlib = path.first;
-	String assetname = path.second;
-	bool needsetback = false;
-	// Change to the different library, if required
-	// TODO: teaching AssetManager to register multiple libraries simultaneously
-	// will let us skip this step, and also make this operation much faster.
-	if (!assetlib.IsEmpty() && assetlib.CompareNoCase(_GP(ResPaths).GamePak.Name) != 0) {
-		AssetManager::SetDataFile(get_known_assetlib(assetlib));
-		needsetback = true;
-	}
-	Stream *asset_stream = AssetManager::OpenAsset(assetname);
-	asset_size = AssetManager::GetLastAssetSize();
-	if (needsetback)
-		AssetManager::SetDataFile(_GP(ResPaths).GamePak.Path);
+	String assetname = path.Name;
+	String filter = path.Filter;
+	soff_t asset_sz = 0;
+	Stream *asset_stream = _GP(AssetMgr)->OpenAsset(assetname, filter, &asset_sz);
+	asset_size = asset_sz;
 	return asset_stream;
 }
 
@@ -483,112 +476,31 @@ PACKFILE *PackfileFromAsset(const AssetPath &path, size_t &asset_size) {
 	return nullptr;
 }
 
-bool DoesAssetExistInLib(const AssetPath &assetname) {
-	bool needsetback = false;
-	// Change to the different library, if required
-	// TODO: teaching AssetManager to register multiple libraries simultaneously
-	// will let us skip this step, and also make this operation much faster.
-	if (!assetname.first.IsEmpty() && assetname.first.CompareNoCase(_GP(ResPaths).GamePak.Name) != 0) {
-		AssetManager::SetDataFile(get_known_assetlib(assetname.first));
-		needsetback = true;
-	}
-	bool res = AssetManager::DoesAssetExist(assetname.second);
-	if (needsetback)
-		AssetManager::SetDataFile(_GP(ResPaths).GamePak.Path);
-	return res;
-}
-
-void set_install_dir(const String &path, const String &audio_path, const String &voice_path) {
-	if (path.IsEmpty())
-		_G(installDirectory) = ".";
-	else
-		_G(installDirectory) = Path::MakePathNoSlash(path);
-	if (audio_path.IsEmpty())
-		_G(installAudioDirectory) = ".";
-	else
-		_G(installAudioDirectory) = Path::MakePathNoSlash(audio_path);
-	if (voice_path.IsEmpty())
-		_G(installVoiceDirectory) = ".";
-	else
-		_G(installVoiceDirectory) = Path::MakePathNoSlash(voice_path);
-}
-
-String get_install_dir() {
-	return _G(installDirectory);
-}
-
-String get_audio_install_dir() {
-	return _G(installAudioDirectory);
-}
-
-String get_voice_install_dir() {
-	return _G(installVoiceDirectory);
-}
-
-void get_install_dir_path(char *buffer, const char *fileName) {
-	sprintf(buffer, "%s/%s", _G(installDirectory).GetCStr(), fileName);
+bool DoesAssetExistInLib(const AssetPath &path) {
+	String assetname = path.Name;
+	String filter = path.Filter;
+	return _GP(AssetMgr)->DoesAssetExist(assetname, filter);
 }
 
 String find_assetlib(const String &filename) {
-	String libname = cbuf_to_string_and_free(ci_find_file(_GP(ResPaths).DataDir, filename));
+	String libname = cbuf_to_string_and_free(ci_find_file(_GP(ResPaths).DataDir.GetCStr(), filename.GetCStr()));
 	if (AssetManager::IsDataFile(libname))
 		return libname;
-	if (Path::ComparePaths(_GP(ResPaths).DataDir, _G(installDirectory)) != 0) {
+	if (Path::ComparePaths(_GP(ResPaths).DataDir, _GP(ResPaths).DataDir2) != 0) {
 		// Hack for running in Debugger
-		libname = cbuf_to_string_and_free(ci_find_file(_G(installDirectory), filename));
+		libname = cbuf_to_string_and_free(ci_find_file(_GP(ResPaths).DataDir2.GetCStr(), filename.GetCStr()));
 		if (AssetManager::IsDataFile(libname))
 			return libname;
 	}
 	return "";
 }
 
-// Looks up for known valid asset library and returns path, or empty string if failed
-String get_known_assetlib(const String &filename) {
-	// TODO: write now there's only 3 regular PAKs, so we may do this quick
-	// string comparison, but if we support more maybe we could use a table.
-	if (filename.CompareNoCase(_GP(ResPaths).GamePak.Name) == 0)
-		return _GP(ResPaths).GamePak.Path;
-	if (filename.CompareNoCase(_GP(ResPaths).AudioPak.Name) == 0)
-		return _GP(ResPaths).AudioPak.Path;
-	if (filename.CompareNoCase(_GP(ResPaths).SpeechPak.Name) == 0)
-		return _GP(ResPaths).SpeechPak.Path;
-	return String();
-}
-
-Stream *find_open_asset(const String &filename) {
-	Stream *asset_s = Shared::AssetManager::OpenAsset(filename);
-	if (!asset_s && Path::ComparePaths(_GP(ResPaths).DataDir, _G(installDirectory)) != 0) {
-		// Just in case they're running in Debug, try standalone file in compiled folder
-		asset_s = ci_fopen(String::FromFormat("%s/%s", _G(installDirectory).GetCStr(), filename.GetCStr()));
-	}
-	return asset_s;
-}
-
 AssetPath get_audio_clip_assetpath(int bundling_type, const String &filename) {
-	// Special case is explicitly defined audio directory, which should be
-	// tried first regardless of bundling type.
-	if (Path::ComparePaths(_GP(ResPaths).DataDir, _G(installAudioDirectory)) != 0) {
-		String filepath = String::FromFormat("%s/%s", _G(installAudioDirectory).GetCStr(), filename.GetCStr());
-		if (Path::IsFile(filepath))
-			return AssetPath("", filepath);
-	}
-
-	if (bundling_type == AUCL_BUNDLE_EXE)
-		return AssetPath(_GP(ResPaths).GamePak.Name, filename);
-	else if (bundling_type == AUCL_BUNDLE_VOX)
-		return AssetPath(_GP(game).GetAudioVOXName(), filename);
-	return AssetPath();
+	return AssetPath(filename, "audio");
 }
 
 AssetPath get_voice_over_assetpath(const String &filename) {
-	// Special case is explicitly defined voice-over directory, which should be
-	// tried first.
-	if (Path::ComparePaths(_GP(ResPaths).DataDir, _G(installVoiceDirectory)) != 0) {
-		String filepath = String::FromFormat("%s/%s", _G(installVoiceDirectory).GetCStr(), filename.GetCStr());
-		if (Path::IsFile(filepath))
-			return AssetPath("", filepath);
-	}
-	return AssetPath(_GP(ResPaths).SpeechPak.Name, filename);
+	return AssetPath(filename, "voice");
 }
 
 ScriptFileHandle valid_handles[MAX_OPEN_SCRIPT_FILES + 1];
@@ -633,8 +545,6 @@ Stream *get_valid_file_stream_from_handle(int32_t handle, const char *operation_
 // Script API Functions
 //
 //=============================================================================
-
-
 
 // int (const char *fnmm)
 RuntimeScriptValue Sc_File_Delete(const RuntimeScriptValue *params, int32_t param_count) {

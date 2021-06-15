@@ -24,10 +24,26 @@
 #define AGS_ENGINE_AC_GLOBAL_GAME_H
 
 #include "ags/shared/util/string.h"
+#include "ags/lib/system/datetime.h"
 
 namespace AGS3 {
 
 using namespace AGS; // FIXME later
+
+struct SaveListItem {
+	int    Slot;
+	Shared::String Description;
+	time_t FileTime = 0;
+
+	SaveListItem(int slot, const Shared::String &desc, time_t ft)
+		: Slot(slot), Description(desc), FileTime(ft) {
+	}
+
+	inline bool operator < (const SaveListItem &other) const {
+		return FileTime < other.FileTime;
+	}
+};
+
 
 void GiveScore(int amnt);
 void restart_game();
@@ -35,6 +51,7 @@ void RestoreGameSlot(int slnum);
 void DeleteSaveSlot(int slnum);
 int  GetSaveSlotDescription(int slnum, char *desbuf);
 int  LoadSaveSlotScreenshot(int slnum, int width, int height);
+void FillSaveList(std::vector<SaveListItem> &saves, size_t max_count = -1);
 void PauseGame();
 void UnPauseGame();
 int  IsGamePaused();
@@ -42,7 +59,7 @@ void SetGlobalInt(int index, int valu);
 int  GetGlobalInt(int index);
 void SetGlobalString(int index, const char *newval);
 void GetGlobalString(int index, char *strval);
-int  RunAGSGame(const char *newgame, unsigned int mode, int data);
+int  RunAGSGame(const Shared::String &newgame, unsigned int mode, int data);
 int  GetGameParameter(int parm, int data1, int data2, int data3);
 void QuitGame(int dialog);
 void SetRestartPoint();
@@ -89,9 +106,7 @@ int GetGraphicalVariable(const char *varName);
 void SetGraphicalVariable(const char *varName, int p_value);
 void scrWait(int nloops);
 int WaitKey(int nloops);
-int WaitMouse(int nloops);
 int WaitMouseKey(int nloops);
-void SkipWait();
 
 } // namespace AGS3
 

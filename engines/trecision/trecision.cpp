@@ -29,19 +29,20 @@
 #include "common/fs.h"
 #include "common/str.h"
 
-#include "trecision/trecision.h"
 #include "trecision/anim.h"
-#include "trecision/scheduler.h"
 #include "trecision/actor.h"
-#include "trecision/3d.h"
-#include "trecision/defines.h"
 #include "trecision/console.h"
+#include "trecision/defines.h"
 #include "trecision/dialog.h"
 #include "trecision/graphics.h"
-#include "trecision/video.h"
+#include "trecision/pathfinding3d.h"
+#include "trecision/renderer3d.h"
 #include "trecision/logic.h"
-#include "trecision/text.h"
+#include "trecision/scheduler.h"
 #include "trecision/sound.h"
+#include "trecision/trecision.h"
+#include "trecision/text.h"
+#include "trecision/video.h"
 
 namespace Common {
 class File;
@@ -71,21 +72,12 @@ TrecisionEngine::TrecisionEngine(OSystem *syst, const ADGameDescription *desc) :
 
 	_iconBase = 0;
 	_inventoryRefreshStartIcon = 0;
-	_inventoryRefreshStartIconOld = 0xFF;
 	_curObj = 1;
 	_inventoryRefreshStartLine = INVENTORY_HIDE;
-	_inventoryRefreshStartLineOld = 0xFF;
 	_lightIcon = 0xFF;
-	_lightIconOld = 0xFF;
 	_inventoryStatus = INV_OFF;
 	_inventoryCounter = INVENTORY_HIDE;	
 	_flagInventoryLocked = false;
-	_inventorySpeed[0] = 20;
-	_inventorySpeed[1] = 10;
-	_inventorySpeed[2] = 5;
-	_inventorySpeed[3] = 3;
-	_inventorySpeed[4] = 2;
-	_inventorySpeed[5] = _inventorySpeed[6] = _inventorySpeed[7] = 0;
 	_inventorySpeedIndex = 0;
 	_inventoryScrollTime = 0;
 
@@ -151,15 +143,8 @@ TrecisionEngine::TrecisionEngine(OSystem *syst, const ADGameDescription *desc) :
 		_maskPointers[i] = nullptr;
 	}
 
-	_blinkLastDTextChar = MASKCOL;
 	_curTime = 0;
 	_characterSpeakTime = 0;
-
-	_actorPos = 0;
-	_forcedActorPos = 0;
-
-	maskMouse = false;
-
 	_pauseStartTime = 0;
 	_textStatus = TEXT_OFF;
 
@@ -313,7 +298,7 @@ void TrecisionEngine::checkSystem() {
 	eventLoop();
 }
 
-void TrecisionEngine::startCharacterAction(uint16 action, uint16 newRoom, uint8 newPos, uint16 sent) {
+void TrecisionEngine::startCharacterAction(uint16 action, uint16 newRoom, uint8 newPos, uint16 textId) {
 	_scheduler->initCharacterQueue();
 
 	_flagInventoryLocked = false;
@@ -331,8 +316,8 @@ void TrecisionEngine::startCharacterAction(uint16 action, uint16 newRoom, uint8 
 		_pathFind->nextStep();
 	}
 
-	if (sent)
-		_textMgr->characterSayInAction(sent);
+	if (textId)
+		_textMgr->characterSayInAction(textId);
 	else
 		_textMgr->clearLastText();
 }

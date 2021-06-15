@@ -219,7 +219,6 @@ Console::Console(AsylumEngine *engine) : _vm(engine) {
 }
 
 Console::~Console() {
-	DebugMan.clearAllDebugChannels();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -586,7 +585,7 @@ bool Console::cmdSetStatus(int argc, const char **argv) {
 		return true;
 	}
 
-	actor->updateStatus((ActorStatus)status);
+	actor->changeStatus((ActorStatus)status);
 	return false;
 }
 

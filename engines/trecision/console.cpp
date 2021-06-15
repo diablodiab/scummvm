@@ -25,6 +25,7 @@
 
 #include "trecision/console.h"
 #include "trecision/dialog.h"
+#include "trecision/pathfinding3d.h"
 #include "trecision/scheduler.h"
 #include "trecision/text.h"
 #include "trecision/trecision.h"
@@ -32,11 +33,14 @@
 namespace Trecision {
 
 Console::Console(TrecisionEngine *vm) : GUI::Debugger(), _vm(vm) {
-	registerCmd("room",			WRAP_METHOD(Console, Cmd_Room));
-	registerCmd("filedump",		WRAP_METHOD(Console, Cmd_DumpFile));
-	registerCmd("dialog",		WRAP_METHOD(Console, Cmd_Dialog));
-	registerCmd("item",			WRAP_METHOD(Console, Cmd_Item));
-	registerCmd("say",			WRAP_METHOD(Console, Cmd_Say));
+	registerCmd("room",			 WRAP_METHOD(Console, Cmd_Room));
+	registerCmd("dumpanim",		 WRAP_METHOD(Console, Cmd_DumpAnim));
+	registerCmd("dumpfile",		 WRAP_METHOD(Console, Cmd_DumpFile));
+	registerCmd("dialog",		 WRAP_METHOD(Console, Cmd_Dialog));
+	registerCmd("item",			 WRAP_METHOD(Console, Cmd_Item));
+	registerCmd("say",			 WRAP_METHOD(Console, Cmd_Say));
+	registerCmd("position",		 WRAP_METHOD(Console, Cmd_Position));
+	registerCmd("toggle_object", WRAP_METHOD(Console, Cmd_ToggleObject));
 }
 
 Console::~Console() {
@@ -55,6 +59,47 @@ bool Console::Cmd_Room(int argc, const char **argv) {
 	return false;
 }
 
+bool Console::Cmd_DumpAnim(int argc, const char **argv) {
+	if (argc < 2) {
+		debugPrintf("Usage: %s <file name>\n", argv[0]);
+		return true;
+	}
+
+	FastFile animFile;
+
+	Common::String fileName = argv[1];
+
+	bool found = false;
+	for (int i = 1; i <= 3; i++) {
+		Common::String animFileName = Common::String::format("nlanim.cd%d", i);
+		animFile.open(_vm, animFileName);
+
+		if (animFile.hasFile(fileName)) {
+			found = true;
+			break;
+		}
+	}
+
+	if (!found) {
+		debugPrintf("File not found\n");
+		animFile.close();
+		return true;
+	}
+
+	Common::SeekableReadStream *dataFile = animFile.createReadStreamForMember(fileName);
+
+	Common::DumpFile *outFile = new Common::DumpFile();
+	Common::String outName = fileName + ".dump";
+	outFile->open(outName);
+	outFile->writeStream(dataFile, dataFile->size());
+	outFile->finalize();
+	outFile->close();
+
+	animFile.close();
+
+	return true;
+}
+
 bool Console::Cmd_DumpFile(int argc, const char **argv) {
 	if (argc < 2) {
 		debugPrintf("Usage: %s <file name>\n", argv[0]);
@@ -63,7 +108,12 @@ bool Console::Cmd_DumpFile(int argc, const char **argv) {
 
 	Common::String fileName = argv[1];
 
-	Common::SeekableReadStream *dataFile = _vm->_dataFile.createReadStreamForCompressedMember(fileName);
+	if (!_vm->_dataFile.hasFile(fileName)) {
+		debugPrintf("File not found\n");
+		return true;
+	}
+
+	Common::SeekableReadStream *dataFile = fileName.hasSuffix(".cr") ? _vm->_dataFile.createReadStreamForCompressedMember(fileName) : _vm->_dataFile.createReadStreamForMember(fileName);
 
 	Common::DumpFile *outFile = new Common::DumpFile();
 	Common::String outName = fileName + ".dump";
@@ -112,6 +162,32 @@ bool Console::Cmd_Say(int argc, const char **argv) {
 
 	const uint16 sentenceId = (uint16)atoi(argv[1]);
 	_vm->_textMgr->characterSay(sentenceId);
+
+	return false;
+}
+
+bool Console::Cmd_Position(int argc, const char **argv) {
+	if (argc < 2) {
+		debugPrintf("Use %s <positionId> to set Joshua's position\n", argv[0]);
+		return true;
+	}
+
+	const uint16 positionId = (uint16)atoi(argv[1]);
+	_vm->_pathFind->setPosition(positionId);
+
+	return false;
+}
+
+bool Console::Cmd_ToggleObject(int argc, const char **argv) {
+	if (argc < 3) {
+		debugPrintf("Use %s <objectId> <status> to show or hide an object\n", argv[0]);
+		debugPrintf("Status can be true (or 1) to show an object, or false (or 0) to hide it\n");
+		return true;
+	}
+
+	const uint16 objectId = (uint16)atoi(argv[1]);
+	const bool visible = !strcmp(argv[2], "1") || !scumm_stricmp(argv[2], "true");
+	_vm->setObjectVisible(objectId, visible);
 
 	return false;
 }

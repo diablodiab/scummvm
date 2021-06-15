@@ -499,6 +499,11 @@ void LC::c_assign() {
 void LC::c_eval() {
 	LC::c_varpush();
 
+	// HACK: The grammar currently doesn't differentiate between cases
+	// when it should push a reference (e.g. delete char 2 of "abc")
+	// and cases when it should push the value (e.g. put char 2 of "abc")
+	// Until that's fixed, just push the reference, and it will be evaluated by pop.
+#if 0
 	Datum d;
 	d = g_lingo->pop(false);
 
@@ -510,6 +515,7 @@ void LC::c_eval() {
 	d = g_lingo->varFetch(d);
 
 	g_lingo->push(d);
+#endif
 }
 
 void LC::c_theentitypush() {
@@ -874,89 +880,143 @@ void LC::c_within() {
 	}
 }
 
-Datum LC::chunkRef(ChunkType type, int startChunk, int endChunk, const Datum &src) {
+Datum LC::chunkRef(ChunkType type, int startChunk, int endChunk, const Datum &src, bool returnLast) {
 	// A chunk expression is made up of 0 or more chunks within a source text.
-	// These chunks are called chars, words, items, or lines, but it's easier to think of them
-	// as a substring between 0 or more skip characters and a break character (or the end of the string).
 	// This function returns a reference to the source text, the start index of the first chunk,
 	// and the end index of the last chunk in the chunk expression.
 
-	if (startChunk < 1 || (0 > endChunk && endChunk < startChunk))
+	if (0 > endChunk && endChunk < startChunk)
+		return src;
+
+	// If startChunk < 1 && returnLast, we'll return the last chunk.
+	// Otherwise, the default is to return the full string.
+	if (startChunk < 1 && !returnLast)
 		return src;
 
 	if (endChunk < 1)
 		endChunk = startChunk;
 
-	Common::String skipChars;
-	Common::String breakChars;
+	Common::String str = src.eval().asString();
+
+	// these hold the bounds of the last chunk in the expression
+	int chunkNum = 0;
+	int chunkStartIdx = -1;
+	int chunkEndIdx = -1;
+
+	// these hold the bounds of the entire chunk expression
+	int exprStartIdx = -1;
+	int exprEndIdx = -1;
 
 	switch (type) {
 	case kChunkChar:
-		skipChars = "";
-		breakChars = "";
+		if (startChunk < 1) {
+			// last char was requested. set its bounds.
+			chunkNum = str.size();
+			chunkStartIdx = str.size() - 1;
+			chunkEndIdx = str.size();
+		} else if (startChunk <= (int)str.size()) {
+			exprStartIdx = MIN(startChunk, (int)str.size()) - 1;
+			exprEndIdx = MIN(endChunk, (int)str.size());
+		}
 		break;
 	case kChunkWord:
-		skipChars = "\t\n\r ";
-		breakChars = "\t\n\r ";
-		break;
-	case kChunkItem:
-		skipChars = "";
-		breakChars = g_lingo->_itemDelimiter;
-		break;
-	case kChunkLine:
-		skipChars = "";
-		breakChars = "\n\r";
-		break;
-	}
-
-	Common::String str = src.asString();
-	int idx = 0;
-	int chunkNum = 0;
-
-	int startIdx = -1;
-	int endIdx = -1;
-
-	while (true) {
-		// each iteration processes one chunk
-
-		// find the start of the chunk
-		while (idx < (int)str.size() && skipChars.contains(str[idx])) {
-			idx++;
-		}
-		chunkNum++;
-		if (chunkNum == startChunk) {
-			startIdx = idx; // found start of chunk expression
-		}
-
-		// find the end of the chunk
-		if (!breakChars.empty()) {
-			while (idx < (int)str.size() && !breakChars.contains(str[idx])) {
+		{
+			int idx = 0;
+			while (idx < (int)str.size() && Common::isSpace(str[idx])) {
 				idx++;
 			}
-		} else if (idx < (int)str.size()) {
-			idx++;
-		}
-		if (chunkNum == endChunk || idx == (int)str.size()) {
-			endIdx = idx; // found end of chunk expression
-			break;
-		}
+			while (idx < (int)str.size()) {
+				// each loop processes one chunk
+				chunkNum++;
 
-		if (!breakChars.empty())
-			idx++; // skip break char
+				// start of chunk
+				chunkStartIdx = idx;
+				if (chunkNum == startChunk) {
+					exprStartIdx = chunkStartIdx;
+				}
+
+				while (idx < (int)str.size() && !Common::isSpace(str[idx])) {
+					idx++;
+				}
+
+				// end of chunk
+				chunkEndIdx = idx;
+
+				if (chunkNum == endChunk) {
+					exprEndIdx = chunkEndIdx;
+					break;
+				}
+
+				while (idx < (int)str.size() && Common::isSpace(str[idx])) {
+					idx++;
+				}
+			}
+		}
+		break;
+	case kChunkItem:
+	case kChunkLine:
+		{
+			char delimiter = (type == kChunkItem) ? g_lingo->_itemDelimiter : '\n';
+
+			int idx = 0;
+			while (true) {
+				// each loop processes one chunk
+				chunkNum++;
+
+				// start of chunk
+				chunkStartIdx = idx;
+				if (chunkNum == startChunk) {
+					exprStartIdx = chunkStartIdx;
+				}
+
+				while (idx < (int)str.size() && str[idx] != delimiter) {
+					idx++;
+				}
+
+				// end of chunk
+				chunkEndIdx = idx;
+				if (chunkNum == endChunk) {
+					exprEndIdx = chunkEndIdx;
+					break;
+				}
+
+				if (idx == (int)str.size())
+					break;
+				
+				idx++; // skip delimiter
+			}
+		}
+		break;
 	}
 
-	if (startIdx < 0)
-		startIdx = endIdx;
+	if (startChunk < 1) {
+		// return the last chunk we found
+		startChunk = chunkNum;
+		endChunk = chunkNum;
+		exprStartIdx = chunkStartIdx;
+		exprEndIdx = chunkEndIdx;
+	} else {
+		if (exprStartIdx < 0) {
+			// we never found the requested start chunk
+			exprStartIdx = -1;
+		}
+		if (exprEndIdx < 0) {
+			// we never found the requested end chunk
+			exprEndIdx = str.size();
+		}
+	}
 
 	Datum res;
-	res.u.cref = new ChunkReference(src, startIdx, endIdx);
+	res.u.cref = new ChunkReference(src, type, startChunk, endChunk, exprStartIdx, exprEndIdx);
 	res.type = CHUNKREF;
 	return res;
 }
 
-void LC::c_of() {
-	// put char 5 of word 1 of line 2 into field "thing"
-	Datum src = g_lingo->pop();
+Datum LC::lastChunk(ChunkType type, const Datum &src) {
+	return chunkRef(type, 0, 0, src, true);
+}
+
+Datum LC::readChunkRef(const Datum &src) {
 	Datum lastLine = g_lingo->pop();
 	Datum firstLine = g_lingo->pop();
 	Datum lastItem = g_lingo->pop();
@@ -966,18 +1026,22 @@ void LC::c_of() {
 	Datum lastChar = g_lingo->pop();
 	Datum firstChar = g_lingo->pop();
 
-	Datum res = src;
-
 	if (firstChar.asInt() > 0)
-		res = LC::chunkRef(kChunkChar, firstChar.asInt(), lastChar.asInt(), src);
-	else if (firstWord.asInt() > 0)
-		res = LC::chunkRef(kChunkWord, firstWord.asInt(), lastWord.asInt(), src);
-	else if (firstItem.asInt() > 0)
-		res = LC::chunkRef(kChunkItem, firstItem.asInt(), lastItem.asInt(), src);
-	else if (lastLine.asInt() > 0)
-		res = LC::chunkRef(kChunkLine, firstLine.asInt(), lastLine.asInt(), src);
+		return LC::chunkRef(kChunkChar, firstChar.asInt(), lastChar.asInt(), src);
+	if (firstWord.asInt() > 0)
+		return LC::chunkRef(kChunkWord, firstWord.asInt(), lastWord.asInt(), src);
+	if (firstItem.asInt() > 0)
+		return LC::chunkRef(kChunkItem, firstItem.asInt(), lastItem.asInt(), src);
+	if (lastLine.asInt() > 0)
+		return LC::chunkRef(kChunkLine, firstLine.asInt(), lastLine.asInt(), src);
 
-	g_lingo->push(res);
+	return src;
+}
+
+void LC::c_of() {
+	Datum src = g_lingo->pop();
+	Datum ref = readChunkRef(src);
+	g_lingo->push(ref.eval());
 }
 
 void LC::c_charOf() {
@@ -1584,20 +1648,11 @@ void LC::c_procret() {
 }
 
 void LC::c_hilite() {
-	Datum first_char = g_lingo->pop();
-	Datum last_char = g_lingo->pop();
-	Datum first_word = g_lingo->pop();
-	Datum last_word = g_lingo->pop();
-	Datum first_item = g_lingo->pop();
-	Datum last_item = g_lingo->pop();
-	Datum first_line = g_lingo->pop();
-	Datum last_line = g_lingo->pop();
-	Datum cast_id = g_lingo->pop();
-
-	warning("STUB: LC::c_hilite(): %d %d %d %d %d %d %d %d %d",
-		first_char.u.i, last_char.u.i, first_word.u.i, last_word.u.i,
-		first_item.u.i, last_item.u.i, first_line.u.i, last_line.u.i,
-		cast_id.u.i);
+	Datum fieldID = g_lingo->pop().asCastId();
+	fieldID.type = FIELDREF;
+	Datum chunkRef = readChunkRef(fieldID);
+	g_lingo->push(chunkRef);
+	LB::b_hilite(1);
 }
 
 void LC::c_asserterror() {

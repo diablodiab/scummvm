@@ -20,17 +20,19 @@
  *
  */
 
+#include "ags/lib/std/thread.h"
 #include "ags/engine/ac/timer.h"
 #include "ags/shared/core/platform.h"
-#include "ags/lib/std/chrono.h"
-#include "ags/lib/std/thread.h"
-#include "ags/engine/platform/base/agsplatformdriver.h"
+#include "ags/engine/ac/sys_events.h"
+#include "ags/engine/platform/base/ags_platform_driver.h"
 #include "ags/ags.h"
 #include "ags/globals.h"
 
 namespace AGS3 {
 
+namespace {
 const auto MAXIMUM_FALL_BEHIND = 3;
+}
 
 std::chrono::microseconds GetFrameDuration() {
 	if (_G(framerate_maxed)) {
@@ -58,6 +60,11 @@ void WaitForNextFrame() {
 	// early exit if we're trying to maximise framerate
 	if (frameDuration <= std::chrono::milliseconds::zero()) {
 		_G(next_frame_timestamp) = now;
+		// suspend while the game is being switched out
+		while (_G(game_update_suspend) > 0) {
+			sys_evt_process_pending();
+			_G(platform)->YieldCPU();
+		}
 		return;
 	}
 
@@ -73,7 +80,11 @@ void WaitForNextFrame() {
 
 	_G(next_frame_timestamp) += frameDuration;
 
-	::AGS::g_vm->_rawScreen->update();
+	// suspend while the game is being switched out
+	while (_G(game_update_suspend) > 0) {
+		sys_evt_process_pending();
+		_G(platform)->YieldCPU();
+	}
 }
 
 void skipMissedTicks() {

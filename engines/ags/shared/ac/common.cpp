@@ -22,12 +22,16 @@
 
 #include "ags/shared/ac/common.h"
 #include "ags/shared/util/string.h"
-#include "ags/globals.h"
-#include "ags/ags.h"
 
 namespace AGS3 {
 
 using namespace AGS::Shared;
+
+const char *game_file_sig = "Adventure Creator Game File v2";
+
+void quit(const String &str) {
+	quit(str.GetCStr());
+}
 
 void quitprintf(const char *fmt, ...) {
 	va_list ap;
@@ -38,7 +42,7 @@ void quitprintf(const char *fmt, ...) {
 	// WORKAROUND: In ScummVM we have to make this an error, because
 	// too many places calling it presume it doesn't return,
 	// and will throw a wobbly if does
-	error("%s", (const char *)text);
+	error("%s", text.GetCStr());
 }
 
 } // namespace AGS3

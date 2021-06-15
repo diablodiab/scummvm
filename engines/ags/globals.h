@@ -25,17 +25,19 @@
 
 #include "ags/shared/ac/game_version.h"
 #include "ags/shared/util/string.h"
+#include "ags/shared/util/string_types.h"
 #include "ags/shared/util/version.h"
-#include "ags/shared/gui/guimain.h"
+#include "ags/shared/gui/gui_main.h"
 #include "ags/shared/script/cc_script.h"
 #include "ags/engine/ac/runtime_defines.h"
-#include "ags/engine/ac/walkbehind.h"
+#include "ags/engine/ac/walk_behind.h"
 #include "ags/engine/main/engine.h"
-#include "ags/engine/media/audio/audiodefines.h"
+#include "ags/engine/media/audio/audio_defines.h"
 #include "ags/engine/script/script.h"
 #include "ags/engine/script/script_runtime.h"
 #include "ags/lib/std/array.h"
 #include "ags/lib/std/chrono.h"
+#include "ags/lib/std/memory.h"
 #include "ags/lib/std/set.h"
 #include "ags/lib/allegro/color.h"
 #include "ags/lib/allegro/fixed.h"
@@ -52,10 +54,12 @@ namespace AGS3 {
 
 using String = AGS::Shared::String;
 using Version = AGS::Shared::Version;
+using StringMap = AGS::Shared::StringMap;
 
 namespace AGS {
 namespace Shared {
 
+class AssetManager;
 class Bitmap;
 class DebugManager;
 struct Font;
@@ -66,7 +70,9 @@ class GUIListBox;
 class GUISlider;
 class GUITextBox;
 struct InteractionVariable;
+struct PlaneScaling;
 class RoomStruct;
+struct Translation;
 
 } // namespace Shared
 
@@ -79,7 +85,6 @@ class IGfxDriverFactory;
 class IGraphicsDriver;
 class LogFile;
 class MessageBuffer;
-struct PlaneScaling;
 
 } // namespace Engine
 } // namespace AGS
@@ -153,7 +158,6 @@ struct ScriptPosition;
 struct ScriptRegion;
 struct ScriptString;
 struct ScriptSystem;
-struct sound_cache_entry_t;
 struct SOUNDCLIP;
 struct SpeechLipSyncLine;
 struct SpriteListEntry;
@@ -161,7 +165,6 @@ struct StaticArray;
 struct StaticGame;
 struct SystemImports;
 struct TopBarSettings;
-struct TreeMap;
 struct ViewStruct;
 
 class Globals {
@@ -209,13 +212,30 @@ public:
 	PALETTE _current_palette;
 	PALETTE _prev_current_palette;
 
-	volatile int _mouse_x = 0;	// X position
-	volatile int _mouse_y = 0;	// Y position
-	volatile int _mouse_z = 0;	// Mouse wheel vertical
-	volatile int _mouse_b = 0;	// Mouse buttons bitflags
-	volatile int _mouse_pos = 0;	// X position in upper 16 bits, Y in lower 16
+	volatile int _mouse_x = 0;  // X position
+	volatile int _mouse_y = 0;  // Y position
+	volatile int _mouse_z = 0;  // Mouse wheel vertical
+	volatile int _mouse_b = 0;  // Mouse buttons bitflags
+	volatile int _mouse_pos = 0;    // X position in upper 16 bits, Y in lower 16
+	volatile int _sys_mouse_x = 0; // mouse x position
+	volatile int _sys_mouse_y = 0; // mouse y position
+	volatile int _sys_mouse_z = 0; // mouse wheel position
+	volatile int _freeze_mouse_flag = 0;
 
-	volatile int freeze_mouse_flag;
+	int _mouse_button_state = 0;
+	int _mouse_accum_button_state = 0;
+	uint32 _mouse_clear_at_time = 0;
+	int _mouse_accum_relx = 0, _mouse_accum_rely = 0;
+
+	/**@}*/
+
+	/**
+	 * @defgroup agsstaticobjectglobals agsstaticobject globals
+	 * @ingroup agsglobals
+	 * @{
+	 */
+
+	std::unique_ptr<Shared::AssetManager> *_AssetMgr;
 
 	/**@}*/
 
@@ -411,7 +431,7 @@ public:
 	bool _facetalk_qfg4_override_placement_y = false;
 
 	// lip-sync speech settings
-	int _loops_per_character, _text_lips_offset, _char_speaking = -1;
+	int _loops_per_character = 0, _text_lips_offset = 0, _char_speaking = -1;
 	int _char_thinking = -1;
 	const char *_text_lips_text = nullptr;
 	SpeechLipSyncLine *_splipsync = nullptr;
@@ -435,7 +455,8 @@ public:
 	NewControl **_vobjs;
 	OnScreenWindow *_oswi;
 
-	int controlid = 0;
+	int _windowcount = 0, _curswas = 0;
+	int _win_x = 0, _win_y = 0, _win_width = 0, _win_height = 0;
 
 	/**@}*/
 
@@ -489,7 +510,7 @@ public:
 	 * @{
 	 */
 
-	DialogTopic *_dialog;
+	DialogTopic *_dialog = nullptr;
 	ScriptDialogOptionsRendering *_ccDialogOptionsRendering;
 	ScriptDrawingSurface *_dialogOptionsRenderingSurface = nullptr;
 
@@ -710,7 +731,7 @@ public:
 	bool _abort_engine = false;
 	AGSPlatformDriver *_platform = nullptr;
 
-	RoomObject *_objs;
+	RoomObject *_objs = nullptr;
 	RoomStatus *_croom = nullptr;
 
 	volatile int _switching_away_from_game = 0;
@@ -735,8 +756,9 @@ public:
 	char _gamefilenamebuf[200] = { 0 };
 	int _gameHasBeenRestored = 0;
 	int _oldeip = 0;
+	int _game_update_suspend = 0;
 
-	 /**@}*/
+	/**@}*/
 
 	/**
 	 * @defgroup agsgame_initglobals game_init globals
@@ -760,8 +782,8 @@ public:
 	 * @{
 	 */
 
-	 // Following 3 parameters instruct the engine to run game loops until
-	 // certain condition is not fullfilled.
+	// Following 3 parameters instruct the engine to run game loops until
+	// certain condition is not fullfilled.
 	int _restrict_until = 0;
 	int _user_disabled_for = 0;
 	const void *_user_disabled_data = nullptr;
@@ -772,7 +794,7 @@ public:
 	uint32 _t1 = 0; // timer for FPS
 	int _old_key_shifts = 0; // for saving shift modes
 
-	 /**@}*/
+	/**@}*/
 
 	/**
 	 * @defgroup agsgfxfilter_aad3dglobals gfxfilter_aad3d globals
@@ -851,7 +873,7 @@ public:
 	// Current frame scaling setup
 	GameFrameSetup *_CurFrameSetup;
 	// The game-to-screen transformation
-	AGS::Engine::PlaneScaling *_GameScaling;
+	AGS::Shared::PlaneScaling *_GameScaling;
 
 	/**@}*/
 
@@ -890,7 +912,7 @@ public:
 	AGS::Shared::Bitmap *_windowBuffer = nullptr;
 	AGS::Engine::IDriverDependantBitmap *_dialogDDB = nullptr;
 
-	#define MAXSAVEGAMES_20 20
+#define MAXSAVEGAMES_20 20
 	int _myscrnwid = 320, _myscrnhit = 200;
 	char *_lpTemp = nullptr, *_lpTemp2 = nullptr;
 	int _numsaves = 0, _toomanygames = 0;
@@ -1009,6 +1031,7 @@ public:
 	 * @{
 	 */
 
+	String _appPath;
 	String _appDirectory; // Needed for library loading
 	String _cmdGameDataPath;
 
@@ -1109,8 +1132,9 @@ public:
 	 * @{
 	 */
 
-	std::vector<ScreenOverlay> *_screenover;
+	ScreenOverlay *_screenover;
 	int _is_complete_overlay = 0, _is_text_overlay = 0;
+	int _numscreenover = 0;
 
 	/**@}*/
 
@@ -1136,7 +1160,7 @@ public:
 	char _return_to_room[150] = { '\0' };
 	char _quit_message[256] = { '\0' };
 
-	 /**@}*/
+	/**@}*/
 
 	/**
 	 * @defgroup agsroomglobals room globals
@@ -1164,7 +1188,7 @@ public:
 	AGS::Shared::Bitmap *_wallscreen = nullptr;
 	int _lastcx = 0, _lastcy = 0;
 
-	 /**@}*/
+	/**@}*/
 
 	/**
 	 * @defgroup agsscreenglobals screen globals
@@ -1237,17 +1261,6 @@ public:
 	/**@}*/
 
 	/**
-	 * @defgroup agssoundcacheglobals soundcache globals
-	 * @ingroup agsglobals
-	 * @{
-	 */
-
-	sound_cache_entry_t *_sound_cache_entries = nullptr;
-	unsigned int _sound_cache_counter = 0;
-
-	/**@}*/
-
-	/**
 	 * @defgroup agsstringglobals string globals
 	 * @ingroup agsglobals
 	 * @{
@@ -1299,7 +1312,9 @@ public:
 	 * @{
 	 */
 
-	TreeMap *_transtree = nullptr;
+	AGS::Shared::Translation *_trans;
+	StringMap *_transtree = nullptr;
+	String _trans_name, _trans_filename;
 	long _lang_offs_start = 0;
 	char _transFileName[MAX_PATH] = { 0 };
 
