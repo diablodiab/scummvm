@@ -24,6 +24,7 @@
 #include "ags/plugins/plugin_base.h"
 #include "ags/plugins/ags_agi/ags_agi.h"
 #include "ags/plugins/ags_blend/ags_blend.h"
+#include "ags/plugins/ags_clipboard/ags_clipboard.h"
 #include "ags/plugins/ags_controller/ags_controller.h"
 #include "ags/plugins/ags_creditz/ags_creditz1.h"
 #include "ags/plugins/ags_creditz/ags_creditz2.h"
@@ -36,6 +37,7 @@
 #include "ags/plugins/ags_pal_render/ags_pal_render.h"
 #include "ags/plugins/ags_shell/ags_shell.h"
 #include "ags/plugins/ags_snow_rain/ags_snow_rain.h"
+#include "ags/plugins/ags_sock/ags_sock.h"
 #include "ags/plugins/ags_sprite_font/ags_sprite_font.h"
 #include "ags/plugins/ags_sprite_font/ags_sprite_font_clifftop.h"
 #include "ags/plugins/ags_tcp_ip/ags_tcp_ip.h"
@@ -69,6 +71,9 @@ void *pluginOpen(const char *filename) {
 	if (fname.equalsIgnoreCase("AGSBlend"))
 		return new AGSBlend::AGSBlend();
 
+	if (fname.equalsIgnoreCase("AGSClipboard"))
+		return new AGSClipboard::AGSClipboard();
+
 	if (fname.equalsIgnoreCase("AGSController"))
 		return new AGSController::AGSController();
 
@@ -95,6 +100,9 @@ void *pluginOpen(const char *filename) {
 
 	if (fname.equalsIgnoreCase("AGSSnowRain") || fname.equalsIgnoreCase("ags_snowrain"))
 		return new AGSSnowRain::AGSSnowRain();
+
+	if (fname.equalsIgnoreCase("AGSSock"))
+		return new AGSSock::AGSSock();
 
 	if ((fname.equalsIgnoreCase("AGSSpriteFont") && version == ::AGS::kClifftopGames))
 		return new AGSSpriteFont::AGSSpriteFontClifftopGames();

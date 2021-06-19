@@ -91,7 +91,7 @@ void ScriptBase::Actor_Set_At_XYZ(int actorId, float x, float y, float z, int di
 
 void ScriptBase::Actor_Set_At_Waypoint(int actorId, int waypointId, int angle) {
 	debugC(kDebugScript, "Actor_Set_At_Waypoint(%d, %d, %d)", actorId, waypointId, angle);
-	_vm->_actors[actorId]->setAtWaypoint(waypointId, angle, 0, false);
+	_vm->_actors[actorId]->setAtWaypoint(waypointId, angle, false, false);
 }
 
 bool ScriptBase::Region_Check(int left, int top, int right, int down) {
@@ -350,6 +350,7 @@ void ScriptBase::Actor_Says_With_Pause(int actorId, int sentenceId, float pause,
 	if (pause > 0.0f && !_vm->_actorSpeakStopIsRequested) {
 		Delay(pause * 1000u);
 	}
+	_vm->_actorSpeakStopIsRequested = false;
 	Player_Gains_Control();
 }
 
@@ -375,6 +376,7 @@ void ScriptBase::Actor_Voice_Over(int sentenceId, int actorId) {
 			break;
 		}
 	}
+	_vm->_actorSpeakStopIsRequested = false;
 	Player_Gains_Control();
 }
 

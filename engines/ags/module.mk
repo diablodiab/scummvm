@@ -288,6 +288,7 @@ MODULE_OBJS = \
 	plugins/plugin_object_reader.o \
 	plugins/ags_agi/ags_agi.o \
 	plugins/ags_blend/ags_blend.o \
+	plugins/ags_clipboard/ags_clipboard.o \
 	plugins/ags_controller/ags_controller.o \
 	plugins/ags_creditz/ags_creditz.o \
 	plugins/ags_creditz/ags_creditz1.o \
@@ -304,6 +305,7 @@ MODULE_OBJS = \
 	plugins/ags_parallax/ags_parallax.o \
 	plugins/ags_snow_rain/ags_snow_rain.o \
 	plugins/ags_snow_rain/weather.o \
+	plugins/ags_sock/ags_sock.o \
 	plugins/ags_sprite_font/ags_sprite_font.o \
 	plugins/ags_sprite_font/ags_sprite_font_clifftop.o \
 	plugins/ags_sprite_font/character_entry.o \

@@ -52,21 +52,14 @@ class GraphicsManager {
 	uint8 *_font;
 
 	Common::List<Common::Rect> _dirtyRects;
-	Common::Rect *_actorRect;
-	Common::Rect _drawRect;
-	Common::Rect _drawObjRect;
-	int _drawObjIndex;
-	bool _drawMask;
-
-	const Graphics::PixelFormat kImageFormat;
 
 	uint16 aliasing(uint32 val1, uint32 val2, uint8 num);
 	void drawCharPixel(uint16 y, uint16 charLeft, uint16 charRight, Common::Rect rect, Common::Rect subtitleRect, uint16 color, Graphics::Surface *externalSurface = nullptr);
 	void initCursor();
 	void copyToScreenBufferInner(const Graphics::Surface *surface, int x, int y);
 	void paintObjAnm(uint16 curBox);
-	void drawObj();
-	void eraseObj();
+	void drawObj(int index, bool mask, Common::Rect drawRect, Common::Rect drawObjRect, bool includeDirtyRect = true);
+	void eraseObj(Common::Rect drawObjRect);
 
 public:
 	GraphicsManager(TrecisionEngine *vm);
@@ -98,7 +91,7 @@ public:
 	void pixelAliasing(uint16 x, uint16 y);
 	void dissolve();
 
-	void addDirtyRect(Common::Rect rect, bool translateRect, bool updateActorRect = false);
+	void addDirtyRect(Common::Rect rect, bool translateRect);
 
 	uint16 getCharWidth(byte character);
 	void drawChar(byte curChar, uint16 textColor, uint16 line, Common::Rect rect, Common::Rect subtitleRect, uint16 inc, Graphics::Surface *externalSurface);

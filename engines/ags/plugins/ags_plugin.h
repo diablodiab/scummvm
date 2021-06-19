@@ -32,6 +32,7 @@
 #define AGS_PLUGINS_AGS_PLUGIN_H
 
 #include "ags/shared/core/types.h"
+#include "ags/shared/font/ags_font_renderer.h"
 #include "common/array.h"
 
 namespace AGS3 {
@@ -60,10 +61,6 @@ class BITMAP;
 // If not using windows.h, define HWND
 #if !defined(_WINDOWS_)
 typedef int HWND;
-#endif
-
-#ifndef int32
-typedef int int32;
 #endif
 
 #define AGSIFUNC(type) virtual type
@@ -295,24 +292,6 @@ protected:
 	virtual ~IAGSManagedObjectReader() {
 	}
 };
-
-class IAGSFontRenderer {
-public:
-	virtual bool LoadFromDisk(int fontNumber, int fontSize) = 0;
-	virtual void FreeMemory(int fontNumber) = 0;
-	virtual bool SupportsExtendedCharacters(int fontNumber) = 0;
-	virtual int GetTextWidth(const char *text, int fontNumber) = 0;
-	virtual int GetTextHeight(const char *text, int fontNumber) = 0;
-	virtual void RenderText(const char *text, int fontNumber, BITMAP *destination, int x, int y, int colour) = 0;
-	virtual void AdjustYCoordinateForFont(int *ycoord, int fontNumber) = 0;
-	virtual void EnsureTextValidForFont(char *text, int fontNumber) = 0;
-protected:
-	IAGSFontRenderer() {
-	}
-	virtual ~IAGSFontRenderer() {
-	}
-};
-
 
 struct AGSRenderMatrixes {
 	float WorldMatrix[16];

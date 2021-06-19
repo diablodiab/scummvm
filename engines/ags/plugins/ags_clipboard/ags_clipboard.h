@@ -7,7 +7,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * of the License, or(at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -20,40 +20,32 @@
  *
  */
 
-#ifndef AGS_ENGINE_AC_MOVE_H
-#define AGS_ENGINE_AC_MOVE_H
+#ifndef AGS_PLUGINS_AGS_CLIPBOARD_H
+#define AGS_PLUGINS_AGS_CLIPBOARD_H
 
-#include "ags/lib/allegro.h" // fixed math
-#include "ags/engine/game/savegame.h"
+#include "ags/plugins/plugin_base.h"
 
 namespace AGS3 {
+namespace Plugins {
+namespace AGSClipboard {
 
-// Forward declaration
-namespace AGS {
-namespace Shared {
-class Stream;
-}
-}
-using namespace AGS; // FIXME later
+class AGSClipboard : public PluginBase {
+private:
+	static IAGSEngine *_engine;
+	static Common::String *_text;
+private:
+	static const char *AGS_GetPluginName();
+	static void AGS_EngineStartup(IAGSEngine *engine);
+	static void AGS_EngineShutdown();
+	static void Clipboard_PasteText(ScriptMethodParams &params);
+	static void Clipboard_CopyText(ScriptMethodParams &params);
 
-#define MAXNEEDSTAGES 256
-#define MAXNEEDSTAGES_LEGACY 40
-
-struct MoveList {
-	int32_t pos[MAXNEEDSTAGES];
-	int   numstage;
-	fixed xpermove[MAXNEEDSTAGES], ypermove[MAXNEEDSTAGES];
-	int   fromx, fromy;
-	int   onstage, onpart;
-	int   lastx, lasty;
-	char  doneflag;
-	char  direct;  // MoveCharDirect was used or not
-
-	void ReadFromFile_Legacy(Shared::Stream *in);
-	AGS::Engine::HSaveError ReadFromFile(Shared::Stream *in, int32_t cmp_ver);
-	void WriteToFile(Shared::Stream *out);
+public:
+	AGSClipboard();
 };
 
+} // namespace AGSClipboard
+} // namespace Plugins
 } // namespace AGS3
 
 #endif

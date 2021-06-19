@@ -489,10 +489,6 @@ bool Scene::key(const AsylumEvent &evt) {
 			getActor()->setLastScreenUpdate(_vm->screenUpdateCount);
 		}
 		break;
-
-	case Common::KEYCODE_TAB:
-		getScreen()->takeScreenshot();
-		break;
 	}
 
 	return true;
@@ -2366,6 +2362,7 @@ void Scene::preload() {
 
 	SceneTitle *title = new SceneTitle(_vm);
 	title->load();
+	getCursor()->hide();
 
 	do {
 		title->update(_vm->getTick());
@@ -2392,6 +2389,8 @@ bool Scene::drawScene() {
 
 	if (getSharedData()->getFlag(kFlagSkipDrawScene)) {
 		_vm->screen()->fillRect(0, 0, 640, 480, 0);
+		getCursor()->hide();
+
 		return false;
 	}
 

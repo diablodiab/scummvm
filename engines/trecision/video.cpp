@@ -141,7 +141,7 @@ AnimManager::~AnimManager() {
 	}
 }
 
-void AnimManager::playMovie(const Common::String &filename, int startFrame, int endFrame) {
+void AnimManager::playMovie(const Common::String &filename, int startFrame, int endFrame, bool singleChoice) {
 	NightlongSmackerDecoder *smkDecoder = new NightlongSmackerDecoder;
 
 	if (!smkDecoder->loadFile(filename)) {
@@ -158,6 +158,11 @@ void AnimManager::playMovie(const Common::String &filename, int startFrame, int 
 	_vm->_drawText._text.clear();
 
 	smkDecoder->start();
+
+	// If the video has a single choice, and it starts from the beginning,
+	// ignore the calculated end frame and play all of it
+	if (singleChoice && startFrame < 10 && endFrame < smkDecoder->getFrameCount() - 1)
+		endFrame = smkDecoder->getFrameCount() - 1;
 
 	setVideoRange(smkDecoder, startFrame, endFrame);
 
@@ -550,22 +555,13 @@ void AnimManager::drawSmkActionFrame() {
 	const byte *palette = smkDecoder->getPalette();
 
 	if (smkDecoder->getCurFrame() == 0) {
-		for (uint16 curY = 0; curY < AREA; curY++) {
-			for (uint16 curX = 0; curX < MAXX; curX++) {
-				if (frame->getPixel(curX, curY)) {
-					_animRect.left = MIN<uint16>(curX, _animRect.left);
-					_animRect.top = MIN<uint16>(curY, _animRect.top);
-					_animRect.right = MAX<uint16>(curX, _animRect.right);
-					_animRect.bottom = MAX<uint16>(curY, _animRect.bottom);
-				}
-			}
-		}
+		_animRect = *smkDecoder->getNextDirtyRect();
 	}
 
 	if (_animRect.width() > 0 && _animRect.height() > 0) {
 		Graphics::Surface anim = frame->getSubArea(_animRect);
 		_vm->_graphicsMgr->blitToScreenBuffer(&anim, _animRect.left, _animRect.top + TOP, palette, false);
-		_vm->_graphicsMgr->addDirtyRect(_animRect, true, true);
+		_vm->_graphicsMgr->addDirtyRect(_animRect, true);
 	}
 }
 

@@ -1427,6 +1427,10 @@ void UCMachine::execProcess(UCProcess *p) {
 			int this_size = cs->readByte();
 			int unknown = cs->readByte(); // ??
 
+			// This only gets used in U8.  If it were used in Crusader it would
+			// need the offset translation done in 0x57.
+			assert(GAME_IS_U8);
+
 			debug(MM_INFO, "spawn inline\t%04X:%04X+%04X=%04X %02X %02X\n",
 				classid, offset, delta, offset + delta, this_size, unknown);
 
@@ -1743,8 +1747,7 @@ void UCMachine::execProcess(UCProcess *p) {
 			case 2:
 			case 3: {
 				// area search (3 = recursive)
-				stacksize = 0x34;
-				if (GAME_IS_CRUSADER) stacksize = 0x3A;
+				stacksize = GAME_IS_U8 ? 0x34 : 0x3A;
 				if (searchtype == 3) recurse = true;
 
 				// ui16a = item, ui16b = range
@@ -1764,9 +1767,8 @@ void UCMachine::execProcess(UCProcess *p) {
 			}
 			case 4:
 			case 5: {
-				// container search (4 = recursive)
-				stacksize = 0x28;
-				if (GAME_IS_CRUSADER) stacksize = 0x2A;
+				// container search (5 = recursive)
+				stacksize = GAME_IS_U8 ? 0x28 : 0x2A;
 				if (searchtype == 5) {
 					stacksize += 2;
 					recurse = true;
@@ -1792,8 +1794,7 @@ void UCMachine::execProcess(UCProcess *p) {
 			}
 			case 6: {
 				// Surface search
-				stacksize = 0x3D;
-				if (GAME_IS_CRUSADER) stacksize = 0x43;
+				stacksize = GAME_IS_U8 ? 0x3D : 0x43;
 
 				bool above = ui16a != 0xFFFF;
 				bool below = ui16b != 0xFFFF;
@@ -1846,10 +1847,6 @@ void UCMachine::execProcess(UCProcess *p) {
 			UCList *itemlist = getList(itemlistID);
 			uint16 index = p->_stack.access2(sp + 2);
 			si16a = static_cast<int16>(p->_stack.access2(sp + 4));
-#if 0
-			uint16 scriptsize = p->_stack.access2(sp + 6);
-			const uint8 *loopscript = p->_stack.access(sp + 8);
-#endif
 
 			if (!itemlist) {
 				perr << "Invalid item list in loopnext!" << Std::endl;
@@ -1868,11 +1865,7 @@ void UCMachine::execProcess(UCProcess *p) {
 				uint16 objid = p->_stack.access2(p->_bp + si16a);
 				Item *item = getItem(objid);
 				if (item) {
-#if 0
-					valid = item->checkLoopScript(loopscript, scriptsize);
-#else
 					valid = true;
-#endif
 				}
 
 				if (!valid) index++;
@@ -1904,42 +1897,21 @@ void UCMachine::execProcess(UCProcess *p) {
 
 		case 0x75:
 		case 0x76:
-			// 75 xx yy zz zz
-			// 76 xx yy zz zz
-			// xx appears to be the location to store 'current' value from the
-			//   list (BP+xx)
+			// 75 xx yy zz zz  (foreach list)
+			// 76 xx yy zz zz  (foreach string list)
+			// xx is the stack offset to store 'current' value from the list
+			//   (BP+xx)
 			// yy is the 'datasize' of the list, identical to the second parameter
 			//   of the create list/slist opcodes
-			// zzzz appears to be the offset to jump to after it's finished the
-			//   iteration, the opcode before is a 'jmp' to the original position
-			//   of the opcode.
-			// (all guesses from Remorse1.21 usecode, _may_ be different in u8,
-			//   unlikely though)
-			// the way it appears to operate is it pops a 'word' off the stack
-			//   (maximum number of items to iterate through? No idea, I've only
-			//   seen 0xFFFF pushed before it (in Remorse1.21)), then pops
-			//   the 'list' off to iterate through
-
-			// it seems as if there's no way provided to store index
-			// and list. Assuming there are no nested loops, this isn't
-			// a problem. If there -are- nested loops, we could use a stack
-			// for these.
-			// There may be problems with jumps from inside the loop to outside
-			// Either these are forbidden, or we have to detect when jumping
-			// to outside a loop? (yuck)
-			// (this will be _very_ messy when combined with nested loops,
-			//  let's hope it won't be necessary)
-
-			// random idea: maybe the 0xFFFF on the stack is used to
-			// indicate the start of a loop? Would be mildly ugly, but could
-			// be useful for nested loops or loop-escaping jumps
-
-			// other random idea: 0xFFFF could also be the loop index
-			// to start with minus 1. (This would clean up the 'loop_index=0'
-			// or 'loop_index++' distinction a bit)
+			// zzzz is the offset to jump to after it's finished iteration
+			//	 (the opcode before is always a 'jmp' to the start of the loop)
+			// 2 16 bit values are on the stack and left there during each
+			//   iteration:
+			//   - loop index (always starts at 0xffff), updated each iteration
+			//   - list id
 
 			// 75 is for lists, 76 for slists
-			// Only difference should be in the freeing afterwards.
+			// The only difference should be in the freeing afterwards.
 			// Strings are _not_ duplicated when putting them in the loopvar
 			// Lists _are_ freed afterwards
 
@@ -2217,7 +2189,7 @@ bool UCMachine::assignPointer(uint32 ptr, const uint8 *data, uint32 size) {
 		if (size == 1) {
 			_globals->setEntries(offset, 1, data[0]);
 		} else if (size == 2) {
-			uint16 val = ((data[0] << 8) | data[1]);
+			uint16 val = ((data[1] << 8) | data[0]);
 			_globals->setEntries(offset, 2, val);
 		} else {
 			CANT_HAPPEN_MSG("Global pointers must be size 1 or 2");

@@ -40,6 +40,9 @@
 #include "common/stream.h"
 #include "common/system.h"
 
+#define TS_COLOR(wmeColor) \
+	TS_ARGB(RGBCOLGetA(wmeColor), RGBCOLGetR(wmeColor), RGBCOLGetG(wmeColor), RGBCOLGetB(wmeColor))
+
 namespace Wintermute {
 
 //////////////////////////////////////////////////////////////////////////
@@ -354,39 +357,28 @@ bool BaseSurfaceOSystem::display(int x, int y, Rect32 rect, Graphics::TSpriteBle
 
 
 //////////////////////////////////////////////////////////////////////////
-bool BaseSurfaceOSystem::displayTrans(int x, int y, Rect32 rect, uint32 alpha, Graphics::TSpriteBlendMode blendMode, bool mirrorX, bool mirrorY) {
+bool BaseSurfaceOSystem::displayTrans(int x, int y, Rect32 rect, uint32 alpha, Graphics::TSpriteBlendMode blendMode, bool mirrorX, bool mirrorY, int offsetX, int offsetY) {
 	_rotation = 0;
-	return drawSprite(x, y, &rect, nullptr, Graphics::TransformStruct(Graphics::kDefaultZoomX, Graphics::kDefaultZoomY, blendMode, alpha, mirrorX, mirrorY));
-}
-
-//////////////////////////////////////////////////////////////////////////
-bool BaseSurfaceOSystem::displayTransOffset(int x, int y, Rect32 rect, uint32 alpha, Graphics::TSpriteBlendMode blendMode, bool mirrorX, bool mirrorY, int offsetX, int offsetY) {
-	_rotation = 0;
-	return drawSprite(x, y, &rect, nullptr,  Graphics::TransformStruct(Graphics::kDefaultZoomX, Graphics::kDefaultZoomY, Graphics::kDefaultAngle, Graphics::kDefaultHotspotX, Graphics::kDefaultHotspotY, blendMode, alpha, mirrorX, mirrorY, offsetX, offsetY));
+	return drawSprite(x, y, &rect, nullptr,  Graphics::TransformStruct(Graphics::kDefaultZoomX, Graphics::kDefaultZoomY, Graphics::kDefaultAngle, Graphics::kDefaultHotspotX, Graphics::kDefaultHotspotY, blendMode, TS_COLOR(alpha), mirrorX, mirrorY, offsetX, offsetY));
 }
 
 //////////////////////////////////////////////////////////////////////////
 bool BaseSurfaceOSystem::displayTransZoom(int x, int y, Rect32 rect, float zoomX, float zoomY, uint32 alpha, Graphics::TSpriteBlendMode blendMode, bool mirrorX, bool mirrorY) {
 	_rotation = 0;
-	return drawSprite(x, y, &rect, nullptr, Graphics::TransformStruct((int32)zoomX, (int32)zoomY, blendMode, alpha, mirrorX, mirrorY));
+	return drawSprite(x, y, &rect, nullptr, Graphics::TransformStruct((int32)zoomX, (int32)zoomY, blendMode, TS_COLOR(alpha), mirrorX, mirrorY));
 }
 
 
 //////////////////////////////////////////////////////////////////////////
-bool BaseSurfaceOSystem::displayZoom(int x, int y, Rect32 rect, float zoomX, float zoomY, uint32 alpha, bool transparent, Graphics::TSpriteBlendMode blendMode, bool mirrorX, bool mirrorY) {
-	_rotation = 0;
-	Graphics::TransformStruct transform;
-	if (transparent) {
-		transform = Graphics::TransformStruct((int32)zoomX, (int32)zoomY, Graphics::kDefaultAngle, Graphics::kDefaultHotspotX, Graphics::kDefaultHotspotY, blendMode, alpha,  mirrorX, mirrorY);
-	} else {
-		transform = Graphics::TransformStruct((int32)zoomX, (int32)zoomY, mirrorX, mirrorY);
-	}
-	return drawSprite(x, y, &rect, nullptr, transform);
-}
+bool BaseSurfaceOSystem::displayTransRotate(int x, int y, uint32 angle, int32 hotspotX, int32 hotspotY, Rect32 rect, float zoomX, float zoomY, uint32 alpha, Graphics::TSpriteBlendMode blendMode, bool mirrorX, bool mirrorY) {
+	Common::Point newHotspot;
+	Common::Rect oldRect(rect.left, rect.top, rect.right, rect.bottom);
+	Graphics::TransformStruct transform = Graphics::TransformStruct(zoomX, zoomY, angle, hotspotX, hotspotY, blendMode, TS_COLOR(alpha), mirrorX, mirrorY, 0, 0);
+	Rect32 newRect = Graphics::TransformTools::newRect(oldRect, transform, &newHotspot);
 
+	x -= newHotspot.x;
+	y -= newHotspot.y;
 
-//////////////////////////////////////////////////////////////////////////
-bool BaseSurfaceOSystem::displayTransform(int x, int y, Rect32 rect, Rect32 newRect, const Graphics::TransformStruct &transform) {
 	_rotation = (uint32)transform._angle;
 	if (transform._angle < 0.0f) {
 		warning("Negative rotation: %d %d", transform._angle, _rotation);
@@ -413,7 +405,7 @@ bool BaseSurfaceOSystem::drawSprite(int x, int y, Rect32 *rect, Rect32 *newRect,
 	}
 
 	if (renderer->_forceAlphaColor != 0) {
-		transform._rgbaMod = renderer->_forceAlphaColor;
+		transform._rgbaMod = TS_COLOR(renderer->_forceAlphaColor);
 	}
 
 	// TODO: This _might_ miss the intended behaviour by 1 in each direction
