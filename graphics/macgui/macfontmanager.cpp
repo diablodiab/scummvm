@@ -375,6 +375,29 @@ int MacFontManager::parseFontSlant(Common::String slant) {
 	return slantVal;
 }
 
+int MacFontManager::parseSlantFromName(const Common::String &name) {
+	int slantVal = 0;
+
+	if (name.contains(" Bold"))
+		slantVal |= kMacFontBold;
+	if (name.contains(" Italic"))
+		slantVal |= kMacFontItalic;
+	if (name.contains(" Regular"))
+		slantVal |= kMacFontRegular;
+	if (name.contains(" Underline"))
+		slantVal |= kMacFontUnderline;
+	if (name.contains(" Shadow"))
+		slantVal |= kMacFontShadow;
+	if (name.contains(" Outline"))
+		slantVal |= kMacFontOutline;
+	if (name.contains(" Condense"))
+		slantVal |= kMacFontCondense;
+	if (name.contains(" Extend"))
+		slantVal |= kMacFontExtend;
+
+	return slantVal;
+}
+
 void MacFontManager::registerFontMapping(uint16 id, Common::String name) {
 	_extraFontNames[id] = name;
 	_extraFontIds[name] = id;
@@ -400,6 +423,9 @@ const Common::String MacFontManager::getFontName(int id, int size, int slant, bo
 	if (_extraFontNames.contains(id)) {
 		n = cleanFontName(_extraFontNames[id]);
 		extraSlant = parseFontSlant(_extraFontNames[id]);
+		// let's try parse slant from name
+		if (!extraSlant)
+			extraSlant = parseSlantFromName(_extraFontNames[id]);
 	} else if (id < ARRAYSIZE(fontNames)) {
 		if (fontNames[id])
 			n = fontNames[id];

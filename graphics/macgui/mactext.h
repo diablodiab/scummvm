@@ -146,11 +146,11 @@ struct SelectedText {
 class MacText : public MacWidget {
 public:
 	MacText(MacWidget *parent, int x, int y, int w, int h, MacWindowManager *wm, const Common::U32String &s, const MacFont *font, int fgcolor, int bgcolor, int maxWidth, TextAlign textAlignment = kTextAlignLeft, int interlinear = 0, uint16 border = 0, uint16 gutter = 0, uint16 boxShadow = 0, uint16 textShadow = 0);
-	MacText(MacWidget *parent, int x, int y, int w, int h, MacWindowManager *wm, const Common::String &s, const MacFont *font, int fgcolor, int bgcolor, int maxWidth, TextAlign textAlignment = kTextAlignLeft, int interlinear = 0, uint16 border = 0, uint16 gutter = 0, uint16 boxShadow = 0, uint16 textShadow = 0);
+	MacText(MacWidget *parent, int x, int y, int w, int h, MacWindowManager *wm, const Common::String &s, const MacFont *font, int fgcolor, int bgcolor, int maxWidth, TextAlign textAlignment = kTextAlignLeft, int interlinear = 0, uint16 border = 0, uint16 gutter = 0, uint16 boxShadow = 0, uint16 textShadow = 0, Common::CodePage encodeType = Common::kMacCentralEurope);
 	// 0 pixels between the lines by default
 
 	MacText(const Common::U32String &s, MacWindowManager *wm, const MacFont *font, int fgcolor, int bgcolor, int maxWidth, TextAlign textAlignment, int interlinear = 0);
-	MacText(const Common::String &s, MacWindowManager *wm, const MacFont *font, int fgcolor, int bgcolor, int maxWidth, TextAlign textAlignment, int interlinear = 0);
+	MacText(const Common::String &s, MacWindowManager *wm, const MacFont *font, int fgcolor, int bgcolor, int maxWidth, TextAlign textAlignment, int interlinear = 0, Common::CodePage encodeType = Common::kMacCentralEurope);
 
 	MacText(const Common::U32String &s, MacWindowManager *wm, const Font *font, int fgcolor, int bgcolor, int maxWidth, TextAlign textAlignment, int interlinear = 0);
 
@@ -192,6 +192,8 @@ private:
 	void appendText_(const Common::U32String &strWithFont, uint oldLen);
 	void deletePreviousCharInternal(int *row, int *col);
 	void insertTextFromClipboard();
+	// getStringWidth for mactext version, because we may have the plain bytes mode
+	int getStringWidth(const Font * font, const Common::U32String &str);
 
 public:
 	void appendTextDefault(const Common::U32String &str, bool skipAdd = false);
@@ -204,6 +206,9 @@ public:
 	int getTextHeight() { return _textMaxHeight; }
 	int getLineHeight(int line);
 	int getTextMaxWidth() { return _textMaxWidth; }
+
+	void setText(const Common::U32String &str);
+	void setText(const Common::String &str);
 
 	void deleteSelection();
 	void deletePreviousChar(int *row, int *col);
@@ -307,6 +312,10 @@ protected:
 	MacFontRun _currentFormatting;
 
 	bool _macFontMode;
+
+	bool _plainByteMode;
+
+	Common::CodePage _encodeType;
 
 private:
 	ManagedSurface *_cursorSurface;

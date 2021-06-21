@@ -37,6 +37,7 @@ static const PlainGameDescriptor wintermuteGames[] = {
 	{"alphapolaris",    "Alpha Polaris"},
 	{"apeiron",         "Apeiron"},
 	{"artofmurder1",    "Art of Murder 1: FBI Confidential"},
+	{"awakening",       "Awakening: Burning Ashes"},
 	{"barrowhilldp",    "Barrow Hill - The Dark Path"},
 	{"basisoctavus",    "Basis Octavus"},
 	{"bickadoodle",     "Bickadoodle"},
@@ -60,6 +61,7 @@ static const PlainGameDescriptor wintermuteGames[] = {
 	{"conspiracao",     "Conspiracao Dumont"},
 	{"corrosion",       "Corrosion: Cold Winter Waiting"},
 	{"darkfallls",      "Dark Fall: Lost Souls"},
+	{"darksummer",      "Twilight: Dark Summer"},
 	{"deadcity",        "Dead City"},
 	{"devilincapital",  "Devil In The Capital"},
 	{"dfafadventure",   "DFAF Adventure"},
@@ -263,11 +265,11 @@ static const WMEGameDescription gameDescriptions[] = {
 	WME_WINENTRY("alavi", "Try version",
 		WME_ENTRY1s("data.dcp", "07b847ebafbf8e58daa341d60598c84b", 36628230), Common::FA_IRN, ADGF_UNSTABLE | ADGF_DEMO | GF_3D, WME_ANDISHE_VARAN),
 
-	// Alavi Detective - Murder of Miss Rojan (Persian)
+	// Alavi Detective - Murder of Miss Rojan (Hayoola) (Persian)
 	WME_WINENTRY("alavi", "",
 		WME_ENTRY1s("data.dcp", "bffb07282d27b6c5351ed4fce92db4da", 516186290), Common::FA_IRN, ADGF_UNSTABLE | GF_3D, WME_ANDISHE_VARAN),
 
-	// Alimardan's Mischief (Persian)
+	// Alimardan's Mischief (Retail) (Persian)
 	WME_WINENTRY("alimardan1", "",
 		WME_ENTRY1s("data.dcp", "ab1aa5f3d6d5f10d3f131a78be80bf34", 1747086434), Common::FA_IRN, ADGF_UNSTABLE, WME_1_9_1),
 
@@ -283,7 +285,11 @@ static const WMEGameDescription gameDescriptions[] = {
 	WME_WINENTRY("alimardan1", "",
 		WME_ENTRY1s("data.dcp", "d74f56d9ce3b7442b921393af7fb6167", 1258761838), Common::EN_ANY, ADGF_UNSTABLE, WME_1_9_3),
 
-	// Alimardan Meets Merlin
+	// Alimardan Meets Merlin (Hayoola) (Persian)
+	WME_WINENTRY("alimardan2", "",
+		WME_ENTRY1s("data.dcp", "10f3f0e1b05187ab99fca2ad026c51c2", 412587946), Common::FA_IRN, ADGF_UNSTABLE, WME_1_9_3),
+
+	// Alimardan Meets Merlin (Steam) (English)
 	WME_WINENTRY("alimardan2", "",
 		WME_ENTRY1s("data.dcp", "e3ffb5d177737a57bb391995d9361055", 413397623), Common::EN_ANY, ADGF_UNSTABLE, WME_1_9_3),
 
@@ -411,6 +417,10 @@ static const WMEGameDescription gameDescriptions[] = {
 	WME_WINENTRY("artofmurder1", "Demo",
 		WME_ENTRY2s("data.dcp", "99d63dfee4ea97d31530649c929bee45", 81127581,
 					"de.dcp", "e97e2e18b26e5eff916c73f720d5f4f2", 17737492), Common::DE_DEU, ADGF_UNSTABLE | ADGF_DEMO | GF_3D, WME_1_8_1),
+
+	// Awakening: Burning Ashes (Hayoola) (Persian)
+	WME_WINENTRY("awakening", "",
+		WME_ENTRY1s("data.dcp", "a7b8633fdc5cc8ff659dda5a11d3d971", 1900777616), Common::FA_IRN, ADGF_UNSTABLE | GF_3D, WME_1_9_3),
 
 	// Barrow Hill - The Dark Path (Steam, September 2018) (English)
 	WME_WINENTRY("barrowhilldp", "",
@@ -787,6 +797,10 @@ static const WMEGameDescription gameDescriptions[] = {
 		WME_ENTRY2s("actors.dcp", "170c7ade10edd7ff6d24b16f2eecd818", 453328582,
 					"stageplay.dcp", "ed67b4d6e35c19597241eb1d863aa315", 226453373), Common::EN_ANY, ADGF_UNSTABLE | GF_3D, WME_1_8_10),
 
+	// Twilight: Dark Summer (Ario) (Persian)
+	WME_WINENTRY("darksummer", "",
+		WME_ENTRY1s("data.dcp","da1142983240a5bb62c32f79a863eac5", 1030873185), Common::FA_IRN, ADGF_UNSTABLE | GF_3D, WME_1_9_3),
+
 	// Dead City (Czech)
 	WME_WINENTRY("deadcity", "",
 		WME_ENTRY2s("data.dcp", "7ebfd50d1a22370ed7b079bcaa631d62", 9070205,
@@ -816,6 +830,10 @@ static const WMEGameDescription gameDescriptions[] = {
 	WME_WINENTRY("deadcity", "",
 		WME_ENTRY2s("string.tab", "9c997f0d58fd7aa6ba9baf3fbfbaba90", 42085,
 					"data.dcp", "7ebfd50d1a22370ed7b079bcaa631d62", 9070205), Common::PL_POL, ADGF_UNSTABLE, WME_1_4_1),
+
+	// Devil In The Capital (Hayoola) (Persian)
+	WME_WINENTRY("devilincapital", "",
+		WME_ENTRY1s("data.dcp","c54f7bc0b0d3d79096f9b999c23c9865", 1317026760), Common::FA_IRN, ADGF_UNSTABLE | GF_3D, WME_1_9_3),
 
 	// Devil In The Capital (Steam, July 2017) (English)
 	WME_WINENTRY("devilincapital", "",
@@ -951,13 +969,17 @@ static const WMEGameDescription gameDescriptions[] = {
 	WME_WINENTRY("findinghope", "",
 		WME_ENTRY1s("default.game", "57db79e9de62b9d1c7a335822f6242ff", 742), Common::RU_RUS, ADGF_UNSTABLE, WME_1_9_1),
 
-	// Forgotten Sound 1 - Revelation (Persian)
+	// Forgotten Sound 1 - Revelation (Retail/Hayoola) (Persian)
 	WME_WINENTRY("forgottensound1", "",
 		WME_ENTRY1s("data.dcp", "1c5871ad711430663b1848f0f2362b44", 2030321701), Common::FA_IRN, ADGF_UNSTABLE | GF_3D, WME_1_9_1),
 
 	// Forgotten Sound 1 - Revelation (Steam, January 2018) (English)
 	WME_WINENTRY("forgottensound1", "",
 		WME_ENTRY1s("data.dcp", "01b8b2b4c55c2d83071f5730269cb313", 937507449), Common::EN_ANY, ADGF_UNSTABLE | GF_3D, WME_1_9_3),
+
+	// Forgotten Sound 2 - Destiny (Hayoola) (Persian)
+	WME_WINENTRY("forgottensound2", "",
+		WME_ENTRY1s("data.dcp", "9e1b4f3dd41e8dee79698ea17bc9ab7b", 1630760876), Common::FA_IRN, ADGF_UNSTABLE | GF_3D, WME_1_9_3),
 
 	// Forgotten Sound 2 - Destiny (Steam, January 2018) (English)
 	WME_WINENTRY("forgottensound2", "",
@@ -1758,9 +1780,13 @@ static const WMEGameDescription gameDescriptions[] = {
 	WME_WINENTRY("lonelyrobot", "Beta",
 		WME_ENTRY1s("data.dcp", "a0cf7ad5bab957416dcda454e9f28ef0", 3420120), Common::EN_ANY, ADGF_UNSTABLE | ADGF_DEMO, WME_1_9_0),
 
-	// Qajary Cat (Persian)
+	// Qajary Cat (Retail) (Persian)
 	WME_WINENTRY("qajarycat", "",
 		WME_ENTRY1s("data.dcp", "f2b6bf3daf6324e58042f214cdc075ca", 1782529732), Common::FA_IRN, ADGF_UNSTABLE, WME_1_9_1),
+
+	// Qajary Cat (Hayoola) (Persian)
+	WME_WINENTRY("qajarycat", "",
+		WME_ENTRY1s("data.dcp", "5d91d8fdcade34ad1130b890396da39a", 450901389), Common::FA_IRN, ADGF_UNSTABLE, WME_1_9_1),
 
 	// Qajary Cat (Steam, November 2017) (English)
 	WME_WINENTRY("qajarycat", "",
@@ -4040,6 +4066,16 @@ static const WMEGameDescription gameDescriptions[] = {
 	WME_PLATENTRY("securanote", "",
 		WME_ENTRY1s("data.dcp", "5213d3e59b9e95b7fbd5c56f7de5341a", 2625554), Common::EN_ANY, Common::kPlatformIOS, ADGF_UNSTABLE, WME_LITE),
 
+	// Shaban (Hayoola) (Persian)
+	WME_WINENTRY("shaban", "",
+		WME_ENTRY2s("data.dcp", "7d945a8219af9bf306980f526f2a885f", 589685802,
+					"persian.dcp", "395b6b13665f1afabaa51a4136c069e4", 12555497), Common::FA_IRN, ADGF_UNSTABLE, WME_1_9_2),
+
+	// Shaban (Hayoola) (English)
+	WME_WINENTRY("shaban", "",
+		WME_ENTRY2s("data.dcp", "7d945a8219af9bf306980f526f2a885f", 589685802,
+					"data.dcp", "7d945a8219af9bf306980f526f2a885f", 589685802), Common::EN_ANY, ADGF_UNSTABLE, WME_1_9_2),
+
 	// Shaban (English)
 	// TODO: add checksum of localization.txt
 	WME_WINENTRY("shaban", "",
@@ -5202,13 +5238,21 @@ static const WMEGameDescription gameDescriptions[] = {
 	WME_WINENTRY("tanya2", "",
 		WME_ENTRY1s("data.dcp", "9c15f14990f630177e063da885d03e6d", 936959767), Common::RU_RUS, ADGF_UNSTABLE, WME_1_8_3),
 
-	// Murder In Tehran's Alleys 1933 (Persian)
+	// Murder In Tehran's Alleys 1933 (Retail) (Persian)
 	WME_WINENTRY("tehran1933", "",
 		WME_ENTRY1s("data.dcp", "0ab314e014b5e9d45411fee436d98dfd", 1921736252), Common::FA_IRN, ADGF_UNSTABLE | GF_3D, WME_1_9_1),
+
+	// Murder In Tehran's Alleys 1933 (Hayoola) (Persian)
+	WME_WINENTRY("tehran1933", "",
+		WME_ENTRY1s("data.dcp", "acc00770c734c8c5bb25141f6d3bd82d", 872649217), Common::FA_IRN, ADGF_UNSTABLE | GF_3D, WME_1_9_1),
 
 	// Murder In Tehran's Alleys 1933 (Steam, June 2017) (English)
 	WME_WINENTRY("tehran1933", "",
 		WME_ENTRY1s("data.dcp", "7d74999f8a926bce367b2f851a06bc1c", 890506879), Common::EN_ANY, ADGF_UNSTABLE | GF_3D, WME_1_9_3),
+
+	// Murder In Tehran's Alleys 2016 (Hayoola) (Persian)
+	WME_WINENTRY("tehran2016", "",
+		WME_ENTRY1s("data.dcp", "24c54a6f4dc9ff0498972ae4572df2ee", 1156014223), Common::FA_IRN, ADGF_UNSTABLE | GF_3D, WME_1_9_1),
 
 	// Murder In Tehran's Alleys 2016 (Steam, June 2017) (English)
 	WME_WINENTRY("tehran2016", "",

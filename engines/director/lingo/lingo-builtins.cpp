@@ -1636,19 +1636,40 @@ void LB::b_showLocals(int nargs) {
 void LB::b_constrainH(int nargs) {
 	Datum num = g_lingo->pop();
 	Datum sprite = g_lingo->pop();
+	Score *score = g_director->getCurrentMovie()->getScore();
+	int res = 0;
+	if (score) {
+		Channel *ch = score->getChannelById(sprite.asInt());
+		if (ch) {
+			res = CLIP<int> (num.asInt(), ch->getBbox().left, ch->getBbox().right);
+		} else {
+			warning("b_constrainH: cannot find channel %d", sprite.asInt());
+		}
+	} else {
+		warning("b_constrainH: no score");
+	}
 
-	warning("STUB: b_constrainH(%d, %d)", sprite.asInt(), num.asInt());
-
-	g_lingo->push(Datum(0));
+	g_lingo->push(Datum(res));
 }
 
 void LB::b_constrainV(int nargs) {
 	Datum num = g_lingo->pop();
 	Datum sprite = g_lingo->pop();
 
-	warning("STUB: b_constrainV(%d, %d)", sprite.asInt(), num.asInt());
+	Score *score = g_director->getCurrentMovie()->getScore();
+	int res = 0;
+	if (score) {
+		Channel *ch = score->getChannelById(sprite.asInt());
+		if (ch) {
+			res = CLIP<int> (num.asInt(), ch->getBbox().top, ch->getBbox().bottom);
+		} else {
+			warning("b_constrainH: cannot find channel %d", sprite.asInt());
+		}
+	} else {
+		warning("b_constrainV: no score");
+	}
 
-	g_lingo->push(Datum(0));
+	g_lingo->push(Datum(res));
 }
 
 void LB::b_copyToClipBoard(int nargs) {

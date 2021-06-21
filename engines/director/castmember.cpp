@@ -541,6 +541,7 @@ TextCastMember::TextCastMember(Cast *cast, uint16 castId, Common::SeekableReadSt
 	_textSlant = 0;
 	_bgpalinfo1 = _bgpalinfo2 = _bgpalinfo3 = 0;
 	_fgpalinfo1 = _fgpalinfo2 = _fgpalinfo3 = 0xff;
+	_widget = nullptr;
 
 	if (version < kFileVer400) {
 		_flags1 = flags1; // region: 0 - auto, 1 - matte, 2 - disabled
@@ -704,9 +705,9 @@ Graphics::MacWidget *TextCastMember::createWidget(Common::Rect &bbox, Channel *c
 	switch (_type) {
 	case kCastText:
 		// since mactext will add some offsets itself, then we calculate it first, to make sure the result size is the same as bbox
-		// use the initialRect for the dims, (seems like initialRect is same as bbox since we once called setCast)
-		dims = getTextOnlyDimensions(_initialRect);
-		widget = new Graphics::MacText(g_director->getCurrentWindow(), bbox.left, bbox.top, dims.width(), dims.height(), g_director->_wm, _ftext, macFont, getForeColor(), getBackColor(), dims.width(), getAlignment(), 0, _borderSize, _gutterSize, _boxShadow, _textShadow);
+		// we are using a very special logic to solve the size for text castmembers now, please refer to sprite.cpp setCast()
+		dims = getTextOnlyDimensions(bbox);
+		widget = new Graphics::MacText(g_director->getCurrentWindow(), bbox.left, bbox.top, dims.width(), dims.height(), g_director->_wm, _ftext, macFont, getForeColor(), getBackColor(), dims.width(), getAlignment(), 0, _borderSize, _gutterSize, _boxShadow, _textShadow, Common::kMacCentralEurope);
 		((Graphics::MacText *)widget)->setSelRange(g_director->getCurrentMovie()->_selStart, g_director->getCurrentMovie()->_selEnd);
 		((Graphics::MacText *)widget)->draw();
 		((Graphics::MacText *)widget)->_focusable = _editable;
@@ -719,15 +720,18 @@ Graphics::MacWidget *TextCastMember::createWidget(Common::Rect &bbox, Channel *c
 			if (activeWidget == nullptr || !activeWidget->isEditable())
 				g_director->_wm->setActiveWidget(widget);
 		}
+		// just a link to the widget which we created. we may use it later
+		_widget = widget;
 		break;
 
 	case kCastButton:
 		// note that we use _initialRect for the dimensions of the button;
 		// the values provided in the sprite bounding box are ignored
-		widget = new Graphics::MacButton(Graphics::MacButtonType(_buttonType), getAlignment(), g_director->getCurrentWindow(), bbox.left, bbox.top, _initialRect.width(), _initialRect.height(), g_director->_wm, _ftext, macFont, getForeColor(), 0xff);
-		((Graphics::MacButton *)widget)->draw();
+		widget = new Graphics::MacButton(Graphics::MacButtonType(_buttonType), getAlignment(), g_director->getCurrentWindow(), bbox.left, bbox.top, _initialRect.width(), _initialRect.height(), g_director->_wm, _ftext, macFont, getForeColor(), 0xff, Common::kMacCentralEurope);
 		widget->_focusable = true;
 
+		((Graphics::MacButton *)widget)->setHilite(_hilite);
+		((Graphics::MacButton *)widget)->setCheckBoxType(g_director->getCurrentMovie()->_checkBoxType);
 		((Graphics::MacButton *)widget)->draw();
 		break;
 
@@ -757,7 +761,15 @@ void TextCastMember::setText(const char *text) {
 	_ptext = text;
 	_ftext = formatting + text;
 
-	_modified = true;
+	// if we have the link to widget, then we modify it directly.
+	// thus we can reach the immediate changing effect
+	if (_widget) {
+		((Graphics::MacText *)_widget)->setText(_ftext);
+		((Graphics::MacText *)_widget)->draw();
+		g_director->getCurrentWindow()->addDirtyRect(_widget->_dims);
+	} else {
+		_modified = true;
+	}
 }
 
 Common::String TextCastMember::getText() {

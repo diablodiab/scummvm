@@ -62,6 +62,8 @@ Movie::Movie(Window *window) {
 	_keyFlags = 0;
 
 	_currentDraggedChannel = nullptr;
+	_currentHiliteChannelId = 0;
+	_currentHandlingChannelId = 0;
 
 	_allowOutdatedLingo = false;
 
@@ -73,6 +75,8 @@ Movie::Movie(Window *window) {
 
 	_selEnd = -1;
 	_selStart = -1;
+
+	_checkBoxType = 0;
 }
 
 Movie::~Movie() {
@@ -135,7 +139,7 @@ bool Movie::loadArchive() {
 		uint16 windowWidth = debugChannelSet(-1, kDebugDesktop) ? 1024 : _movieRect.width();
 		uint16 windowHeight = debugChannelSet(-1, kDebugDesktop) ? 768 : _movieRect.height();
 		if (_vm->_wm->_screenDims.width() != windowWidth || _vm->_wm->_screenDims.height() != windowHeight) {
-			_vm->_wm->_screenDims = Common::Rect(windowWidth, windowHeight);
+			_vm->_wm->resizeScreen(windowWidth, windowHeight);
 			recenter = true;
 
 			initGraphics(windowWidth, windowHeight, &_vm->_pixelformat);

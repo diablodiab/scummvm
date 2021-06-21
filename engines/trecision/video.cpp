@@ -159,9 +159,9 @@ void AnimManager::playMovie(const Common::String &filename, int startFrame, int 
 
 	smkDecoder->start();
 
-	// If the video has a single choice, and it starts from the beginning,
-	// ignore the calculated end frame and play all of it
-	if (singleChoice && startFrame < 10 && endFrame < smkDecoder->getFrameCount() - 1)
+	// WORKAROUND: If the video has a single choice, and it starts from
+	// the beginning, ignore the calculated end frame and play all of it
+	if (singleChoice && startFrame < 10 && endFrame < (int)smkDecoder->getFrameCount() - 1)
 		endFrame = smkDecoder->getFrameCount() - 1;
 
 	setVideoRange(smkDecoder, startFrame, endFrame);
@@ -574,23 +574,23 @@ void AnimManager::swapCD(int cd) {
 }
 
 void AnimManager::syncGameStream(Common::Serializer &ser) {
-	for (int a = 0; a < MAXANIM; a++) {
-		SAnim *cur = &_animTab[a];
+	for (int i = 0; i < MAXANIM; i++) {
+		SAnim *cur = &_animTab[i];
 		ser.syncBytes((byte *)cur->_name, 14);
 		ser.syncAsUint16LE(cur->_flag);
-		for (uint8 i = 0; i < MAXCHILD; ++i) {
-			ser.syncAsUint16LE(cur->_lim[i].left);
-			ser.syncAsUint16LE(cur->_lim[i].top);
-			ser.syncAsUint16LE(cur->_lim[i].right);
-			ser.syncAsUint16LE(cur->_lim[i].bottom);
+		for (uint8 j = 0; j < MAXCHILD; ++j) {
+			ser.syncAsUint16LE(cur->_lim[j].left);
+			ser.syncAsUint16LE(cur->_lim[j].top);
+			ser.syncAsUint16LE(cur->_lim[j].right);
+			ser.syncAsUint16LE(cur->_lim[j].bottom);
 		}
 		ser.syncAsByte(cur->_nbox);
 		ser.skip(1, SAVE_VERSION_ORIGINAL_MIN, SAVE_VERSION_ORIGINAL_MAX);
-		for (uint8 i = 0; i < MAXATFRAME; ++i) {
-			ser.syncAsByte(cur->_atFrame[i]._type);
-			ser.syncAsByte(cur->_atFrame[i]._child);
-			ser.syncAsUint16LE(cur->_atFrame[i]._numFrame);
-			ser.syncAsUint16LE(cur->_atFrame[i]._index);
+		for (uint8 j = 0; j < MAXATFRAME; ++j) {
+			ser.syncAsByte(cur->_atFrame[j]._type);
+			ser.syncAsByte(cur->_atFrame[j]._child);
+			ser.syncAsUint16LE(cur->_atFrame[j]._numFrame);
+			ser.syncAsUint16LE(cur->_atFrame[j]._index);
 		}
 	}
 }

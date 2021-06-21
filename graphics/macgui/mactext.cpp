@@ -106,6 +106,8 @@ MacText::MacText(MacWidget *parent, int x, int y, int w, int h, MacWindowManager
 	_bgcolor = bgcolor;
 	_textShadow = textShadow;
 	_macFontMode = true;
+	_encodeType = Common::kUtf8;
+	_plainByteMode = false;
 
 	if (macFont) {
 		_defaultFormatting = MacFontRun(_wm, macFont->getId(), macFont->getSlant(), macFont->getSize(), 0, 0, 0);
@@ -117,17 +119,19 @@ MacText::MacText(MacWidget *parent, int x, int y, int w, int h, MacWindowManager
 	init();
 }
 
-MacText::MacText(MacWidget *parent, int x, int y, int w, int h, MacWindowManager *wm, const Common::String &s, const MacFont *macFont, int fgcolor, int bgcolor, int maxWidth, TextAlign textAlignment, int interlinear, uint16 border, uint16 gutter, uint16 boxShadow, uint16 textShadow) :
+MacText::MacText(MacWidget *parent, int x, int y, int w, int h, MacWindowManager *wm, const Common::String &s, const MacFont *macFont, int fgcolor, int bgcolor, int maxWidth, TextAlign textAlignment, int interlinear, uint16 border, uint16 gutter, uint16 boxShadow, uint16 textShadow, Common::CodePage encodeType) :
 	MacWidget(parent, x, y, w + 2, h, wm, true, border, gutter, boxShadow),
 	_macFont(macFont), _maxWidth(maxWidth), _textAlignment(textAlignment), _interLinear(interlinear) {
 
-	_str = Common::U32String(s);
+	_str = Common::U32String(s, encodeType);
 
 	_wm = wm;
 	_fgcolor = fgcolor;
 	_bgcolor = bgcolor;
 	_textShadow = textShadow;
 	_macFontMode = true;
+	_encodeType = encodeType;
+	_plainByteMode = true;
 
 	if (macFont) {
 		_defaultFormatting = MacFontRun(_wm, macFont->getId(), macFont->getSlant(), macFont->getSize(), 0, 0, 0);
@@ -151,6 +155,8 @@ MacText::MacText(const Common::U32String &s, MacWindowManager *wm, const MacFont
 	_bgcolor = bgcolor;
 	_textShadow = 0;
 	_macFontMode = true;
+	_encodeType = Common::kUtf8;
+	_plainByteMode = false;
 
 	if (macFont) {
 		_defaultFormatting = MacFontRun(_wm, macFont->getId(), macFont->getSlant(), macFont->getSize(), 0, 0, 0);
@@ -162,17 +168,19 @@ MacText::MacText(const Common::U32String &s, MacWindowManager *wm, const MacFont
 	init();
 }
 
-MacText::MacText(const Common::String &s, MacWindowManager *wm, const MacFont *macFont, int fgcolor, int bgcolor, int maxWidth, TextAlign textAlignment, int interlinear) :
+MacText::MacText(const Common::String &s, MacWindowManager *wm, const MacFont *macFont, int fgcolor, int bgcolor, int maxWidth, TextAlign textAlignment, int interlinear, Common::CodePage encodeType) :
 	MacWidget(nullptr, 0, 0, 0, 0, wm, false, 0, 0, 0),
 	_macFont(macFont), _maxWidth(maxWidth), _textAlignment(textAlignment), _interLinear(interlinear) {
 
-	_str = Common::U32String(s);
+	_str = Common::U32String(s, encodeType);
 
 	_wm = wm;
 	_fgcolor = fgcolor;
 	_bgcolor = bgcolor;
 	_textShadow = 0;
 	_macFontMode = true;
+	_encodeType = encodeType;
+	_plainByteMode = true;
 
 	if (macFont) {
 		_defaultFormatting = MacFontRun(_wm, macFont->getId(), macFont->getSlant(), macFont->getSize(), 0, 0, 0);
@@ -196,6 +204,8 @@ MacText::MacText(const Common::U32String &s, MacWindowManager *wm, const Font *f
 	_bgcolor = bgcolor;
 	_textShadow = 0;
 	_macFontMode = false;
+	_encodeType = Common::kUtf8;
+	_plainByteMode = false;
 
 	if (font) {
 		_defaultFormatting = MacFontRun(_wm, font, 0, font->getFontHeight(), 0, 0, 0);
@@ -267,6 +277,15 @@ MacText::~MacText() {
 	delete _surface;
 	delete _cursorSurface;
 	delete _cursorSurface2;
+}
+
+// we are doing this because we may need to dealing with the plain byte. See ctor of mactext which contains String str instead of U32String str
+// thus, if we are passing the str, meaning we are using plainByteMode. And when we calculating the string width. we need to convert it to it's orignal state first;
+int MacText::getStringWidth(const Font *font, const Common::U32String &str) {
+	if (_plainByteMode)
+		return font->getStringWidth(Common::convertFromU32String(str, _encodeType));
+	else
+		return font->getStringWidth(str);
 }
 
 void MacText::setMaxWidth(int maxWidth) {
@@ -518,7 +537,7 @@ void MacText::splitString(const Common::U32String &str, int curLine) {
 				continue;
 			}
 			// calc word_width, the trick we define here is we don`t count the space
-			int word_width = current_format.getFont()->getStringWidth(tmp);
+			int word_width = getStringWidth(current_format.getFont(), tmp);
 			// add all spaces left
 			while (*s == ' ') {
 				tmp += *s;
@@ -537,7 +556,7 @@ void MacText::splitString(const Common::U32String &str, int curLine) {
 			}
 
 			for (int i = 1; i < (int)word.size(); i++) {
-				word_width += word[i].getFont()->getStringWidth(word[i].text);
+				word_width += getStringWidth(word[i].getFont(), word[i].text);
 				D(9, "** word \"%s\" textslant [%d]", Common::toPrintable(word[i].text.encode()).c_str(), word[i].textSlant);
 			}
 
@@ -576,7 +595,14 @@ void MacText::splitString(const Common::U32String &str, int curLine) {
 							}
 							break;
 						}
-						int char_width = word[i].getFont()->getCharWidth(c);
+
+						// here, if we are in the plainByteMode, then we need to get the original text width, because current font may not resolve that u32string
+						int char_width = 0;
+						if (_plainByteMode) {
+							char_width = word[i].getFont()->getCharWidth(Common::convertFromU32String(Common::U32String(it, 1), _encodeType)[0]);
+						} else {
+							char_width = word[i].getFont()->getCharWidth(c);
+						}
 						if (char_width + tmp_width + cur_width > _maxWidth) {
 							++curLine;
 							_textLines.insert_at(curLine, MacTextLine());
@@ -641,14 +667,14 @@ void MacText::reallocSurface() {
 	//int requiredH = (_text.size() + (_text.size() * 10 + 9) / 10) * lineH
 
 	if (!_surface) {
-		_surface = new ManagedSurface(_textMaxWidth, _textMaxHeight, _wm->_pixelformat);
+		_surface = new ManagedSurface(_maxWidth, _textMaxHeight, _wm->_pixelformat);
 
 		return;
 	}
 
 	if (_surface->w < _textMaxWidth || _surface->h < _textMaxHeight) {
 		// realloc surface and copy old content
-		ManagedSurface *n = new ManagedSurface(_textMaxWidth, _textMaxHeight, _wm->_pixelformat);
+		ManagedSurface *n = new ManagedSurface(_maxWidth, _textMaxHeight, _wm->_pixelformat);
 		n->clear(_bgcolor);
 		n->blitFrom(*_surface, Common::Point(0, 0));
 
@@ -683,14 +709,14 @@ void MacText::render(int from, int to) {
 	for (int i = from; i <= to; i++) {
 		int xOffset = 0;
 		if (_textAlignment == kTextAlignRight)
-			xOffset = _textMaxWidth - getLineWidth(i);
+			xOffset = _maxWidth - getLineWidth(i);
 		else if (_textAlignment == kTextAlignCenter)
-			xOffset = (_textMaxWidth / 2) - (getLineWidth(i) / 2);
+			xOffset = (_maxWidth / 2) - (getLineWidth(i) / 2);
 
-		int maxHeightForRow = 0;
+		int maxAscentForRow = 0;
 		for (uint j = 0; j < _textLines[i].chunks.size(); j++) {
-			if (_textLines[i].chunks[j].font->getFontHeight() > maxHeightForRow)
-				maxHeightForRow = _textLines[i].chunks[j].font->getFontHeight();
+			if (_textLines[i].chunks[j].font->getFontAscent() > maxAscentForRow)
+				maxAscentForRow = _textLines[i].chunks[j].font->getFontAscent();
 		}
 
 		// TODO: _textMaxWidth, when -1, was not rendering ANY text.
@@ -705,13 +731,18 @@ void MacText::render(int from, int to) {
 
 			//TODO: There might be a vertical alignment setting somewhere for differing font sizes in a single row?
 			int yOffset = 0;
-			if (_textLines[i].chunks[j].font->getFontHeight() < maxHeightForRow) {
-				//TODO: determine where the magic value 2 comes from
-				yOffset = maxHeightForRow - _textLines[i].chunks[j].font->getFontHeight() - 2;
+			if (_textLines[i].chunks[j].font->getFontAscent() < maxAscentForRow) {
+				yOffset = maxAscentForRow -_textLines[i].chunks[j].font->getFontAscent();
 			}
 
-			_textLines[i].chunks[j].getFont()->drawString(_surface, convertBiDiU32String(_textLines[i].chunks[j].text), xOffset, _textLines[i].y + yOffset, w, _textLines[i].chunks[j].fgcolor);
-			xOffset += _textLines[i].chunks[j].getFont()->getStringWidth(_textLines[i].chunks[j].text);
+			if (_plainByteMode) {
+				Common::String str = Common::convertFromU32String(_textLines[i].chunks[j].text, _encodeType);
+				_textLines[i].chunks[j].getFont()->drawString(_surface, str, xOffset, _textLines[i].y + yOffset, w, _textLines[i].chunks[j].fgcolor);
+				xOffset += _textLines[i].chunks[j].getFont()->getStringWidth(str);
+			} else {
+				_textLines[i].chunks[j].getFont()->drawString(_surface, convertBiDiU32String(_textLines[i].chunks[j].text), xOffset, _textLines[i].y + yOffset, w, _textLines[i].chunks[j].fgcolor);
+				xOffset += _textLines[i].chunks[j].getFont()->getStringWidth(_textLines[i].chunks[j].text);
+			}
 		}
 	}
 
@@ -748,14 +779,14 @@ int MacText::getLineWidth(int line, bool enforce, int col) {
 			} else {
 				Common::U32String tmp = _textLines[line].chunks[i].text.substr(0, col);
 
-				width += _textLines[line].chunks[i].getFont()->getStringWidth(tmp);
+				width += getStringWidth(_textLines[line].chunks[i].getFont(), tmp);
 
 				return width;
 			}
 		}
 
 		if (!_textLines[line].chunks[i].text.empty()) {
-			width += _textLines[line].chunks[i].getFont()->getStringWidth(_textLines[line].chunks[i].text);
+			width += getStringWidth(_textLines[line].chunks[i].getFont(), _textLines[line].chunks[i].text);
 			charwidth += _textLines[line].chunks[i].text.size();
 			hastext = true;
 		}
@@ -855,7 +886,7 @@ void MacText::setAlignOffset(TextAlign align) {
 }
 
 Common::Point MacText::calculateOffset() {
-	return Common::Point(_alignOffset.x + _border + _gutter + 2, _alignOffset.y + _border + _gutter/2);
+	return Common::Point(_border + _gutter + 2, _border + _gutter / 2);
 }
 
 void MacText::setActive(bool active) {
@@ -975,7 +1006,7 @@ void MacText::appendText_(const Common::U32String &strWithFont, uint oldLen) {
 }
 
 void MacText::appendText(const Common::String &str, int fontId, int fontSize, int fontSlant, bool skipAdd) {
-	appendText(Common::U32String(str), fontId, fontSize, fontSlant, skipAdd);
+	appendText(Common::U32String(str, _encodeType), fontId, fontSize, fontSlant, skipAdd);
 }
 
 void MacText::appendTextDefault(const Common::U32String &str, bool skipAdd) {
@@ -1195,9 +1226,9 @@ void MacText::drawSelection(int xoff, int yoff) {
 		// deal with the first line, which is not a complete line
 		if (numLines) {
 			if (_textAlignment == kTextAlignRight)
-				alignOffset = _textMaxWidth - getLineWidth(start_row);
+				alignOffset = _maxWidth - getLineWidth(start_row);
 			else if (_textAlignment == kTextAlignCenter)
-				alignOffset = (_textMaxWidth / 2) - (getLineWidth(start_row) / 2);
+				alignOffset = (_maxWidth / 2) - (getLineWidth(start_row) / 2);
 
 			if (swaped && start_row == s.startRow && s.startCol != 0) {
 				x1 = MIN<int>(x1 + xoff + alignOffset, getDimensions().width() - 1);
@@ -1217,9 +1248,9 @@ void MacText::drawSelection(int xoff, int yoff) {
 			x2 = getDimensions().width() - 1;
 
 			if (_textAlignment == kTextAlignRight)
-				alignOffset = _textMaxWidth - getLineWidth(row);
+				alignOffset = _maxWidth - getLineWidth(row);
 			else if (_textAlignment == kTextAlignCenter)
-				alignOffset = (_textMaxWidth / 2) - (getLineWidth(row) / 2);
+				alignOffset = (_maxWidth / 2) - (getLineWidth(row) / 2);
 
 			numLines = getLineHeight(row);
 			if (y + _scrollPos == s.startY && s.startX > 0)
@@ -1302,12 +1333,12 @@ void MacText::setSelection(int pos, bool start) {
 			if (pos < getLineCharWidth(row)) {
 				for (uint i = 0; i < _textLines[row].chunks.size(); i++) {
 					if ((uint)pos < _textLines[row].chunks[i].text.size()) {
-						colX += _textLines[row].chunks[i].getFont()->getStringWidth(_textLines[row].chunks[i].text.substr(0, pos));
+						colX += getStringWidth(_textLines[row].chunks[i].getFont(), _textLines[row].chunks[i].text.substr(0, pos));
 						col += pos;
 						pos = 0;
 						break;
 					} else {
-						colX += _textLines[row].chunks[i].getFont()->getStringWidth(Common::U32String(_textLines[row].chunks[i].text));
+						colX += getStringWidth(_textLines[row].chunks[i].getFont(), _textLines[row].chunks[i].text);
 						pos -= _textLines[row].chunks[i].text.size();
 						col += _textLines[row].chunks[i].text.size();
 					}
@@ -1664,9 +1695,9 @@ void MacText::getRowCol(int x, int y, int *sx, int *sy, int *row, int *col) {
 
 	int alignOffset = 0;
 	if (_textAlignment == kTextAlignRight)
-		alignOffset = _textMaxWidth - getLineWidth(nrow);
+		alignOffset = _maxWidth - getLineWidth(nrow);
 	else if (_textAlignment == kTextAlignCenter)
-		alignOffset = (_textMaxWidth / 2) - (getLineWidth(nrow) / 2);
+		alignOffset = (_maxWidth / 2) - (getLineWidth(nrow) / 2);
 
 	int width = 0, pwidth = 0;
 	int mcol = 0, pmcol = 0;
@@ -1675,7 +1706,7 @@ void MacText::getRowCol(int x, int y, int *sx, int *sy, int *row, int *col) {
 		pwidth = width;
 		pmcol = mcol;
 		if (!_textLines[nrow].chunks[chunk].text.empty()) {
-			width += _textLines[nrow].chunks[chunk].getFont()->getStringWidth(_textLines[nrow].chunks[chunk].text);
+			width += getStringWidth(_textLines[nrow].chunks[chunk].getFont(), _textLines[nrow].chunks[chunk].text);
 			mcol += _textLines[nrow].chunks[chunk].text.size();
 		}
 
@@ -1692,7 +1723,7 @@ void MacText::getRowCol(int x, int y, int *sx, int *sy, int *row, int *col) {
 	nsx = pwidth;
 
 	for (int i = str.size(); i >= 0; i--) {
-		int strw = _textLines[nrow].chunks[chunk].getFont()->getStringWidth(str);
+		int strw = getStringWidth(_textLines[nrow].chunks[chunk].getFont(), str);
 		if (strw + pwidth + alignOffset <= x) {
 			ncol = pmcol + i;
 			nsx = strw + pwidth;
@@ -1858,8 +1889,36 @@ void MacText::insertTextFromClipboard() {
 	_cursorCol = ppos;
 	recalcDims();
 	updateCursorPos();
-	render();
 	_fullRefresh = true;
+	render();
+}
+
+void MacText::setText(const Common::U32String &str) {
+	_str = str;
+	_textLines.clear();
+	splitString(_str);
+
+	_cursorRow = _cursorCol = 0;
+	recalcDims();
+	updateCursorPos();
+	_fullRefresh = true;
+	render();
+
+	_contentIsDirty = true;
+}
+
+void MacText::setText(const Common::String &str) {
+	_str = Common::U32String(str, _encodeType);
+	_textLines.clear();
+	splitString(_str);
+
+	_cursorRow = _cursorCol = 0;
+	recalcDims();
+	updateCursorPos();
+	_fullRefresh = true;
+	render();
+
+	_contentIsDirty = true;
 }
 
 //////////////////
@@ -1876,14 +1935,14 @@ void MacText::insertChar(byte c, int *row, int *col) {
 	int pos = *col;
 	uint ch = line->getChunkNum(&pos);
 
-	Common::U32String newchunk(line->chunks[ch].text);
+	Common::U32String newchunk(line->chunks[ch].text, _encodeType);
 
 	if (pos >= (int)newchunk.size())
 		newchunk += c;
 	else
 		newchunk.insertChar(c, pos);
-	int chunkw = line->chunks[ch].getFont()->getStringWidth(newchunk);
-	int oldw = line->chunks[ch].getFont()->getStringWidth(line->chunks[ch].text);
+	int chunkw = getStringWidth(line->chunks[ch].getFont(), newchunk);
+	int oldw = getStringWidth(line->chunks[ch].getFont(), line->chunks[ch].text);
 
 	line->chunks[ch].text = newchunk;
 	line->width = -1;	// Force recalc
@@ -2111,9 +2170,9 @@ void MacText::updateCursorPos() {
 
 		int alignOffset = 0;
 		if (_textAlignment == kTextAlignRight)
-			alignOffset = _textMaxWidth - getLineWidth(_cursorRow);
+			alignOffset = _maxWidth - getLineWidth(_cursorRow);
 		else if (_textAlignment == kTextAlignCenter)
-			alignOffset = (_textMaxWidth / 2) - (getLineWidth(_cursorRow) / 2);
+			alignOffset = (_maxWidth / 2) - (getLineWidth(_cursorRow) / 2);
 
 		_cursorY = _textLines[_cursorRow].y - _scrollPos;
 		_cursorX = getLineWidth(_cursorRow, false, _cursorCol) + alignOffset;

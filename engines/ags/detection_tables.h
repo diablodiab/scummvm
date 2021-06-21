@@ -1273,6 +1273,7 @@ const PlainGameDescriptor GAME_NAMES[] = {
 	{ "roccioquest", "Roccio Quest" },
 	{ "rockabillykid", "Rockabilly Kid" },
 	{ "rockburgerstreehouses", "Rock Burgers & Tree Houses" },
+	{ "rockpaperscissors2", "Rock Paper Scissors Reboot" },
 	{ "rockrockrock", "Rock Rock Rock" },
 	{ "rockyroams", "Rocky roams" },
 	{ "rodequest2", "Rode Quest 2" },
@@ -1286,6 +1287,7 @@ const PlainGameDescriptor GAME_NAMES[] = {
 	{ "rowengoestowork", "Rowen Goes To Work" },
 	{ "rs15", "rs15" },
 	{ "rudeawakening", "Rude Awakening" },
+	{ "runestones", "Runestones!" },
 	{ "ryansdayout", "Ryan's Day Out" },
 	{ "saddsonissein", "Saddson Issein" },
 	{ "salazarsevilplan", "Salazar's evil plan" },
@@ -1809,21 +1811,24 @@ const AGSGameDescription GAME_DESCRIPTIONS[] = {
 	UNSUPPORTED_GAME_ENTRY("whokilledkennyrogers", "mags.exe", "ed778afb4f46c3f2a70d330532a83a2f", 1240103),
 	UNSUPPORTED_GAME_ENTRY("winfry", "fry.exe", "73f87b30f84e9c34ab09ec8dd7ae109d", 4164041),
 
+	// uses unsupported agslua plugin
+	UNSUPPORTED_GAME_ENTRY("allthewaydown", "deepuns3.exe", "6c0b5468657c22d62201e3769cd8d2b3", 29830067),
+	// MMM13 crashes during the intro with an error
+	// Error: unexpected data size for WRITELIT op: 8
+	GAME_ENTRY("mmm13", "traum.exe", "3b7cceb3e4bdb031dc5d8f290936e94b", 6703140),
+	// Strangeland isn't yet supported becuase the executable is >2Gb.
+	UNSUPPORTED_GAME_ENTRY("strangeland", "Strangeland.exe", "c5978d50a9b7ee1c8a50a731847d8504", -1),
+	// Commercial game that likely uses custom extensions. Not only does it seem
+	// to use AGSController plugin built-in, even when I hooked up AGSController for
+	// the stand-alone AGS 3.5 interpreter, it hangs just like in ScummVM
+	UNSUPPORTED_GAME_ENTRY("untilihaveyou", "until i have you.exe", "cda1d7e36993dd55ba5513c1c43e5b2b", 1089857773), // Steam
+	UNSUPPORTED_GAME_ENTRY("untilihaveyou", "until i have you.exe", "cda1d7e36993dd55ba5513c1c43e5b2b", 1072879555),
 	// Post 2.5 games that aren't currently supported
 	// 2.55 game, but uses a plugin agsflashlight. Also, even with AGS interpreter
 	// hacked to specify plugin, errors on loading room107 saying that
 	// "room animations are no longer supported"
 	UNSUPPORTED_GAME_ENTRY("zak2", "Zak2.exe", "e88fd6a23a5e498d7b0d50e3bb914085", 8686711),
 	UNSUPPORTED_GAME_ENTRY("zak2", "Zak2.exe", "0b7529a76f38283d6e850b8d56526fc1", 9205143),
-	// uses unsupported agslua plugin
-	UNSUPPORTED_GAME_ENTRY("allthewaydown", "deepuns3.exe", "6c0b5468657c22d62201e3769cd8d2b3", 29830067),
-	// Commercial game that likely uses custom extensions. Not only does it seem
-	// to use AGSController plugin built-in, even when I hooked up AGSController for
-	// the stand-alone AGS 3.5 interpreter, it hangs just like in ScummVM
-	UNSUPPORTED_GAME_ENTRY("untilihaveyou", "until i have you.exe", "cda1d7e36993dd55ba5513c1c43e5b2b", 1089857773), // Steam
-	UNSUPPORTED_GAME_ENTRY("untilihaveyou", "until i have you.exe", "cda1d7e36993dd55ba5513c1c43e5b2b", 1072879555),
-	// Strangeland isn't yet supported becuase the executable is >2Gb.
-	UNSUPPORTED_GAME_ENTRY("strangeland", "Strangeland.exe", "c5978d50a9b7ee1c8a50a731847d8504", -1),
 
 	// AGDI games. They get their own grouping because they're just that awesome
 	GAME_ENTRY("kq1agdi", "kqvga.exe", "73f87b30f84e9c34ab09ec8dd7ae109d", 34298679),  // 1.0
@@ -2906,7 +2911,6 @@ const AGSGameDescription GAME_DESCRIPTIONS[] = {
 	GAME_ENTRY("mmm11", "MMMania 2.exe", "3b7cceb3e4bdb031dc5d8f290936e94b", 7872940),
 	GAME_ENTRY("mmm11", "MMMania.exe", "3b7cceb3e4bdb031dc5d8f290936e94b", 6123337),
 	GAME_ENTRY("mmm12", "Giga.exe", "3b7cceb3e4bdb031dc5d8f290936e94b", 4141502),
-	GAME_ENTRY("mmm13", "traum.exe", "3b7cceb3e4bdb031dc5d8f290936e94b", 6703140),
 	GAME_ENTRY("mmm14", "msytr.exe", "3b7cceb3e4bdb031dc5d8f290936e94b", 5836799),
 	GAME_ENTRY("mmm14", "msytr.exe", "3b7cceb3e4bdb031dc5d8f290936e94b", 5863583),
 	GAME_ENTRY("mmm15", "MMM15.exe", "06a03fe35791b0578068ab1873455463", 8503015),
@@ -2923,7 +2927,7 @@ const AGSGameDescription GAME_DESCRIPTIONS[] = {
 	GAME_ENTRY("mmm24", "mmmgui.exe", "3b7cceb3e4bdb031dc5d8f290936e94b", 6112992),
 	GAME_ENTRY("mmm26", "TryDott.exe", "28f82e420b82d07651b68114f90223c8", 4683840),
 	GAME_ENTRY("mmm27", "Hamster.exe", "465f972675db2da6040518221af5b0ba", 7497001),
-	GAME_ENTRY("mmm28", "Time Machine 2b.exe", "3b7cceb3e4bdb031dc5d8f290936e94b", 7273087),
+	GAME_ENTRY("mmm28", "Time Machine 2.exe", "3b7cceb3e4bdb031dc5d8f290936e94b", 7314610),
 	GAME_ENTRY("mmm29", "mmmgui.exe", "3b7cceb3e4bdb031dc5d8f290936e94b", 8033934),
 	GAME_ENTRY("mmm30", "memorie.exe", "0710e2ec71042617f565c01824f0cf3c", 4300662),
 	GAME_ENTRY("mmm31", "MMM31.exe", "0710e2ec71042617f565c01824f0cf3c", 6777832),
@@ -3238,6 +3242,7 @@ const AGSGameDescription GAME_DESCRIPTIONS[] = {
 	GAME_ENTRY("roccioquest", "RoccioQuest.exe", "7727bf5360b00bfc1947455218137803", 5797284),
 	GAME_ENTRY("rockabillykid", "Rockabilly Kid.exe", "ff3358d8f2726d544aadfde4f1ec8407", 2650305),
 	GAME_ENTRY("rockburgerstreehouses", "RBTH.exe", "88cf59aad15ca331ab0f854e16c84df3", 1876674),
+	GAME_ENTRY("rockpaperscissors2", "Rock, Paper, Scissors 2.exe", "89a94326c8afd9e0234e269bd7330130", 2926218),
 	GAME_ENTRY("rockrockrock", "rrr.exe", "7dd36aa863ed40ede1b09ae505e478cc", 9362761),
 	GAME_ENTRY("rockyroams", "Rocky.exe", "a01a9639ce30bdcd5bf82e528b51fa06", 16978200),
 	GAME_ENTRY("rodequest2", "RQ2.exe", "12c03a3c782237821acd590fd91af4c5", 4192097),
@@ -3251,6 +3256,7 @@ const AGSGameDescription GAME_DESCRIPTIONS[] = {
 	GAME_ENTRY("rowengoestowork", "Rowen.exe", "a1cef60926235b85bd0e1866b19e0dc7", 3791058),
 	GAME_ENTRY("rs15", "rs15.exe", "3b7cceb3e4bdb031dc5d8f290936e94b", 13638597),
 	GAME_ENTRY("rudeawakening", "RudeAwakening.exe", "0710e2ec71042617f565c01824f0cf3c", 8038257),
+	GAME_ENTRY("runestones", "Project Forsetti.exe", "c0d48dcc2003d4de0410cb8612d1c3e6", 37111243),
 	GAME_ENTRY("ryansdayout", "Ryan's Day out.exe", "06a03fe35791b0578068ab1873455463", 2573584),
 	GAME_ENTRY("saddsonissein", "Issein.exe", "3e8667bab45f2e5d7237db53ab376400", 4070795),
 	GAME_ENTRY("salazarsevilplan", "Jonny Smallvalley.exe", "a524cbb1c51589903c4043b98917f1d9", 64646627),

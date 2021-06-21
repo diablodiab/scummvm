@@ -2198,9 +2198,9 @@ drawTriangleVertAlg(int x1, int y1, int w, int h, bool inverted, PixelType color
 
 		for (int x = x1 + 1; x < x2; x++) {
 #if FIXED_POINT
-			if (intery + gradient > ipart(intery) + 0x100) {
+			if (intery + gradient >= ipart(intery) + 0x100) {
 #else
-			if (intery + gradient > ipart(intery) + 1) {
+			if (intery + gradient >= ipart(intery) + 1) {
 #endif
 				ptr_right++;
 				ptr_left--;
@@ -2253,9 +2253,9 @@ drawTriangleVertAlg(int x1, int y1, int w, int h, bool inverted, PixelType color
 
 		for (int y = y1 + 1; y < y2; y++) {
 #if FIXED_POINT
-			if (interx + gradient > ipart(interx) + 0x100) {
+			if (interx + gradient >= ipart(interx) + 0x100) {
 #else
-			if (interx + gradient > ipart(interx) + 1) {
+			if (interx + gradient >= ipart(interx) + 1) {
 #endif
 				ptr_right++;
 				ptr_left--;
@@ -2393,9 +2393,9 @@ drawTriangleVertAlgClip(int x1, int y1, int w, int h, bool inverted, PixelType c
 
 		for (int x = x1 + 1; x < x2; x++) {
 #if FIXED_POINT
-			if (intery + gradient > ipart(intery) + 0x100) {
+			if (intery + gradient >= ipart(intery) + 0x100) {
 #else
-			if (intery + gradient > ipart(intery) + 1) {
+			if (intery + gradient >= ipart(intery) + 1) {
 #endif
 				ptr_right++;
 				ptr_left--;
@@ -2454,9 +2454,9 @@ drawTriangleVertAlgClip(int x1, int y1, int w, int h, bool inverted, PixelType c
 
 		for (int y = y1 + 1; y < y2; y++) {
 #if FIXED_POINT
-			if (interx + gradient > ipart(interx) + 0x100) {
+			if (interx + gradient >= ipart(interx) + 0x100) {
 #else
-			if (interx + gradient > ipart(interx) + 1) {
+			if (interx + gradient >= ipart(interx) + 1) {
 #endif
 				ptr_right++;
 				ptr_left--;
@@ -3170,6 +3170,12 @@ drawRoundedSquareShadow(int x1, int y1, int r, int w, int h, int offset) {
 	for (int i = offset; i >= 0; i--) {
 		int f, ddF_x, ddF_y;
 		int x, y, px, py;
+
+		// No more room to draw: abort
+		if ((shadowRect.width() < 2*r) ||
+			(shadowRect.height() < 2*r)) {
+			break;
+		}
 
 		PixelType *ptr_tl = (PixelType *)Base::_activeSurface->getBasePtr(shadowRect.left  + r, shadowRect.top + r);
 		PixelType *ptr_tr = (PixelType *)Base::_activeSurface->getBasePtr(shadowRect.right - r, shadowRect.top + r);

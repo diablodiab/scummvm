@@ -172,6 +172,7 @@ public:
 	MacWindow *addWindow(bool scrollable, bool resizable, bool editable);
 	MacTextWindow *addTextWindow(const MacFont *font, int fgcolor, int bgcolor, int maxWidth, TextAlign textAlignment, MacMenu *menu, bool cursorHandler = true);
 	MacTextWindow *addTextWindow(const Font *font, int fgcolor, int bgcolor, int maxWidth, TextAlign textAlignment, MacMenu *menu, bool cursorHandler = true);
+	void resizeScreen(int w, int h);
 
 	/**
 	 * Adds a window that has already been initialized to the registry.
@@ -370,6 +371,8 @@ private:
 	int _activeWindow;
 
 	bool _fullRefresh;
+
+	bool _inEditableArea;
 
 	MacPatterns _patterns;
 	byte *_palette;
