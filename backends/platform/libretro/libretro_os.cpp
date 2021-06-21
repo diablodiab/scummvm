@@ -539,15 +539,15 @@ class OSystem_RETRO : public EventsBaseBackend, public PaletteManager {
          _overlay.fillRect(Common::Rect(_overlay.w, _overlay.h), 0);
       }
 
-      virtual void grabOverlay(void *buf, int pitch)
+      virtual void grabOverlay(Graphics::Surface &surface)
       {
          const unsigned char *src = (unsigned char*)_overlay.pixels;
-         unsigned char *dst = (byte *)buf;
+         unsigned char *dst = (byte *)surface.getPixels();;
          unsigned i = RES_H_OVERLAY;
 
          do{
             memcpy(dst, src, RES_W_OVERLAY << 1);
-            dst += pitch;
+            dst += surface.pitch;
             src += RES_W_OVERLAY << 1;
          }while(--i);
       }
