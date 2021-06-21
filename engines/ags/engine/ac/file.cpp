@@ -73,10 +73,10 @@ int File_Delete(const char *fnmm) {
 	if (!ResolveScriptPath(fnmm, false, rp))
 		return 0;
 
-	if (::remove(rp.FullPath.GetCStr()) == 0)
+	if (File::DeleteFile(rp.FullPath))
 		return 1;
 	if (_G(errnum) == AL_ENOENT && !rp.AltPath.IsEmpty() && rp.AltPath.Compare(rp.FullPath) != 0)
-		return ::remove(rp.AltPath.GetCStr()) == 0 ? 1 : 0;
+		return File::DeleteFile(rp.AltPath) ? 1 : 0;
 	return 0;
 }
 
@@ -339,9 +339,8 @@ bool ResolveScriptPath(const String &orig_sc_path, bool read_only, ResolvedPath 
 		// which wants to create a new prog.bwl in the game folder
 		parent_dir = FSLocation(SAVE_FOLDER_PREFIX);
 
-		if (read_only) {
-			alt_path = sc_path;
-		}
+		if (read_only)
+			alt_path = Path::ConcatPaths(_GP(ResPaths).DataDir, sc_path);
 	}
 
 	// Sometimes we have multiple consecutive slashes or backslashes.
