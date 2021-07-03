@@ -51,7 +51,8 @@ enum ScriptType {
 	kCastScript = 1,
 	kMovieScript = 2,
 	kEventScript = 3,
-	kMaxScriptType = 3	// Sync with score-loading.cpp:45, array scriptTypes[]
+	kTestScript = 4,
+	kMaxScriptType = 4	// Sync with cast.cpp:46, array scriptTypes[]
 };
 
 enum ScriptFlag {
@@ -329,6 +330,55 @@ enum FileVersion {
 	kFileVer1150 = 0x782,
 	kFileVer1200 = 0x783,
 	kFileVer1201 = 0x79F
+};
+
+enum DatumType {
+	ARRAY,
+	ARGC,
+	ARGCNORET,
+	CASTREF,
+	CHUNKREF,
+	FIELDREF,
+	FLOAT,
+	INT,
+	OBJECT,
+	PARRAY,
+	POINT,
+	STRING,
+	SYMBOL,
+	VARREF,
+	GLOBALREF,
+	LOCALREF,
+	PROPREF,
+	VOID,
+	RECT
+};
+
+enum VarType {
+	kVarGeneric,
+	kVarArgument,
+	kVarProperty,
+	kVarInstance,
+	kVarGlobal,
+	kVarLocal
+};
+
+struct CastMemberID {
+	int member;
+	int castLib;
+
+	CastMemberID() : member(0), castLib(0) {}
+	CastMemberID(int memberID, int castLibID)
+		: member(memberID), castLib(castLibID) {}
+	
+	bool operator==(const CastMemberID &c) {
+		return member == c.member && castLib == c.castLib;
+	}
+	bool operator!=(const CastMemberID &c) {
+		return member != c.member || castLib != c.castLib;
+	}
+
+	Common::String asString() const;
 };
 
 struct Datum;

@@ -280,6 +280,7 @@ ScummEngine::ScummEngine(OSystem *syst, const DetectorResult &dr)
 	_hePaletteSlot = 0;
 	_16BitPalette = NULL;
 	_macScreen = NULL;
+	_macIndy3TextBox = NULL;
 #ifndef DISABLE_TOWNS_DUAL_LAYER_MODE
 	_townsScreen = 0;
 	_scrollRequest = _scrollDeltaAdjust = 0;
@@ -678,6 +679,11 @@ ScummEngine::~ScummEngine() {
 	if (_macScreen) {
 		_macScreen->free();
 		delete _macScreen;
+	}
+
+	if (_macIndy3TextBox) {
+		_macIndy3TextBox->free();
+		delete _macIndy3TextBox;
 	}
 
 #ifndef DISABLE_TOWNS_DUAL_LAYER_MODE
@@ -1297,12 +1303,41 @@ Common::Error ScummEngine::init() {
 	if (_game.platform == Common::kPlatformMacintosh) {
 		Common::MacResManager resource;
 
-		if (_game.id == GID_LOOM) {
-			// \xAA is a trademark glyph in Mac OS Roman. We try
-			// that, but also the Windows version, the UTF-8
-			// version, and just plain without in case the file
-			// system can't handle exotic characters like that.
+		// \xAA is a trademark glyph in Mac OS Roman. We try that, but
+		// also the Windows version, the UTF-8 version, and just plain
+		// without in case the file system can't handle exotic
+		// characters like that.
 
+		if (_game.id == GID_INDY3) {
+			static const char *indyFileNames[] = {
+				"Indy\xAA",
+				"Indy\x99",
+				"Indy\xE2\x84\xA2",
+				"Indy"
+			};
+
+			for (int i = 0; i < ARRAYSIZE(indyFileNames); i++) {
+				if (resource.exists(indyFileNames[i])) {
+					macResourceFile = indyFileNames[i];
+
+					_textSurfaceMultiplier = 2;
+					_macScreen = new Graphics::Surface();
+					_macScreen->create(640, 400, Graphics::PixelFormat::createFormatCLUT8());
+
+					_macIndy3TextBox = new Graphics::Surface();
+					_macIndy3TextBox->create(448, 47, Graphics::PixelFormat::createFormatCLUT8());
+					break;
+				}
+			}
+
+			if (macResourceFile.empty()) {
+				GUI::MessageDialog dialog(_(
+"Could not find the 'Indy' Macintosh executable. High-resolution fonts will\n"
+"be disabled."), _("OK"));
+				dialog.runModal();
+			}
+
+		} else if (_game.id == GID_LOOM) {
 			static const char *loomFileNames[] = {
 				"Loom\xAA",
 				"Loom\x99",
@@ -1445,7 +1480,9 @@ void ScummEngine::setupScumm(const Common::String &macResourceFile) {
 	Common::String macFontFile;
 
 	if (_game.platform == Common::kPlatformMacintosh) {
-		if (_game.id == GID_LOOM) {
+		if (_game.id == GID_INDY3) {
+			macFontFile = macResourceFile;
+		} if (_game.id == GID_LOOM) {
 			macInstrumentFile = macResourceFile;
 			macFontFile = macResourceFile;
 			_macCursorFile = macResourceFile;
@@ -1666,6 +1703,10 @@ void ScummEngine::resetScumm() {
 
 	if (_macScreen) {
 		_macScreen->fillRect(Common::Rect(_macScreen->w, _macScreen->h), 0);
+	}
+
+	if (_macIndy3TextBox) {
+		_macIndy3TextBox->fillRect(Common::Rect(_macIndy3TextBox->w, _macIndy3TextBox->h), 0);
 	}
 
 	if (_game.version == 0) {
@@ -2095,7 +2136,7 @@ void ScummEngine::setupMusic(int midi, const Common::String &macInstrumentFile) 
 		// EGA/VGA. However, we support multi MIDI for that game and we cannot
 		// support this with the Player_AD code at the moment. The reason here
 		// is that multi MIDI is supported internally by our iMuse output.
-		_musicEngine = new Player_AD(this);
+		_musicEngine = new Player_AD(this, _mixer->mutex());
 #ifdef ENABLE_HE
 	} else if (_game.platform == Common::kPlatformDOS && _sound->_musicType == MDT_ADLIB && _game.heversion >= 60) {
 		_musicEngine = new Player_HE(this);

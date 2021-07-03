@@ -29,7 +29,6 @@ MODULE_OBJS := \
 	scene.o \
 	script.o \
 	sfuncs.o \
-	shorten.o \
 	sndres.o \
 	sound.o \
 	sprite.o \
@@ -40,12 +39,6 @@ MODULE_OBJS += \
 	introproc_ihnm.o \
 	resource_res.o \
 	sfuncs_ihnm.o
-endif
-
-ifdef ENABLE_SAGA2
-MODULE_OBJS += \
-	introproc_saga2.o \
-	resource_hrs.o
 endif
 
 # This module can be built as a plugin

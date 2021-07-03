@@ -487,6 +487,11 @@ public:
 		kFeatureJoystickDeadzone,
 
 		/**
+		* Scalers.
+		*/
+		kFeatureScalers,
+
+		/**
 		* Shaders.
 		*/
 		kFeatureShader,
@@ -861,6 +866,60 @@ public:
 	 */
 	virtual int getStretchMode() const { return 0; }
 
+	/**
+	 * Return the ID of the 'default' scaler.
+	 *
+	 * This mode is set by the client code when no user overrides
+	 * are present (i.e. if no custom scaler is selected using the
+	 * command line or a config file).
+	 *
+	 * @return ID of the 'default' scaler.
+	 */
+	virtual uint getDefaultScaler() const { return 0; }
+
+	/**
+	 * Return the 'default' scale factor.
+	 *
+	 * This mode is set by the client code when no user overrides
+	 * are present (i.e. if no custom shader mode is selected using
+	 * the command line or a config file).
+	 *
+	 * @return The 'default' scale factor.
+	 */
+	virtual uint getDefaultScaleFactor() const { return 1; }
+
+	/**
+	 * Switch to the specified scaler.
+	 *
+	 * If switching to the new mode fails, this method returns false.
+	 *
+	 * @param mode ID of the new scaler.
+	 * @param factor The scale factor to use
+	 *
+	 * @return True if the switch was successful, false otherwise.
+	 */
+	virtual bool setScaler(uint mode, int factor) { return false; }
+
+	/**
+	 * Switch to the scaler with the given name.
+	 *
+	 * If @p name is unknown, or if switching to the new mode fails,
+	 * this method returns false.
+	 *
+	 * @param name Name of the new scaler.
+	 * @param factor The scale factor to use
+	 *
+	 * @return True if the switch was successful, false otherwise.
+	 */
+	virtual bool setScaler(const char *name, int factor) { return false; }
+
+	/**
+	 * Determine which stretch mode is currently active.
+	 *
+	 * @return ID of the active stretch mode.
+	 */
+	virtual uint getScaler() const { return 0; }
+
 
 	/**
 	 * Set the size and color format of the virtual screen.
@@ -1171,7 +1230,8 @@ public:
 	virtual void clearOverlay() = 0;
 
 	/**
-	 * Copy the content of the overlay into a buffer provided by the caller.
+	 * Copy the content of the overlay into a surface provided by the
+	 * caller.
 	 *
 	 * This is only used to implement fake alpha blending.
 	 */

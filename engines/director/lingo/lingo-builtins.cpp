@@ -27,7 +27,6 @@
 
 #include "graphics/macgui/macwindowmanager.h"
 #include "graphics/macgui/macmenu.h"
-#include "graphics/macgui/mactext.h"
 
 #include "director/director.h"
 #include "director/cast.h"
@@ -45,8 +44,8 @@
 #include "director/lingo/lingo.h"
 #include "director/lingo/lingo-builtins.h"
 #include "director/lingo/lingo-code.h"
+#include "director/lingo/lingo-codegen.h"
 #include "director/lingo/lingo-object.h"
-#include "director/lingo/lingo-gr.h"
 
 namespace Director {
 
@@ -107,8 +106,6 @@ static struct BuiltinProto {
 	// String
 	{ "chars",			LB::b_chars,		3, 3, true, 200, FBLTIN },	// D2 f
 	{ "charToNum",		LB::b_charToNum,	1, 1, true, 200, FBLTIN },	// D2 f
-	{ "delete",			LB::b_delete,		1, 1, true, 300, CBLTIN },	//		D3 command
-	{ "hilite",			LB::b_hilite,		1, 1, true, 300, CBLTIN },	//		D3 c
 	{ "length",			LB::b_length,		1, 1, true, 200, FBLTIN },	// D2 f
 	{ "numToChar",		LB::b_numToChar,	1, 1, true, 200, FBLTIN },	// D2 f
 	{ "offset",			LB::b_offset,		2, 3, true, 200, FBLTIN },	// D2 f
@@ -159,7 +156,7 @@ static struct BuiltinProto {
 	{ "dontPassEvent",	LB::b_dontPassEvent,0, 0, false, 200, CBLTIN },	// D2 c
 	{ "delay",	 		LB::b_delay,		1, 1, false, 200, CBLTIN },	// D2 c
 	{ "do",		 		LB::b_do,			1, 1, false, 200, CBLTIN },	// D2 c
-	{ "go",		 		LB::b_go,			1, 2, false, 400, CBLTIN },	// 			D4 c
+	{ "go",		 		LB::b_go,			1, 2, false, 200, CBLTIN },	// D2 c
 	{ "halt",	 		LB::b_halt,			0, 0, false, 400, CBLTIN },	//			D4 c
 	{ "nothing",		LB::b_nothing,		0, 0, false, 200, CBLTIN },	// D2 c
 	{ "pass",			LB::b_pass,			0, 0, false, 400, CBLTIN },	//			D4 c
@@ -229,6 +226,7 @@ static struct BuiltinProto {
 	{ "unLoadCast",		LB::b_unLoadCast,	0, 2, false, 300, CBLTIN },	//		D3.1 c
 	{ "updateStage",	LB::b_updateStage,	0, 0, false, 200, CBLTIN },	// D2 c
 	{ "zoomBox",		LB::b_zoomBox,		-1,0, false, 200, CBLTIN },	// D2 c
+	{"immediateSprite", LB::b_immediateSprite, -1, 0, false, 200, CBLTIN}, // D2 c
 	// Point
 	{ "point",			LB::b_point,		2, 2, true,  400, FBLTIN },	//			D4 f
 	{ "inside",			LB::b_inside,		2, 2, true,  400, FBLTIN },	//			D4 f
@@ -254,7 +252,6 @@ static struct BuiltinProto {
 	{ "version",		LB::b_version,		0, 0, false, 300, KBLTIN },	//		D3 k
 	// References
 	{ "cast",			LB::b_cast,			1, 1, false, 400, FBLTIN },	//			D4 f
-	{ "field",			LB::b_field,		1, 1, false, 300, FBLTIN },	//		D3 f
 	{ "script",			LB::b_script,		1, 1, false, 400, FBLTIN },	//			D4 f
 	{ "window",			LB::b_window,		1, 1, false, 400, FBLTIN },	//			D4 f
 	// Chunk operations
@@ -262,10 +259,6 @@ static struct BuiltinProto {
 	{ "numberOfItems",	LB::b_numberofitems,1, 1, false, 300, FBLTIN },	//			D3 f
 	{ "numberOfLines",	LB::b_numberoflines,1, 1, false, 300, FBLTIN },	//			D3 f
 	{ "numberOfWords",	LB::b_numberofwords,1, 1, false, 300, FBLTIN },	//			D3 f
-	{ "lastCharOf",		LB::b_lastcharof,	1, 1, false, 400, FBLTIN },	//			D4 f
-	{ "lastItemOf",		LB::b_lastitemof,	1, 1, false, 400, FBLTIN },	//			D4 f
-	{ "lastLineOf",		LB::b_lastlineof,	1, 1, false, 400, FBLTIN },	//			D4 f
-	{ "lastWordOf",		LB::b_lastwordof,	1, 1, false, 400, FBLTIN },	//			D4 f
 
 	// ScummVM Asserts: Used for testing ScummVM's Lingo implementation
 	{ "scummvmAssert",	LB::b_scummvmassert,1, 2, true,  200, HBLTIN },
@@ -339,7 +332,7 @@ void Lingo::printSTUBWithArglist(const char *funcname, int nargs, const char *pr
 }
 
 void Lingo::convertVOIDtoString(int arg, int nargs) {
-	if (_stack[_stack.size() - nargs + arg].type == VOIDSYM) {
+	if (_stack[_stack.size() - nargs + arg].type == VOID) {
 		if (_stack[_stack.size() - nargs + arg].u.s != NULL)
 			g_lingo->_stack[_stack.size() - nargs + arg].type = STRING;
 		else
@@ -501,86 +494,6 @@ void LB::b_charToNum(int nargs) {
 	g_lingo->push(res);
 }
 
-void LB::b_delete(int nargs) {
-	Datum d = g_lingo->pop(false);
-
-	Datum field;
-	int start, end;
-	if (d.type == FIELDREF || d.type == VAR) {
-		field = d;
-		start = 0;
-		end = -1;
-	} else if (d.type == CHUNKREF) {
-		TYPECHECK2(d.u.cref->source, FIELDREF, VAR);
-		field = d.u.cref->source;
-		start = d.u.cref->start;
-		end = d.u.cref->end;
-	} else {
-		warning("b_delete: bad field type: %s", d.type2str());
-		return;
-	}
-
-	if (start < 0)
-		return;
-
-	Common::String text = g_lingo->varFetch(field).asString();
-	if (d.type == CHUNKREF) {
-		switch (d.u.cref->type) {
-		case kChunkChar:
-			break;
-		case kChunkWord:
-			while (end < (int)text.size() && Common::isSpace(text[end]))
-				end++;
-			break;
-		case kChunkItem:
-		case kChunkLine:
-			// last char of the first portion is the delimiter. skip it.
-			if (start > 0)
-				start--;
-			break;
-		}
-	}
-
-	Common::String res = text.substr(0, start) + text.substr(end);
-	Datum s;
-	s.u.s = new Common::String(res);
-	s.type = STRING;
-	g_lingo->varAssign(field, s);
-}
-
-void LB::b_hilite(int nargs) {
-	Datum d = g_lingo->pop(false);
-
-	int fieldId, start, end;
-	if (d.type == FIELDREF) {
-		fieldId = d.u.i;
-		start = 0;
-		end = -1;
-	} else if (d.type == CHUNKREF) {
-		TYPECHECK(d.u.cref->source, FIELDREF);
-		fieldId = d.u.cref->source.u.i;
-		start = d.u.cref->start;
-		end = d.u.cref->end;
-	} else {
-		warning("b_hilite: bad field type: %s", d.type2str());
-		return;
-	}
-
-	if (start < 0)
-		return;
-
-	Score *score = g_director->getCurrentMovie()->getScore();
-	uint16 spriteId = score->getSpriteIdByMemberId(fieldId);
-	if (spriteId == 0)
-		return;
-
-	Channel *channel = score->getChannelById(spriteId);
-	if (channel->_sprite->_cast && channel->_sprite->_cast->_type == kCastText && channel->_widget) {
-		((Graphics::MacText *)channel->_widget)->setSelection(start, true);
-		((Graphics::MacText *)channel->_widget)->setSelection(end, false);
-	}
-}
-
 void LB::b_length(int nargs) {
 	Datum d = g_lingo->pop();
 	TYPECHECK(d, STRING);
@@ -629,7 +542,7 @@ void LB::b_value(int nargs) {
 	}
 	Common::String code = "scummvm_returnNumber " + expr;
 	// Compile the code to an anonymous function and call it
-	ScriptContext *sc = g_lingo->compileAnonymous(code.c_str());
+	ScriptContext *sc = g_lingo->_compiler->compileAnonymous(code.c_str());
 	Symbol sym = sc->_eventHandlers[kEventGeneric];
 	LC::call(sym, 0, true);
 }
@@ -1511,8 +1424,8 @@ void LB::b_startTimer(int nargs) {
 ///////////////////
 void LB::b_factory(int nargs) {
 	Datum factoryName = g_lingo->pop();
-	factoryName.type = VAR;
-	Datum o = g_lingo->varFetch(factoryName, true);
+	factoryName.type = GLOBALREF;
+	Datum o = g_lingo->varFetch(factoryName);
 	if (o.type == OBJECT && (o.u.obj->getObjType() & (kFactoryObj | kXObj))
 			&& o.u.obj->getName().equalsIgnoreCase(*factoryName.u.s) && o.u.obj->getInheritanceLevel() == 1) {
 		g_lingo->push(o);
@@ -1586,6 +1499,7 @@ void LB::b_alert(int nargs) {
 	warning("b_alert(%s)", alert.c_str());
 
 	if (!debugChannelSet(-1, kDebugFewFramesOnly)) {
+		g_director->_wm->clearHandlingWidgets();
 		GUI::MessageDialog dialog(alert.c_str(), "OK");
 		dialog.runModal();
 	}
@@ -1604,9 +1518,9 @@ void LB::b_cursor(int nargs) {
 		Datum sprite = d.u.farr->operator[](0);
 		Datum mask = d.u.farr->operator[](1);
 
-		g_lingo->func_cursor(sprite.asCastId(), mask.asCastId());
+		g_lingo->func_cursor(sprite.asMemberID(), mask.asMemberID());
 	} else {
-		g_lingo->func_cursor(d.asInt(), -1);
+		g_lingo->func_cursor(d.asInt());
 	}
 }
 
@@ -1697,6 +1611,7 @@ void LB::b_editableText(int nargs) {
 		Datum sprite = g_lingo->pop();
 		if ((uint)sprite.asInt() < sc->_channels.size()) {
 			sc->getSpriteById(sprite.asInt())->_editable = state.asInt();
+			sc->getOriginalSpriteById(sprite.asInt())->_editable = state.asInt();
 		} else {
 			warning("b_editableText: sprite index out of bounds");
 		}
@@ -1708,6 +1623,7 @@ void LB::b_editableText(int nargs) {
 			return;
 		}
 		sc->getSpriteById(g_lingo->_currentChannelId)->_editable = true;
+		sc->getOriginalSpriteById(g_lingo->_currentChannelId)->_editable = true;
 	} else {
 		warning("b_editableText: unexpectedly received %d arguments", nargs);
 		g_lingo->dropStack(nargs);
@@ -1742,25 +1658,24 @@ void LB::b_installMenu(int nargs) {
 	// installMenu castNum
 	Datum d = g_lingo->pop();
 
-	int castId = d.asCastId();
-
-	if (castId == 0) {
+	CastMemberID memberID = d.asMemberID();
+	if (memberID.member == 0) {
 		g_director->_wm->removeMenu();
 		return;
 	}
 
-	CastMember *member = g_director->getCurrentMovie()->getCastMember(castId);
+	CastMember *member = g_director->getCurrentMovie()->getCastMember(memberID);
 	if (!member) {
-		g_lingo->lingoError("installMenu: Unknown cast number #%d", castId);
+		g_lingo->lingoError("installMenu: Unknown %s", memberID.asString().c_str());
 		return;
 	}
 	if (member->_type != kCastText) {
-		g_lingo->lingoError("installMenu: Cast member %d is not a field", castId);
+		g_lingo->lingoError("installMenu: %s is not a field", memberID.asString().c_str());
 		return;
 	}
 	TextCastMember *field = static_cast<TextCastMember *>(member);
 
-	Common::String menuStxt = g_lingo->codePreprocessor(field->getText().c_str(), field->getCast()->_lingoArchive, kNoneScript, castId, true);
+	Common::String menuStxt = g_lingo->_compiler->codePreprocessor(field->getText().c_str(), field->getCast()->_lingoArchive, kNoneScript, memberID, true);
 	Common::String line;
 	int linenum = -1; // We increment it before processing
 
@@ -1876,7 +1791,8 @@ void LB::b_move(int nargs) {
 }
 
 void LB::b_moveableSprite(int nargs) {
-	Frame *frame = g_director->getCurrentMovie()->getScore()->_frames[g_director->getCurrentMovie()->getScore()->getCurrentFrame()];
+	Score *sc = g_director->getCurrentMovie()->getScore();
+	Frame *frame = sc->_frames[g_director->getCurrentMovie()->getScore()->getCurrentFrame()];
 
 	if (g_lingo->_currentChannelId == -1) {
 		warning("b_moveableSprite: channel Id is missing");
@@ -1884,6 +1800,9 @@ void LB::b_moveableSprite(int nargs) {
 		return;
 	}
 
+	// since we are using value copying, in order to make it taking effect immediately. we modify the sprites in channel
+	if (sc->_channels[g_lingo->_currentChannelId])
+		sc->_channels[g_lingo->_currentChannelId]->_sprite->_moveable = true;
 	frame->_sprites[g_lingo->_currentChannelId]->_moveable = true;
 }
 
@@ -1923,14 +1842,10 @@ void LB::b_puppetPalette(int nargs) {
 				palette = kClutNTSC;
 			} else if (palStr.equalsIgnoreCase("Metallic")) {
 				palette = kClutMetallic;
-			} else {
-				CastMember *member = g_director->getCurrentMovie()->getCastMemberByName(palStr);
-
-				if (member && member->_type == kCastPalette)
-					palette = ((PaletteCastMember *)member)->getPaletteId();
 			}
-		} else {
-			CastMember *member = g_director->getCurrentMovie()->getCastMember(d.asInt());
+		}
+		if (!palette) {
+			CastMember *member = g_director->getCurrentMovie()->getCastMember(d.asMemberID());
 
 			if (member && member->_type == kCastPalette)
 				palette = ((PaletteCastMember *)member)->getPaletteId();
@@ -1976,8 +1891,48 @@ void LB::b_puppetSound(int nargs) {
 		return;
 	}
 
-	int castId = castMember.asCastId();
+	CastMemberID castId = castMember.asMemberID();
 	sound->playCastMember(castId, channel);
+}
+
+void LB::b_immediateSprite(int nargs) {
+	Score *sc = g_director->getCurrentMovie()->getScore();
+	if (!sc) {
+		warning("b_immediateSprite: no score");
+		g_lingo->dropStack(nargs);
+		return;
+	}
+
+	if (nargs == 2) {
+		Datum state = g_lingo->pop();
+		Datum sprite = g_lingo->pop();
+
+		Sprite *sp = sc->getSpriteById(sprite.asInt());
+		if ((uint)sprite.asInt() < sc->_channels.size()) {
+			if (sc->getNextFrame() && !sp->_immediate) {
+				// same as puppetSprite
+				Channel *channel = sc->getChannelById(sprite.asInt());
+
+				channel->replaceSprite(sc->_frames[sc->getNextFrame()]->_sprites[sprite.asInt()]);
+				channel->_dirty = true;
+			}
+
+			sc->getSpriteById(sprite.asInt())->_immediate = (bool)state.asInt();
+		} else {
+			warning("b_immediateSprite: sprite index out of bounds");
+		}
+	} else if (nargs == 0 && g_director->getVersion() < 400) {
+		g_lingo->dropStack(nargs);
+
+		if (g_lingo->_currentChannelId == -1) {
+			warning("b_immediateSprite: channel Id is missing");
+			return;
+		}
+		sc->getSpriteById(g_lingo->_currentChannelId)->_immediate = true;
+	} else {
+		warning("b_immediateSprite: unexpectedly received %d arguments", nargs);
+		g_lingo->dropStack(nargs);
+	}
 }
 
 void LB::b_puppetSprite(int nargs) {
@@ -2454,33 +2409,26 @@ void LB::b_version(int nargs) {
 ///////////////////
 void LB::b_cast(int nargs) {
 	Datum d = g_lingo->pop();
-	Datum res = d.asCastId();
+	Datum res = d.asMemberID();
 	res.type = CASTREF;
-	g_lingo->push(res);
-}
-
-void LB::b_field(int nargs) {
-	Datum d = g_lingo->pop();
-	Datum res = d.asCastId();
-	res.type = FIELDREF;
 	g_lingo->push(res);
 }
 
 void LB::b_script(int nargs) {
 	Datum d = g_lingo->pop();
-	int castId = d.asCastId();
-	CastMember *cast = g_director->getCurrentMovie()->getCastMember(castId);
+	CastMemberID memberID = d.asMemberID();
+	CastMember *cast = g_director->getCurrentMovie()->getCastMember(memberID);
 
 	if (cast) {
 		ScriptContext *script = nullptr;
 
 		if (cast->_type == kCastLingoScript) {
 			// script cast can be either a movie script or score script
-			script = g_director->getCurrentMovie()->getScriptContext(kMovieScript, castId);
+			script = g_director->getCurrentMovie()->getScriptContext(kMovieScript, memberID);
 			if (!script)
-				script = g_director->getCurrentMovie()->getScriptContext(kScoreScript, castId);
+				script = g_director->getCurrentMovie()->getScriptContext(kScoreScript, memberID);
 		} else {
-			g_director->getCurrentMovie()->getScriptContext(kCastScript, castId);
+			g_director->getCurrentMovie()->getScriptContext(kCastScript, memberID);
 		}
 
 		if (script) {
@@ -2541,30 +2489,6 @@ void LB::b_numberofwords(int nargs) {
 	Datum d = g_lingo->pop();
 	Datum chunkRef = LC::lastChunk(kChunkWord, d);
 	g_lingo->push(chunkRef.u.cref->startChunk);
-}
-
-void LB::b_lastcharof(int nargs) {
-	Datum d = g_lingo->pop();
-	Datum chunkRef = LC::lastChunk(kChunkChar, d);
-	g_lingo->push(chunkRef.eval());
-}
-
-void LB::b_lastitemof(int nargs) {
-	Datum d = g_lingo->pop();
-	Datum chunkRef = LC::lastChunk(kChunkItem, d);
-	g_lingo->push(chunkRef.eval());
-}
-
-void LB::b_lastlineof(int nargs) {
-	Datum d = g_lingo->pop();
-	Datum chunkRef = LC::lastChunk(kChunkLine, d);
-	g_lingo->push(chunkRef.eval());
-}
-
-void LB::b_lastwordof(int nargs) {
-	Datum d = g_lingo->pop();
-	Datum chunkRef = LC::lastChunk(kChunkWord, d);
-	g_lingo->push(chunkRef.eval());
 }
 
 void LB::b_scummvmassert(int nargs) {

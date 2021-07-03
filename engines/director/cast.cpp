@@ -47,7 +47,8 @@ const char *scriptTypes[] = {
 	"ScoreScript",
 	"CastScript",
 	"MovieScript",
-	"EventScript"
+	"EventScript",
+	"TestScript"
 };
 
 const char *scriptType2str(ScriptType scr) {
@@ -60,16 +61,16 @@ const char *scriptType2str(ScriptType scr) {
 	return scriptTypes[scr];
 }
 
-Cast::Cast(Movie *movie, bool isShared) {
+Cast::Cast(Movie *movie, uint16 castLibID, bool isShared) {
 	_movie = movie;
 	_vm = _movie->getVM();
 	_lingo = _vm->getLingo();
 
+	_castLibID = castLibID;
 	_isShared = isShared;
 
 	_lingoArchive = new LingoArchive(this);
 
-	_movieScriptCount = 0;
 	_castArrayStart = _castArrayEnd = 0;
 
 	_castIDoffset = 0;
@@ -167,7 +168,7 @@ void Cast::setCastMemberModified(int castId) {
 		return;
 	}
 
-	cast->_modified = 1;
+	cast->setModified(true);
 }
 
 Common::String Cast::getString(Common::String str) {
@@ -327,8 +328,6 @@ void Cast::loadCast() {
 
 	// Font Mapping
 	if (_castArchive->hasResource(MKTAG('V', 'W', 'F', 'M'), -1)) {
-		_vm->_wm->_fontMan->clearFontMapping();
-
 		loadFontMap(*(r = _castArchive->getFirstResource(MKTAG('V', 'W', 'F', 'M'))));
 		delete r;
 	}
@@ -431,7 +430,7 @@ void Cast::loadCast() {
 			if (debugChannelSet(-1, kDebugFewFramesOnly))
 				warning("Compiling STXT %d", *iterator);
 
-			loadScriptText(*(r = _castArchive->getResource(MKTAG('S','T','X','T'), *iterator)));
+			loadScriptText(*(r = _castArchive->getResource(MKTAG('S','T','X','T'), *iterator)), *iterator - _castIDoffset);
 			delete r;
 		}
 
@@ -1022,7 +1021,7 @@ void Cast::loadLingoContext(Common::SeekableReadStreamEndian &stream) {
 	}
 }
 
-void Cast::loadScriptText(Common::SeekableReadStreamEndian &stream) {
+void Cast::loadScriptText(Common::SeekableReadStreamEndian &stream, uint16 id) {
 	/*uint32 unk1 = */ stream.readUint32();
 	uint32 strLen = stream.readUint32();
 	/*uin32 dataLen = */ stream.readUint32();
@@ -1044,14 +1043,12 @@ void Cast::loadScriptText(Common::SeekableReadStreamEndian &stream) {
 		return;
 
 	if (ConfMan.getBool("dump_scripts"))
-		dumpScript(script.c_str(), kMovieScript, _movieScriptCount);
+		dumpScript(script.c_str(), kMovieScript, id);
 
 	if (script.contains("\nmenu:") || script.hasPrefix("menu:"))
 		return;
 
-	_lingoArchive->addCode(script.c_str(), kMovieScript, _movieScriptCount);
-
-	_movieScriptCount++;
+	_lingoArchive->addCode(script.c_str(), kMovieScript, id);
 }
 
 void Cast::dumpScript(const char *script, ScriptType type, uint16 id) {
@@ -1075,10 +1072,10 @@ void Cast::loadCastInfo(Common::SeekableReadStreamEndian &stream, uint16 id) {
 
 	InfoEntries castInfo = Movie::loadInfoEntries(stream, _version);
 
-	debugCN(4, kDebugLoading, "Cast::loadCastInfo(): str(%d): '", castInfo.strings.size());
+	debugCN(4, kDebugLoading, "Cast::loadCastInfo(): castId: %s str(%d): '", numToCastNum(id), castInfo.strings.size());
 
 	for (uint i = 0; i < castInfo.strings.size(); i++) {
-		debugCN(4, kDebugLoading, "%s'", castInfo.strings[i].readString().c_str());
+		debugCN(4, kDebugLoading, "%s'", Common::toPrintable(castInfo.strings[i].readString()).c_str());
 		if (i != castInfo.strings.size() - 1)
 			debugCN(4, kDebugLoading, ", '");
 	}
@@ -1194,8 +1191,8 @@ void Cast::loadFontMap(Common::SeekableReadStreamEndian &stream) {
 			font += stream.readByte();
 		}
 
-		_fontMap[id] = font;
-		_vm->_wm->_fontMan->registerFontMapping(id, font);
+		// Map cast font ID to window manager font ID
+		_fontMap[id] = _vm->_wm->_fontMan->registerFontName(font);
 
 		debugC(3, kDebugLoading, "Fontmap. ID %d Font %s", id, font.c_str());
 		currentRawPosition = stream.pos();

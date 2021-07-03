@@ -72,6 +72,7 @@ public:
 	virtual bool isEditable() { return false; }
 	virtual void setEditable(bool editable) {}
 	virtual bool isModified() { return _modified; }
+	virtual void setModified(bool modified) { _modified = modified; }
 	virtual Graphics::MacWidget *createWidget(Common::Rect &bbox, Channel *channel) { return nullptr; }
 	virtual void updateWidget(Graphics::MacWidget *widget, Channel *channel) {}
 	virtual void updateFromWidget(Graphics::MacWidget *widget) {}
@@ -88,12 +89,14 @@ public:
 	Datum getField(int field) override;
 	bool setField(int field, const Datum &value) override;
 
+	// release the control to widget, this happens when we are changing sprites. Because we are having the new cast member and the old one shall leave
+	void releaseWidget() { _widget = nullptr; }
+
 	CastType _type;
 	Common::Rect _initialRect;
 	Common::Rect _boundingRect;
 	Common::Array<Resource> _children;
 
-	bool _modified;
 	bool _hilite;
 	int _purgePriority;
 	uint32 _size;
@@ -102,6 +105,9 @@ public:
 protected:
 	Cast *_cast;
 	uint16 _castId;
+	// a link to the widget we created, we may use it later
+	Graphics::MacWidget *_widget;
+	bool _modified;
 };
 
 class BitmapCastMember : public CastMember {
@@ -228,6 +234,10 @@ public:
 	Datum getField(int field) override;
 	bool setField(int field, const Datum &value) override;
 
+	bool hasChunkField(int field);
+	Datum getChunkField(int field, int start, int end);
+	bool setChunkField(int field, int start, int end, const Datum &value);
+
 	SizeType _borderSize;
 	SizeType _gutterSize;
 	SizeType _boxShadow;
@@ -255,11 +265,8 @@ public:
 	Common::String getText();
 
 private:
-	Common::Rect getTextOnlyDimensions(const Common::Rect &targetDims);
-
 	uint32 _bgcolor;
 	uint32 _fgcolor;
-	Graphics::MacWidget *_widget;
 };
 
 class ScriptCastMember : public CastMember {

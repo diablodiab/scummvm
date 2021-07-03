@@ -44,8 +44,6 @@ void b_tan(int nargs);
 
 void b_chars(int nargs);
 void b_charToNum(int nargs);
-void b_delete(int nargs);
-void b_hilite(int nargs);
 void b_length(int nargs);
 void b_numToChar(int nargs);
 void b_offset(int nargs);
@@ -124,6 +122,7 @@ void b_unLoad(int nargs);
 void b_unLoadCast(int nargs);
 void b_updateStage(int nargs);
 void b_zoomBox(int nargs);
+void b_immediateSprite(int nargs);
 
 void b_abort(int nargs);
 void b_continue(int nargs);
@@ -187,17 +186,12 @@ void b_true(int nargs);
 void b_version(int nargs);
 
 void b_cast(int nargs);
-void b_field(int nargs);
 void b_script(int nargs);
 
 void b_numberofchars(int nargs);
 void b_numberofitems(int nargs);
 void b_numberoflines(int nargs);
 void b_numberofwords(int nargs);
-void b_lastcharof(int nargs);
-void b_lastitemof(int nargs);
-void b_lastlineof(int nargs);
-void b_lastwordof(int nargs);
 
 void b_scummvmassert(int nargs);
 void b_scummvmassertequal(int nargs);

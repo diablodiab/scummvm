@@ -75,6 +75,16 @@ public:
 
 	virtual const Common::Array<uint> &getFactors() const { return _factors; }
 
+	virtual bool hasFactor(uint factor) {
+		const Common::Array<uint> &factors = getFactors();
+		for (Common::Array<uint>::const_iterator it = factors.begin(); it != factors.end(); it++) {
+			if ((*it) == factor)
+				return true;
+		}
+
+		return false;
+	}
+
 	/**
 	 * Set the scaling factor.
 	 * Intended to be used with GUI to set a known valid factor.
@@ -215,6 +225,16 @@ public:
 	 * Search the scaler plugins for a special plugin based on its name.
 	 */
 	Plugin *findScalerPlugin(const char *name) const;
+
+	/**
+	 * Search the scaler plugins for a special plugin based on its name.
+	 */
+	uint findScalerPluginIndex(const char *name) const;
+
+	/**
+	 * Update scaler settings from older versions of ScummVM.
+	 */
+	void updateOldSettings();
 };
 
 /** Convenience shortcut for accessing singleton */

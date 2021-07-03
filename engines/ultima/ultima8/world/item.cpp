@@ -1419,9 +1419,11 @@ uint16 Item::fireDistance(const Item *other, Direction dir, int16 xoff, int16 yo
 			Std::list<CurrentMap::SweepItem> collisions;
 			Std::list<CurrentMap::SweepItem>::iterator it;
 			cm->sweepTest(start, end, dims, ShapeInfo::SI_SOLID,
-						   _objId, false, &collisions);
+						   _objId, true, &collisions);
 			for (it = collisions.begin(); it != collisions.end(); it++) {
 				if (it->_item == getObjId())
+					continue;
+				if (it->_touching)
 					continue;
 				if (it->_item != other->getObjId())
 					break;
@@ -1432,7 +1434,10 @@ uint16 Item::fireDistance(const Item *other, Direction dir, int16 xoff, int16 yo
 			}
 		}
 	}
-	return dist / 32;
+
+	if (!dist)
+		return 0;
+	return dist < 32 ? 1 : dist / 32;
 }
 
 int32 Item::getTargetZRelativeToAttackerZ(int32 otherz) const {
@@ -2093,6 +2098,12 @@ void Item::grab() {
 
 
 void Item::hurl(int xs, int ys, int zs, int grav) {
+	if (_parent) {
+		// Should be removed from the container first??
+		// This will break otherwise as location is 0,0,0
+		warning("Ignoring hurl for contained item %d.", _objId);
+		return;
+	}
 	// crusader sleeps existing gravity at first
 	bool do_sleep = GAME_IS_CRUSADER && (_gravityPid == 0);
 	GravityProcess *p = ensureGravityProcess();
@@ -2714,6 +2725,11 @@ uint32 Item::I_setShape(const uint8 *args, unsigned int /*argsize*/) {
 	ARG_ITEM_FROM_PTR(item);
 	ARG_UINT16(shape);
 	if (!item) return 0;
+
+#if 0
+	debug(6, "Item::setShape: objid %04X shape (%d -> %d)",
+		  item->getObjId(), item->getShape(), shape);
+#endif
 
 	item->setShape(shape);
 	return 0;
@@ -3348,8 +3364,8 @@ uint32 Item::I_create(const uint8 *args, unsigned int /*argsize*/) {
 	uint16 objID = newitem->getObjId();
 
 #if 0
-	pout << "Item::create: created item " << objID << " (" << shape
-	     << "," << frame << ")" << Std::endl;
+	debug(6, "Item::create: objid %04X shape (%d, %d)",
+		  objID, shape, frame);
 #endif
 
 	newitem->moveToEtherealVoid();

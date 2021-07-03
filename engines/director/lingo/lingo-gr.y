@@ -60,9 +60,12 @@
 
 #include "director/director.h"
 #include "director/lingo/lingo.h"
+#include "director/lingo/lingo-ast.h"
 #include "director/lingo/lingo-code.h"
+#include "director/lingo/lingo-codegen.h"
 #include "director/lingo/lingo-gr.h"
 #include "director/lingo/lingo-object.h"
+#include "director/lingo/lingo-the.h"
 
 extern int yylex();
 extern int yyparse();
@@ -70,107 +73,36 @@ extern int yyparse();
 using namespace Director;
 
 static void yyerror(const char *s) {
-	g_lingo->_hadError = true;
+	LingoCompiler *compiler = g_lingo->_compiler;
+	compiler->_hadError = true;
 	warning("######################  LINGO: %s at line %d col %d in %s id: %d",
-		s, g_lingo->_linenumber, g_lingo->_colnumber, scriptType2str(g_lingo->_assemblyContext->_scriptType),
-		g_lingo->_assemblyContext->_id);
-	if (g_lingo->_lines[2] != g_lingo->_lines[1])
-		warning("# %3d: %s", g_lingo->_linenumber - 2, Common::String(g_lingo->_lines[2], g_lingo->_lines[1] - 1).c_str());
+		s, compiler->_linenumber, compiler->_colnumber, scriptType2str(compiler->_assemblyContext->_scriptType),
+		compiler->_assemblyContext->_id);
+	if (compiler->_lines[2] != compiler->_lines[1])
+		warning("# %3d: %s", compiler->_linenumber - 2, Common::String(compiler->_lines[2], compiler->_lines[1] - 1).c_str());
 
-	if (g_lingo->_lines[1] != g_lingo->_lines[0])
-		warning("# %3d: %s", g_lingo->_linenumber - 1, Common::String(g_lingo->_lines[1], g_lingo->_lines[0] - 1).c_str());
+	if (compiler->_lines[1] != compiler->_lines[0])
+		warning("# %3d: %s", compiler->_linenumber - 1, Common::String(compiler->_lines[1], compiler->_lines[0] - 1).c_str());
 
-	const char *ptr = g_lingo->_lines[0];
+	const char *ptr = compiler->_lines[0];
 
 	while (*ptr && *ptr != '\n')
 		ptr++;
 
-	warning("# %3d: %s", g_lingo->_linenumber, Common::String(g_lingo->_lines[0], ptr).c_str());
+	warning("# %3d: %s", compiler->_linenumber, Common::String(compiler->_lines[0], ptr).c_str());
 
 	Common::String arrow;
-	for (uint i = 0; i < g_lingo->_colnumber; i++)
+	for (uint i = 0; i < compiler->_colnumber; i++)
 		arrow += ' ';
 
 	warning("#      %s^ about here", arrow.c_str());
 }
 
-static void checkEnd(Common::String *token, const char *expect, bool required) {
+static void checkEnd(Common::String *token, Common::String *expect, bool required) {
 	if (required) {
-		if (token->compareToIgnoreCase(expect)) {
-			Common::String err = Common::String::format("end mismatch. Expected %s but got %s", expect, token->c_str());
+		if (token->compareToIgnoreCase(*expect)) {
+			Common::String err = Common::String::format("end mismatch. Expected %s but got %s", expect->c_str(), token->c_str());
 			yyerror(err.c_str());
-		}
-	}
-}
-
-static void inArgs() { g_lingo->_indefStore = g_lingo->_indef; g_lingo->_indef = kStateInArgs; }
-static void inDef()  { g_lingo->_indefStore = g_lingo->_indef; g_lingo->_indef = kStateInDef; }
-static void inNone() { g_lingo->_indefStore = g_lingo->_indef; g_lingo->_indef = kStateNone; }
-static void inLast() { g_lingo->_indef = g_lingo->_indefStore; }
-
-static void startDef() {
-	inArgs();
-	g_lingo->_methodVarsStash = g_lingo->_methodVars;
-	g_lingo->_methodVars = new VarTypeHash;
-
-	for (VarTypeHash::iterator i = g_lingo->_methodVarsStash->begin(); i != g_lingo->_methodVarsStash->end(); ++i) {
-		if (i->_value == kVarGlobal || i->_value == kVarProperty)
-			(*g_lingo->_methodVars)[i->_key] = i->_value;
-	}
-	if (g_lingo->_inFactory) {
-		for (DatumHash::iterator i = g_lingo->_assemblyContext->_properties.begin(); i != g_lingo->_assemblyContext->_properties.end(); ++i) {
-			(*g_lingo->_methodVars)[i->_key] = kVarInstance;
-		}
-	}
-}
-
-static void endDef() {
-	g_lingo->clearArgStack();
-	inNone();
-
-	delete g_lingo->_methodVars;
-	g_lingo->_methodVars = g_lingo->_methodVarsStash;
-	g_lingo->_methodVarsStash = nullptr;
-}
-
-static void startRepeat() {
-	g_lingo->_repeatStack.push_back(new RepeatBlock);
-}
-
-static void endRepeat(uint exitPos, uint nextPos) {
-	RepeatBlock *block = g_lingo->_repeatStack.back();
-	g_lingo->_repeatStack.pop_back();
-	for (uint i = 0; i < block->exits.size(); i++) {
-		uint32 pos = block->exits[i];
-		inst exit = 0;
-		WRITE_UINT32(&exit, exitPos - (pos - 1));
-		(*g_lingo->_currentAssembly)[pos] = exit;
-	}
-	for (uint i = 0; i < block->nexts.size(); i++) {
-		uint32 pos = block->nexts[i];
-		inst next = 0;
-		WRITE_UINT32(&next, nextPos - (pos - 1));
-		(*g_lingo->_currentAssembly)[pos] = next;
-	}
-	delete block;
-}
-
-static VarType globalCheck() {
-	// If in a definition, assume variables are local unless
-	// they were declared global with `global varname`
-	if (g_lingo->_indef == kStateInDef) {
-		return kVarLocal;
-	}
-	return kVarGlobal;
-}
-
-static void mVar(Common::String *s, VarType type) {
-	if (!g_lingo->_methodVars->contains(*s)) {
-		(*g_lingo->_methodVars)[*s] = type;
-		if (type == kVarProperty || type == kVarInstance) {
-			g_lingo->_assemblyContext->_properties[*s] = Datum();
-		} else if (type == kVarGlobal) {
-			g_lingo->varCreate(*s, true);
 		}
 	}
 }
@@ -181,618 +113,110 @@ static void mVar(Common::String *s, VarType type) {
 	Common::String *s;
 	int i;
 	double f;
-	int e[2];	// Entity + field
-	int code;
-	int narg;	/* number of arguments */
-	Director::DatumArray *arr;
+	Director::ChunkType chunktype;
 
-	struct {
-		Common::String *obj;
-		Common::String *prop;
-	} objectprop;
+	Director::IDList *idlist;
+	Director::Node *node;
+	Director::NodeList *nodelist;
 }
 
-%token UNARY
+%token tUNARY
 
-// Datum types
-%token VOID VAR POINT RECT ARRAY OBJECT LEXERROR PARRAY
-%token CASTREF FIELDREF CHUNKREF
-%token<i> INT ARGC ARGCNORET
-
-%token<e> THEENTITY THEENTITYWITHID THEMENUITEMENTITY THEMENUITEMSENTITY
-%token<f> FLOAT
-%token<s> THEFUNC THEFUNCINOF
-%token<s> VARID STRING SYMBOL
-%token<s> ENDCLAUSE tPLAYACCEL tMETHOD
-%token<objectprop> THEOBJECTPROP
+%token tLEXERROR
+%token<i> tINT
+%token<f> tFLOAT
+%token<s> tVARID tSTRING tSYMBOL
+%token<s> tENDCLAUSE
 %token tCAST tFIELD tSCRIPT tWINDOW
-%token tDOWN tELSE tELSIF tEXIT tGLOBAL tGO tGOLOOP tIF tIN tINTO tMACRO
+%token tDELETE tDOWN tELSE tELSIF tEXIT tFRAME tGLOBAL tGO tHILITE tIF tIN tINTO tMACRO
 %token tMOVIE tNEXT tOF tPREVIOUS tPUT tREPEAT tSET tTHEN tTO tWHEN
 %token tWITH tWHILE tFACTORY tOPEN tPLAY tINSTANCE
 %token tGE tLE tEQ tNEQ tAND tOR tNOT tMOD
-%token tAFTER tBEFORE tCONCAT tCONTAINS tSTARTS tCHAR tITEM tLINE tWORD
-%token tSPRITE tINTERSECTS tWITHIN tTELL tPROPERTY
-%token tON tENDIF tENDREPEAT tENDTELL
+%token tAFTER tBEFORE tCONCAT tCONTAINS tSTARTS
+%token tCHAR tCHARS tITEM tITEMS tLINE tLINES tWORD tWORDS
+%token tABBREVIATED tABBREV tABBR tLONG tSHORT
+%token tCASTMEMBERS tDATE tLAST tMENU tMENUITEM tMENUITEMS tNUMBER tTHE tTIME
+%token tSOUND tSPRITE tINTERSECTS tWITHIN tTELL tPROPERTY
+%token tON tMETHOD tENDIF tENDREPEAT tENDTELL
 %token tASSERTERROR
 
-%type<code> asgn lbl expr if chunkexpr simpleexprnoparens
-%type<code> tellstart reference simpleexpr list valuelist
-%type<code> jump jumpifz varassign
-%type<narg> argdef arglist nonemptyarglist linearlist proplist
-%type<s> ID on
+// TOP-LEVEL STUFF
+%type<node> script scriptpart
+%type<nodelist> scriptpartlist
+
+// MACRO
+%type<node> macro
+
+// FACTORY
+%type<node> factory method
+%type<nodelist> methodlist nonemptymethodlist
+%type<node> methodlistline
+
+// HANDLER
+%type<node> handler
+
+// GENERIC VAR STUFF
+%type<s> CMDID ID
+%type<idlist> idlist nonemptyidlist
+
+// STATEMENT
+%type<node> stmt stmt_insideif stmtoneliner
+%type<node> proc asgn definevars
+%type<node> ifstmt ifelsestmt loop tell when
+%type<nodelist> cmdargs frameargs stmtlist nonemptystmtlist stmtlist_insideif nonemptystmtlist_insideif
+%type<node> stmtlistline stmtlistline_insideif
+
+// EXPRESSION
+%type<node> simpleexpr_nounarymath simpleexpr
+%type<node> unarymath
+%type<node> expr expr_nounarymath expr_noeq sprite
+%type<node> var varorchunk varorthe
+%type<chunktype> chunktype
+%type<node> the theobj menu thedatetime thenumberof
+%type<node> writablethe writabletheobj
+%type<node> list proppair
+%type<node> chunk object
+%type<nodelist> refargs proplist exprlist nonemptyexprlist
 
 %left tAND tOR
 %left '<' tLE '>' tGE tEQ tNEQ tCONTAINS tSTARTS
 %left '&' tCONCAT
 %left '+' '-'
 %left '*' '/' '%' tMOD
-%right UNARY tCAST tFIELD tSCRIPT tWINDOW
-%nonassoc VARID
+%right tUNARY
+// %right tCAST tFIELD tSCRIPT tWINDOW
+// %nonassoc tVARID
 
 %destructor { delete $$; } <s>
 
 %%
 
-program: programline
-	| program '\n' programline
+// TOP-LEVEL STUFF
 
-programline: /* empty */
-	| defn
+script: scriptpartlist					{ g_lingo->_compiler->_assemblyAST = new ScriptNode($scriptpartlist); } ;
+
+scriptpartlist: scriptpart[item]				{
+		NodeList *list = new NodeList;
+		if ($item) {
+			list->push_back($item);
+		}
+		$$ = list; }
+	| scriptpartlist[prev] scriptpart[item]		{
+		if ($item) {
+			$prev->push_back($item);
+		}
+		$$ = $prev; }
+	;
+
+scriptpart:	'\n'						{ $$ = nullptr; }
+	| macro
+	| factory
+	| handler
 	| stmt
+	;
 
-ID: VARID
-	| tCAST			{ $$ = new Common::String("cast"); }
-	| tFIELD		{ $$ = new Common::String("field"); }
-	| tSCRIPT		{ $$ = new Common::String("script"); }
-	| tWINDOW		{ $$ = new Common::String("window"); }
+// MACRO
 
-asgn: tPUT expr tINTO ID 			{
-		g_lingo->code1(LC::c_varpush);
-		g_lingo->codeString($ID->c_str());
-		mVar($ID, globalCheck());
-		g_lingo->code1(LC::c_assign);
-		$$ = $expr;
-		delete $ID; }
-	| tPUT expr tINTO chunkexpr 	{
-		g_lingo->code1(LC::c_assign);
-		$$ = $expr; }
-	// {put the number of menuItems of} menu into <expr>
-	| tPUT THEMENUITEMSENTITY ID simpleexpr tINTO expr	{
-		if (!$ID->equalsIgnoreCase("menu")) {
-			warning("LEXER: keyword 'menu' expected");
-			YYERROR;
-		}
-
-		g_lingo->code1(LC::c_themenuentitypush);
-		g_lingo->codeInt($THEMENUITEMSENTITY[0]);
-		g_lingo->codeInt($THEMENUITEMSENTITY[1]);
-		g_lingo->code1(LC::c_assign);
-		$$ = $expr; }
-	| tPUT expr tAFTER ID 			{
-		g_lingo->code1(LC::c_varpush);
-		g_lingo->codeString($ID->c_str());
-		mVar($ID, globalCheck());
-		g_lingo->code1(LC::c_putafter);
-		$$ = $expr;
-		delete $ID; }		// D3
-	| tPUT expr tAFTER chunkexpr	{
-		g_lingo->code1(LC::c_putafter);
-		$$ = $expr; }
-	| tPUT expr tBEFORE ID 			{
-		g_lingo->code1(LC::c_varpush);
-		g_lingo->codeString($ID->c_str());
-		mVar($ID, globalCheck());
-		g_lingo->code1(LC::c_putbefore);
-		$$ = $expr;
-		delete $ID; }		// D3
-	| tPUT expr tBEFORE chunkexpr 	{
-		g_lingo->code1(LC::c_putbefore);
-		$$ = $expr; }
-	| tSET ID tEQ expr				{
-		g_lingo->code1(LC::c_varpush);
-		g_lingo->codeString($ID->c_str());
-		mVar($ID, globalCheck());
-		g_lingo->code1(LC::c_assign);
-		$$ = $expr;
-		delete $ID; }
-	| tSET THEENTITY tEQ expr		{
-		g_lingo->code1(LC::c_intpush);
-		g_lingo->codeInt(0); // Put dummy id
-		g_lingo->code1(LC::c_theentityassign);
-		g_lingo->codeInt($THEENTITY[0]);
-		g_lingo->codeInt($THEENTITY[1]);
-		$$ = $expr; }
-	| tSET ID tTO expr				{
-		g_lingo->code1(LC::c_varpush);
-		g_lingo->codeString($ID->c_str());
-		mVar($ID, globalCheck());
-		g_lingo->code1(LC::c_assign);
-		$$ = $expr;
-		delete $ID; }
-	| tSET THEENTITY tTO expr		{
-		g_lingo->code1(LC::c_intpush);
-		g_lingo->codeInt(0); // Put dummy id
-		g_lingo->code1(LC::c_theentityassign);
-		g_lingo->codeInt($THEENTITY[0]);
-		g_lingo->codeInt($THEENTITY[1]);
-		$$ = $expr; }
-	| tSET THEENTITYWITHID expr[entityId] tTO expr[value]	{
-		g_lingo->code1(LC::c_swap);
-		g_lingo->code1(LC::c_theentityassign);
-		g_lingo->codeInt($THEENTITYWITHID[0]);
-		g_lingo->codeInt($THEENTITYWITHID[1]);
-		$$ = $value; }
-	| tSET THEENTITYWITHID expr[entityId] tEQ expr[value]	{
-		g_lingo->code1(LC::c_swap);
-		g_lingo->code1(LC::c_theentityassign);
-		g_lingo->codeInt($THEENTITYWITHID[0]);
-		g_lingo->codeInt($THEENTITYWITHID[1]);
-		$$ = $value; }
-	// the <field> of menuItem <expr> of menu <expr>
-	| tSET THEMENUITEMENTITY simpleexpr tOF ID simpleexpr tTO expr	{
-		if (!$ID->equalsIgnoreCase("menu")) {
-			warning("LEXER: keyword 'menu' expected");
-			YYERROR;
-		}
-
-		warning("STUB: menuItem entity");
-		g_lingo->code1(LC::c_themenuitementityassign);
-		g_lingo->codeInt($THEMENUITEMENTITY[0]);
-		g_lingo->codeInt($THEMENUITEMENTITY[1]);
-		$$ = $expr; }
-	| tSET THEMENUITEMENTITY simpleexpr tOF ID simpleexpr tEQ expr	{
-		if (!$ID->equalsIgnoreCase("menu")) {
-			warning("LEXER: keyword 'menu' expected");
-			YYERROR;
-		}
-
-		warning("STUB: menuItem entity");
-		g_lingo->code1(LC::c_themenuitementityassign);
-		g_lingo->codeInt($THEMENUITEMENTITY[0]);
-		g_lingo->codeInt($THEMENUITEMENTITY[1]);
-		$$ = $expr; }
-	| tSET THEOBJECTPROP tTO expr		{
-		g_lingo->code1(LC::c_objectpropassign);
-		g_lingo->codeString($THEOBJECTPROP.obj->c_str());
-		g_lingo->codeString($THEOBJECTPROP.prop->c_str());
-		delete $THEOBJECTPROP.obj;
-		delete $THEOBJECTPROP.prop;
-		$$ = $expr; }
-	| tSET THEOBJECTPROP tEQ expr		{
-		g_lingo->code1(LC::c_objectpropassign);
-		g_lingo->codeString($THEOBJECTPROP.obj->c_str());
-		g_lingo->codeString($THEOBJECTPROP.prop->c_str());
-		delete $THEOBJECTPROP.obj;
-		delete $THEOBJECTPROP.prop;
-		$$ = $expr; }
-
-stmtoneliner: asgn
-	| proc
-
-stmt: stmtoneliner
-	| ifstmt
-	// repeat while (expression = TRUE)
-	//   statements
-	// end repeat
-	//
-	| tREPEAT tWHILE lbl expr jumpifz[body] startrepeat stmtlist jump[end2] tENDREPEAT	{
-		inst start = 0, end = 0;
-		WRITE_UINT32(&start, $lbl - $end2 + 1);
-		WRITE_UINT32(&end, $end2 - $body + 2);
-		(*g_lingo->_currentAssembly)[$body] = end;		/* end, if cond fails */
-		(*g_lingo->_currentAssembly)[$end2] = start;	/* looping back */
-		endRepeat($end2 + 1, $lbl);	}	/* code any exit/next repeats */
-
-	// repeat with index = start to end
-	//   statements
-	// end repeat
-	//
-	| tREPEAT tWITH ID tEQ expr[init]
-				{ g_lingo->code1(LC::c_varpush);
-				  g_lingo->codeString($ID->c_str());
-				  mVar($ID, globalCheck()); }
-			varassign
-				{ g_lingo->code1(LC::c_eval);
-				  g_lingo->codeString($ID->c_str()); }
-			tTO expr[finish]
-				{ g_lingo->code1(LC::c_le); } jumpifz startrepeat stmtlist tENDREPEAT {
-
-		int nextPos = g_lingo->_currentAssembly->size();
-		g_lingo->code1(LC::c_eval);
-		g_lingo->codeString($ID->c_str());
-		g_lingo->code1(LC::c_intpush);
-		g_lingo->codeInt(1);
-		g_lingo->code1(LC::c_add);
-		g_lingo->code1(LC::c_varpush);
-		g_lingo->codeString($ID->c_str());
-		g_lingo->code1(LC::c_assign);
-		g_lingo->code2(LC::c_jump, 0);
-		int pos = g_lingo->_currentAssembly->size() - 1;
-
-		inst loop = 0, end = 0;
-		WRITE_UINT32(&loop, $varassign - pos + 2);
-		WRITE_UINT32(&end, pos - $jumpifz + 2);
-		(*g_lingo->_currentAssembly)[pos] = loop;		/* final count value */
-		(*g_lingo->_currentAssembly)[$jumpifz] = end;	/* end, if cond fails */
-		endRepeat(pos + 1, nextPos); }	/* code any exit/next repeats */
-
-
-	// repeat with index = high down to low
-	//   statements
-	// end repeat
-	//
-	| tREPEAT tWITH ID tEQ expr[init]
-				{ g_lingo->code1(LC::c_varpush);
-				  g_lingo->codeString($ID->c_str());
-				  mVar($ID, globalCheck()); }
-			varassign
-				{ g_lingo->code1(LC::c_eval);
-				  g_lingo->codeString($ID->c_str()); }
-			tDOWN tTO expr[finish]
-				{ g_lingo->code1(LC::c_ge); }
-			jumpifz startrepeat stmtlist tENDREPEAT {
-
-		int nextPos = g_lingo->_currentAssembly->size();
-		g_lingo->code1(LC::c_eval);
-		g_lingo->codeString($ID->c_str());
-		g_lingo->code1(LC::c_intpush);
-		g_lingo->codeInt(1);
-		g_lingo->code1(LC::c_sub);
-		g_lingo->code1(LC::c_varpush);
-		g_lingo->codeString($ID->c_str());
-		g_lingo->code1(LC::c_assign);
-		g_lingo->code2(LC::c_jump, 0);
-		int pos = g_lingo->_currentAssembly->size() - 1;
-
-		inst loop = 0, end = 0;
-		WRITE_UINT32(&loop, $varassign - pos + 2);
-		WRITE_UINT32(&end, pos - $jumpifz + 2);
-		(*g_lingo->_currentAssembly)[pos] = loop;		/* final count value */
-		(*g_lingo->_currentAssembly)[$jumpifz] = end;	/* end, if cond fails */
-		endRepeat(pos + 1, nextPos); }	/* code any exit/next repeats */
-
-	// repeat with index in list
-	//   statements
-	// end repeat
-	//
-	| tREPEAT tWITH ID tIN expr
-				{ g_lingo->code1(LC::c_stackpeek);
-				  g_lingo->codeInt(0);
-				  Common::String count("count");
-				  g_lingo->codeFunc(&count, 1);
-				  g_lingo->code1(LC::c_intpush);	// start counter
-				  g_lingo->codeInt(1); }
-			lbl
-				{ g_lingo->code1(LC::c_stackpeek);	// get counter
-				  g_lingo->codeInt(0);
-				  g_lingo->code1(LC::c_stackpeek);	// get array size
-				  g_lingo->codeInt(2);
-				  g_lingo->code1(LC::c_le); }
-			jumpifz
-				{ g_lingo->code1(LC::c_stackpeek);	// get list
-				  g_lingo->codeInt(2);
-				  g_lingo->code1(LC::c_stackpeek);	// get counter
-				  g_lingo->codeInt(1);
-				  Common::String getAt("getAt");
-				  g_lingo->codeFunc(&getAt, 2);
-				  g_lingo->code1(LC::c_varpush);
-				  g_lingo->codeString($ID->c_str());
-				  mVar($ID, globalCheck());
-				  g_lingo->code1(LC::c_assign); }
-			startrepeat stmtlist tENDREPEAT {
-
-		int nextPos = g_lingo->_currentAssembly->size();
-		g_lingo->code1(LC::c_intpush);
-		g_lingo->codeInt(1);
-		g_lingo->code1(LC::c_add);			// Increment counter
-
-		int jump = g_lingo->code2(LC::c_jump, 0);
-
-		int end2 = g_lingo->code1(LC::c_stackdrop);	// remove list, size, counter
-		g_lingo->codeInt(3);
-
-		inst loop = 0, end = 0;
-		WRITE_UINT32(&loop, $lbl - jump);
-		WRITE_UINT32(&end, end2 - $jumpifz + 1);
-
-		(*g_lingo->_currentAssembly)[jump + 1] = loop;		/* final count value */
-		(*g_lingo->_currentAssembly)[$jumpifz] = end;		/* end, if cond fails */
-		endRepeat(end2, nextPos); }	/* code any exit/next repeats */
-
-	| tNEXT tREPEAT 		{
-		if (g_lingo->_repeatStack.size()) {
-			g_lingo->code2(LC::c_jump, 0);
-			int pos = g_lingo->_currentAssembly->size() - 1;
-			g_lingo->_repeatStack.back()->nexts.push_back(pos);
-		} else {
-			warning("# LINGO: next repeat not inside repeat block");
-		} }
-	| tWHEN ID tTHEN expr	{
-		g_lingo->code1(LC::c_whencode);
-		g_lingo->codeString($ID->c_str()); }
-	| tTELL expr '\n' tellstart stmtlist lbl tENDTELL { g_lingo->code1(LC::c_telldone); }
-	| tTELL expr tTO tellstart stmtoneliner lbl { g_lingo->code1(LC::c_telldone); }
-	| tASSERTERROR asserterrorstart stmtoneliner { g_lingo->code1(LC::c_asserterrordone); }
-	| error	'\n'			{ yyerrok; }
-
-startrepeat:	/* nothing */	{ startRepeat(); }
-
-tellstart:	  /* empty */	{ g_lingo->code1(LC::c_tell); }
-
-asserterrorstart:	/* empty */	{ g_lingo->code1(LC::c_asserterror); }
-
-ifstmt: if expr jumpifz[then] tTHEN stmtlist jump[else1] elseifstmtlist lbl[end3] tENDIF {
-		inst else1 = 0, end3 = 0;
-		WRITE_UINT32(&else1, $else1 + 1 - $then + 1);
-		WRITE_UINT32(&end3, $end3 - $else1 + 1);
-		(*g_lingo->_currentAssembly)[$then] = else1;		/* elsepart */
-		(*g_lingo->_currentAssembly)[$else1] = end3;		/* end, if cond fails */
-		g_lingo->processIf($else1, $end3); }
-	| if expr jumpifz[then] tTHEN stmtlist jump[else1] elseifstmtlist tELSE stmtlist lbl[end3] tENDIF {
-		inst else1 = 0, end = 0;
-		WRITE_UINT32(&else1, $else1 + 1 - $then + 1);
-		WRITE_UINT32(&end, $end3 - $else1 + 1);
-		(*g_lingo->_currentAssembly)[$then] = else1;		/* elsepart */
-		(*g_lingo->_currentAssembly)[$else1] = end;		/* end, if cond fails */
-		g_lingo->processIf($else1, $end3); }
-
-elseifstmtlist:	/* nothing */
-	| elseifstmtlist elseifstmt
-
-elseifstmt: tELSIF expr jumpifz[then] tTHEN stmtlist jump[end3] {
-		inst else1 = 0;
-		WRITE_UINT32(&else1, $end3 + 1 - $then + 1);
-		(*g_lingo->_currentAssembly)[$then] = else1;	/* end, if cond fails */
-		g_lingo->codeLabel($end3); }
-
-jumpifz:	/* nothing */	{
-		g_lingo->code2(LC::c_jumpifz, 0);
-		$$ = g_lingo->_currentAssembly->size() - 1; }
-
-jump:		/* nothing */	{
-		g_lingo->code2(LC::c_jump, 0);
-		$$ = g_lingo->_currentAssembly->size() - 1; }
-
-varassign:		/* nothing */	{
-		g_lingo->code1(LC::c_assign);
-		$$ = g_lingo->_currentAssembly->size() - 1; }
-
-if:	  tIF					{
-		g_lingo->codeLabel(0); } // Mark beginning of the if() statement
-
-lbl:	  /* nothing */		{ $$ = g_lingo->_currentAssembly->size(); }
-
-stmtlist: stmtlistline
-	| stmtlistline '\n' stmtlist
-
-stmtlistline: /* empty */
-	| stmt
-
-simpleexprnoparens: INT		{
-		$$ = g_lingo->code1(LC::c_intpush);
-		g_lingo->codeInt($INT); }
-	| FLOAT		{
-		$$ = g_lingo->code1(LC::c_floatpush);
-		g_lingo->codeFloat($FLOAT); }
-	| SYMBOL	{											// D3
-		$$ = g_lingo->code1(LC::c_symbolpush);
-		g_lingo->codeString($SYMBOL->c_str());
-		delete $SYMBOL; }
-	| STRING		{
-		$$ = g_lingo->code1(LC::c_stringpush);
-		g_lingo->codeString($STRING->c_str());
-		delete $STRING; }
-	| '+' simpleexpr[arg]  %prec UNARY	{ $$ = $arg; }
-	| '-' simpleexpr[arg]  %prec UNARY	{ $$ = $arg; g_lingo->code1(LC::c_negate); }
-	| tNOT simpleexpr  %prec UNARY		{ g_lingo->code1(LC::c_not); }
-	| reference
-	| THEENTITY					{
-		$$ = g_lingo->code1(LC::c_intpush);
-		g_lingo->codeInt(0); // Put dummy id
-		g_lingo->code1(LC::c_theentitypush);
-		inst e = 0, f = 0;
-		WRITE_UINT32(&e, $THEENTITY[0]);
-		WRITE_UINT32(&f, $THEENTITY[1]);
-		g_lingo->code2(e, f); }
-	| THEENTITYWITHID simpleexpr {
-		$$ = g_lingo->code1(LC::c_theentitypush);
-		inst e = 0, f = 0;
-		WRITE_UINT32(&e, $THEENTITYWITHID[0]);
-		WRITE_UINT32(&f, $THEENTITYWITHID[1]);
-		g_lingo->code2(e, f); }
-	| THEFUNCINOF simpleexpr	{
-		$$ = g_lingo->codeFunc($THEFUNCINOF, 1);
-		delete $THEFUNCINOF; }
-	| THEFUNC tOF simpleexpr	{
-		$$ = g_lingo->codeFunc($THEFUNC, 1);
-		delete $THEFUNC; }
-	| THEOBJECTPROP				{
-		g_lingo->code1(LC::c_objectproppush);
-		g_lingo->codeString($THEOBJECTPROP.obj->c_str());
-		g_lingo->codeString($THEOBJECTPROP.prop->c_str());
-		delete $THEOBJECTPROP.obj;
-		delete $THEOBJECTPROP.prop; }
-    | tSPRITE expr tINTERSECTS simpleexpr	{ g_lingo->code1(LC::c_intersects); }
-    | tSPRITE expr tWITHIN simpleexpr		{ g_lingo->code1(LC::c_within); }
-	| list
-	| ID[func] '(' ID[method] ')' {
-			g_lingo->code1(LC::c_varpush);
-			g_lingo->codeString($method->c_str());
-			g_lingo->codeFunc($func, 1);
-			delete $func;
-			delete $method; }
-	| ID[func] '(' ID[method] ',' { g_lingo->code1(LC::c_varpush); g_lingo->codeString($method->c_str()); }
-				nonemptyarglist ')' {
-			g_lingo->codeFunc($func, $nonemptyarglist + 1);
-			delete $func;
-			delete $method; }
-	| ID '(' arglist ')'		{
-		$$ = g_lingo->codeFunc($ID, $arglist);
-		delete $ID; }
-	| ID						{
-		if (g_lingo->_builtinConsts.contains(*$ID)) {
-			$$ = g_lingo->code1(LC::c_constpush);
-		} else {
-			$$ = g_lingo->code1(LC::c_eval);
-		}
-		g_lingo->codeString($ID->c_str());
-		delete $ID; }
-
-simpleexpr: simpleexprnoparens
-	| '(' expr[arg] ')'			{ $$ = $arg; }
-
-expr: simpleexpr { $$ = $simpleexpr; }
-	| expr '+' expr				{ g_lingo->code1(LC::c_add); }
-	| expr '-' expr				{ g_lingo->code1(LC::c_sub); }
-	| expr '*' expr				{ g_lingo->code1(LC::c_mul); }
-	| expr '/' expr				{ g_lingo->code1(LC::c_div); }
-	| expr tMOD expr			{ g_lingo->code1(LC::c_mod); }
-	| expr '>' expr				{ g_lingo->code1(LC::c_gt); }
-	| expr '<' expr				{ g_lingo->code1(LC::c_lt); }
-	| expr tEQ expr				{ g_lingo->code1(LC::c_eq); }
-	| expr tNEQ expr			{ g_lingo->code1(LC::c_neq); }
-	| expr tGE expr				{ g_lingo->code1(LC::c_ge); }
-	| expr tLE expr				{ g_lingo->code1(LC::c_le); }
-	| expr tAND expr			{ g_lingo->code1(LC::c_and); }
-	| expr tOR expr				{ g_lingo->code1(LC::c_or); }
-	| expr '&' expr				{ g_lingo->code1(LC::c_ampersand); }
-	| expr tCONCAT expr			{ g_lingo->code1(LC::c_concat); }
-	| expr tCONTAINS expr		{ g_lingo->code1(LC::c_contains); }
-	| expr tSTARTS expr			{ g_lingo->code1(LC::c_starts); }
-
-chunkexpr:  tFIELD simpleexprnoparens	{
-		Common::String field("field");
-		g_lingo->codeFunc(&field, 1); }
-	| tCAST simpleexprnoparens		{
-		Common::String cast("cast");
-		g_lingo->codeFunc(&cast, 1); }
-	| tCHAR expr tOF simpleexpr				{ g_lingo->code1(LC::c_charOf); }
-	| tCHAR expr tTO expr tOF simpleexpr	{ g_lingo->code1(LC::c_charToOf); }
-	| tITEM expr tOF simpleexpr				{ g_lingo->code1(LC::c_itemOf); }
-	| tITEM expr tTO expr tOF simpleexpr	{ g_lingo->code1(LC::c_itemToOf); }
-	| tLINE expr tOF simpleexpr				{ g_lingo->code1(LC::c_lineOf); }
-	| tLINE expr tTO expr tOF simpleexpr	{ g_lingo->code1(LC::c_lineToOf); }
-	| tWORD expr tOF simpleexpr				{ g_lingo->code1(LC::c_wordOf); }
-	| tWORD expr tTO expr tOF simpleexpr	{ g_lingo->code1(LC::c_wordToOf); }
-
-reference: 	chunkexpr
-	| tSCRIPT simpleexprnoparens	{
-		Common::String script("script");
-		g_lingo->codeFunc(&script, 1); }
-	| tWINDOW simpleexprnoparens	{
-		Common::String window("window");
-		g_lingo->codeFunc(&window, 1); }
-
-proc: tPUT expr					{
-		Common::String put("put");
-		g_lingo->codeCmd(&put, 1); }
-	| gotofunc
-	| playfunc
-	| tEXIT tREPEAT				{
-		if (g_lingo->_repeatStack.size()) {
-			g_lingo->code2(LC::c_jump, 0);
-			int pos = g_lingo->_currentAssembly->size() - 1;
-			g_lingo->_repeatStack.back()->exits.push_back(pos);
-		} else {
-			warning("# LINGO: exit repeat not inside repeat block");
-		} }
-	| tEXIT						{ g_lingo->code1(LC::c_procret); }
-	| tGLOBAL					{ inArgs(); } globallist { inLast(); }
-	| tPROPERTY					{ inArgs(); } propertylist { inLast(); }
-	| tINSTANCE					{ inArgs(); } instancelist { inLast(); }
-	| tOPEN expr tWITH expr		{
-		Common::String open("open");
-		g_lingo->codeCmd(&open, 2); }
-	| tOPEN expr 				{
-		Common::String open("open");
-		g_lingo->codeCmd(&open, 1); }
-	| ID[func] '(' ID[method] ')' {
-			g_lingo->code1(LC::c_varpush);
-			g_lingo->codeString($method->c_str());
-			g_lingo->codeCmd($func, 1);
-			delete $func;
-			delete $method; }
-	| ID[func] '(' ID[method] ',' { g_lingo->code1(LC::c_varpush); g_lingo->codeString($method->c_str()); }
-				nonemptyarglist ')' {
-			g_lingo->codeCmd($func, $nonemptyarglist + 1);
-			delete $func;
-			delete $method; }
-	| ID '(' arglist ')'		{
-		g_lingo->codeCmd($ID, $arglist);
-		delete $ID; }
-	| ID arglist				{
-		g_lingo->codeCmd($ID, $arglist);
-		delete $ID; }
-
-globallist:		/* nothing */
-	| ID						{
-		mVar($ID, kVarGlobal);
-		delete $ID; }
-	| ID ',' globallist			{
-		mVar($ID, kVarGlobal);
-		delete $ID; }
-
-propertylist:	/* nothing */
-	| ID						{
-		mVar($ID, kVarProperty);
-		delete $ID; }
-	| ID ',' propertylist		{
-		mVar($ID, kVarProperty);
-		delete $ID; }
-
-instancelist:	/* nothing */
-	| ID						{
-		mVar($ID, kVarInstance);
-		delete $ID; }
-	| ID ',' instancelist		{
-		mVar($ID, kVarInstance);
-		delete $ID; }
-
-// go {to} {frame} whichFrame {of movie whichMovie}
-// go {to} {frame "Open23" of} movie whichMovie
-// go loop
-// go next
-// go previous
-// go to {frame} whichFrame {of movie whichMovie}
-// go to {frame whichFrame of} movie whichMovie
-gotofunc: tGOLOOP				{ g_lingo->code1(LC::c_gotoloop); }
-	| tGO tNEXT					{ g_lingo->code1(LC::c_gotonext); }
-	| tGO tPREVIOUS				{ g_lingo->code1(LC::c_gotoprevious); }
-	| tGO expr 					{
-		g_lingo->code1(LC::c_intpush);
-		g_lingo->codeInt(1);
-		g_lingo->code1(LC::c_goto); }
-	| tGO expr gotomovie		{
-		g_lingo->code1(LC::c_intpush);
-		g_lingo->codeInt(3);
-		g_lingo->code1(LC::c_goto); }
-	| tGO gotomovie				{
-		g_lingo->code1(LC::c_intpush);
-		g_lingo->codeInt(2);
-		g_lingo->code1(LC::c_goto); }
-
-gotomovie: tOF tMOVIE expr
-	| tMOVIE expr
-
-playfunc: tPLAY expr 			{ // "play #done" is also caught by this
-		g_lingo->code1(LC::c_intpush);
-		g_lingo->codeInt(1);
-		g_lingo->code1(LC::c_play); }
-	| tPLAY expr gotomovie		{
-		g_lingo->code1(LC::c_intpush);
-		g_lingo->codeInt(3);
-		g_lingo->code1(LC::c_play); }
-	| tPLAY gotomovie			{
-		g_lingo->code1(LC::c_intpush);
-		g_lingo->codeInt(2);
-		g_lingo->code1(LC::c_play); }
-	| tPLAYACCEL { g_lingo->codeSetImmediate(true); } arglist {
-		g_lingo->codeSetImmediate(false);
-		g_lingo->codeCmd($tPLAYACCEL, $arglist);
-		delete $tPLAYACCEL; }
-
-// macro
-//
 // Special Note  The macro keyword is retained in Director 3.0 to maintain compatibility
 // with scripts developed under Version 2.0. When writing new scripts, or editing old
 // scripts, you should use handlers instead of macros. (Handlers are defined with the on keyword.)
@@ -816,85 +240,605 @@ playfunc: tPLAY expr 			{ // "play #done" is also caught by this
 //
 // See also:
 //   on keyword
-defn: tMACRO { startDef(); } ID
-			lbl argdef '\n' argstore stmtlist 		{
-		g_lingo->code1(LC::c_procret);
-		g_lingo->codeDefine(*$ID, $lbl, $argdef);
-		endDef();
-		delete $ID; }
-	| tFACTORY ID	{ g_lingo->codeFactory(*$ID); delete $ID; }
-	| tMETHOD {
-			startDef();
-			Common::String me("me");
-			g_lingo->codeArg(&me);
-			mVar(&me, kVarArgument);
-		} lbl argdef '\n' argstore stmtlist {
-			g_lingo->code1(LC::c_procret);
-			g_lingo->codeDefine(*$tMETHOD, $lbl, $argdef + 1);
-			endDef();
-			delete $tMETHOD; }
-	| on lbl argdef '\n' argstore stmtlist ENDCLAUSE endargdef {	// D3
-		g_lingo->code1(LC::c_procret);
-		g_lingo->codeDefine(*$on, $lbl, $argdef);
-		endDef();
 
-		checkEnd($ENDCLAUSE, $on->c_str(), false);
-		delete $on;
-		delete $ENDCLAUSE; }
-	| on lbl argdef '\n' argstore stmtlist {	// D4. No 'end' clause
-		g_lingo->code1(LC::c_procret);
-		g_lingo->codeDefine(*$on, $lbl, $argdef);
-		endDef();
-		delete $on; }
+macro: tMACRO ID idlist '\n' stmtlist	{ $$ = new HandlerNode($ID, $idlist, $stmtlist); } ;
 
-on:  tON { startDef(); } ID 	{ $$ = $ID; }
+// FACTORY
 
-argname: ID						{ g_lingo->codeArg($ID); mVar($ID, kVarArgument); delete $ID; }
+factory: tFACTORY ID '\n' methodlist	{ $$ = new FactoryNode($ID, $methodlist); } ;
 
-argdef:  /* nothing */ 			{ $$ = 0; }
-	| argname					{ $$ = 1; }
-	| argname ',' argdef		{ $$ = $3 + 1; }
+method: tMETHOD ID idlist '\n' stmtlist	{ $$ = new HandlerNode($ID, $idlist, $stmtlist); } ;
+
+methodlist: /* empty */				{ $$ = new NodeList; }
+	| nonemptymethodlist
+	;
+
+nonemptymethodlist: methodlistline[item]			{
+		NodeList *list = new NodeList;
+		if ($item) {
+			list->push_back($item);
+		}
+		$$ = list; }
+	| nonemptymethodlist[prev] methodlistline[item]	{
+		if ($item) {
+			$prev->push_back($item);
+		}
+		$$ = $prev; }
+	;
+
+methodlistline: '\n'				{ $$ = nullptr; }
+	| method
+	;
+
+// HANDLER
+
+handler: tON ID idlist '\n' stmtlist tENDCLAUSE endargdef '\n' {	// D3
+		$$ = new HandlerNode($ID, $idlist, $stmtlist);
+		checkEnd($tENDCLAUSE, $ID, false);
+		delete $tENDCLAUSE; }
+	| tON ID idlist '\n' stmtlist {	// D4. No 'end' clause
+		$$ = new HandlerNode($ID, $idlist, $stmtlist); }
+	;
 
 endargdef:	/* nothing */
 	| ID						{ delete $ID; }
 	| endargdef ',' ID			{ delete $ID; }
+	;
 
-argstore:	  /* nothing */		{ inDef(); }
+// GENERIC VAR STUFF
 
-arglist:  /* nothing */ 		{ $$ = 0; }
-	| expr						{ $$ = 1; }
-	| expr ',' arglist			{ $$ = $3 + 1; }
+// This is only the identifiers that can appaear at the start of a line
+// and will not conflict with other statement types.
+CMDID: tVARID
+	| tABBREVIATED	{ $$ = new Common::String("abbreviated"); }
+	| tABBREV		{ $$ = new Common::String("abbrev"); }
+	| tABBR			{ $$ = new Common::String("abbr"); }
+	| tAFTER		{ $$ = new Common::String("after"); }
+	| tAND			{ $$ = new Common::String("and"); }
+	| tBEFORE		{ $$ = new Common::String("before"); }
+	| tCAST			{ $$ = new Common::String("cast"); }
+	| tCHAR			{ $$ = new Common::String("char"); }
+	| tCHARS		{ $$ = new Common::String("chars"); }
+	| tCONTAINS		{ $$ = new Common::String("contains"); }
+	| tDATE			{ $$ = new Common::String("date"); }
+	| tDELETE		{ $$ = new Common::String("delete"); }
+	| tDOWN			{ $$ = new Common::String("down"); }
+	| tFIELD		{ $$ = new Common::String("field"); }
+	| tFRAME		{ $$ = new Common::String("frame"); }
+	| tHILITE		{ $$ = new Common::String("hilite"); }
+	| tIN			{ $$ = new Common::String("in"); }
+	| tINTERSECTS	{ $$ = new Common::String("intersects"); }
+	| tINTO			{ $$ = new Common::String("into"); }
+	| tITEM			{ $$ = new Common::String("item"); }
+	| tITEMS		{ $$ = new Common::String("items"); }
+	| tLAST			{ $$ = new Common::String("last"); }
+	| tLINE			{ $$ = new Common::String("line"); }
+	| tLINES		{ $$ = new Common::String("lines"); }
+	| tLONG			{ $$ = new Common::String("long"); }
+	| tMENU			{ $$ = new Common::String("menu"); }
+	| tMENUITEM		{ $$ = new Common::String("menuItem"); }
+	| tMENUITEMS	{ $$ = new Common::String("menuItems"); }
+	| tMOD			{ $$ = new Common::String("mod"); }
+	| tMOVIE		{ $$ = new Common::String("movie"); }
+	| tNEXT			{ $$ = new Common::String("next"); }
+	| tNOT			{ $$ = new Common::String("not"); }
+	| tNUMBER		{ $$ = new Common::String("number"); }
+	| tOF			{ $$ = new Common::String("of"); }
+	| tOR			{ $$ = new Common::String("or"); }
+	| tPREVIOUS		{ $$ = new Common::String("previous"); }
+	| tREPEAT		{ $$ = new Common::String("repeat"); }
+	| tSCRIPT		{ $$ = new Common::String("script"); }
+	| tASSERTERROR	{ $$ = new Common::String("scummvmAssertError"); }
+	| tSHORT		{ $$ = new Common::String("short"); }
+	| tSOUND		{ $$ = new Common::String("sound"); }
+	| tSPRITE		{ $$ = new Common::String("sprite"); }
+	| tSTARTS		{ $$ = new Common::String("starts"); }
+	| tTHE			{ $$ = new Common::String("the"); }
+	| tTIME			{ $$ = new Common::String("time"); }
+	| tTO			{ $$ = new Common::String("to"); }
+	| tWHILE		{ $$ = new Common::String("while"); }
+	| tWINDOW		{ $$ = new Common::String("window"); }
+	| tWITH			{ $$ = new Common::String("with"); }
+	| tWITHIN		{ $$ = new Common::String("within"); }
+	| tWORD			{ $$ = new Common::String("word"); }
+	| tWORDS		{ $$ = new Common::String("words"); }
+	;
 
-nonemptyarglist:  expr			{ $$ = 1; }
-	| expr ','					{ $$ = 1; }
-	| expr ',' nonemptyarglist	{ $$ = $3 + 1; }
+ID: CMDID
+	| tELSE			{ $$ = new Common::String("else"); }
+	| tENDCLAUSE	{ $$ = new Common::String("end"); }
+	| tEXIT			{ $$ = new Common::String("exit"); }
+	| tFACTORY		{ $$ = new Common::String("factory"); }
+	| tGLOBAL		{ $$ = new Common::String("global"); }
+	| tGO			{ $$ = new Common::String("go"); }
+	| tIF			{ $$ = new Common::String("if"); }
+	| tINSTANCE		{ $$ = new Common::String("instance"); }
+	| tMACRO		{ $$ = new Common::String("macro"); }
+	| tMETHOD		{ $$ = new Common::String("method"); }
+	| tON			{ $$ = new Common::String("on"); }
+	| tOPEN			{ $$ = new Common::String("open"); }
+	| tPLAY			{ $$ = new Common::String("play"); }
+	| tPROPERTY		{ $$ = new Common::String("property"); }
+	| tPUT			{ $$ = new Common::String("put"); }
+	| tSET			{ $$ = new Common::String("set"); }
+	| tTELL			{ $$ = new Common::String("tell"); }
+	| tTHEN			{ $$ = new Common::String("then"); }
+	| tWHEN			{ $$ = new Common::String("when"); }
+	;
 
-list: '[' valuelist ']'			{ $$ = $valuelist; }
+idlist: /* empty */					{ $$ = new IDList; }
+	| nonemptyidlist
+	| nonemptyidlist ',' // allow trailing comma
+	;
 
-valuelist:	/* nothing */		{ $$ = g_lingo->code2(LC::c_arraypush, 0); }
-	| ':'						{ $$ = g_lingo->code2(LC::c_proparraypush, 0); }
-	| proplist	 { $$ = g_lingo->code1(LC::c_proparraypush); $$ = g_lingo->codeInt($proplist); }
-	| linearlist { $$ = g_lingo->code1(LC::c_arraypush); $$ = g_lingo->codeInt($linearlist); }
+nonemptyidlist: ID[item]					{
+		Common::Array<Common::String *> *list = new IDList;
+		list->push_back($item);
+		$$ = list; }
+	| nonemptyidlist[prev] ',' ID[item]		{
+		$prev->push_back($item);
+		$$ = $prev; }
+	;
 
-linearlist: expr				{ $$ = 1; }
-	| linearlist ',' expr		{ $$ = $1 + 1; }
+// STATEMENT
+// N.B. A statement must always be terminated by a '\n' symbol.
+// Sometimes this '\n' is in a nested statement (e.g. tIF expr tTHEN stmt).
+// It may not look like there's a '\n', but it's there.
 
-proplist:  proppair				{ $$ = 1; }
-	| proplist ',' proppair		{ $$ = $1 + 1; }
+stmt: stmt_insideif
+	| tENDIF '\n'						{ $$ = nullptr; } // stray `end if`s are allowed for some reason
+	;
 
-proppair: SYMBOL ':' expr {
-		g_lingo->code1(LC::c_symbolpush);
-		g_lingo->codeString($SYMBOL->c_str());
-		delete $SYMBOL; }
-	| STRING ':' expr 	{
-		g_lingo->code1(LC::c_stringpush);
-		g_lingo->codeString($STRING->c_str());
-		delete $STRING; }
-	| ID ':' expr 	{
-		g_lingo->code1(LC::c_stringpush);
-		g_lingo->codeString($ID->c_str());
-		delete $ID; }
+stmt_insideif: stmtoneliner
+	| ifstmt
+	| ifelsestmt
+	| loop
+	| tell
+	| when
+	;
 
+stmtoneliner: proc
+	| asgn
+	| definevars
+	;
+
+proc: CMDID cmdargs '\n'				{ $$ = new CmdNode($CMDID, $cmdargs, g_lingo->_compiler->_linenumber - 1); }
+	| tPUT cmdargs '\n'					{ $$ = new CmdNode(new Common::String("put"), $cmdargs, g_lingo->_compiler->_linenumber - 1); }
+	| tGO cmdargs '\n'					{ $$ = new CmdNode(new Common::String("go"), $cmdargs, g_lingo->_compiler->_linenumber - 1); }
+	| tGO frameargs '\n'				{ $$ = new CmdNode(new Common::String("go"), $frameargs, g_lingo->_compiler->_linenumber - 1); }
+	| tPLAY cmdargs '\n'				{ $$ = new CmdNode(new Common::String("play"), $cmdargs, g_lingo->_compiler->_linenumber - 1); }
+	| tPLAY frameargs '\n'				{ $$ = new CmdNode(new Common::String("play"), $frameargs, g_lingo->_compiler->_linenumber - 1); }
+	| tOPEN cmdargs '\n'				{ $$ = new CmdNode(new Common::String("open"), $cmdargs, g_lingo->_compiler->_linenumber - 1); }
+	| tOPEN expr[arg1] tWITH expr[arg2] '\n' {
+		NodeList *args = new NodeList;
+		args->push_back($arg1);
+		args->push_back($arg2);
+		$$ = new CmdNode(new Common::String("open"), args, g_lingo->_compiler->_linenumber - 1); }
+	| tNEXT tREPEAT '\n'				{ $$ = new NextRepeatNode(); }
+	| tEXIT tREPEAT '\n'				{ $$ = new ExitRepeatNode(); }
+	| tEXIT '\n'						{ $$ = new ExitNode(); }
+	| tDELETE chunk '\n'				{ $$ = new DeleteNode($chunk); }
+	| tHILITE chunk '\n'				{ $$ = new HiliteNode($chunk); }
+	| tASSERTERROR stmtoneliner			{ $$ = new AssertErrorNode($stmtoneliner); }
+	;
+
+cmdargs: /* empty */									{
+		// This matches `cmd`
+		$$ = new NodeList; }
+	| expr trailingcomma								{
+		// This matches `cmd arg` and `cmd(arg)`
+		NodeList *args = new NodeList;
+		args->push_back($expr);
+		$$ = args; }
+	| expr ',' nonemptyexprlist[args] trailingcomma		{
+		// This matches `cmd args, ...)
+		$args->insert_at(0, $expr);
+		$$ = $args; }
+	| expr expr_nounarymath trailingcomma				{
+		// This matches `cmd arg arg`
+		NodeList *args = new NodeList;
+		args->push_back($expr);
+		args->push_back($expr_nounarymath);
+		$$ = args; }
+	| expr expr_nounarymath ',' nonemptyexprlist[args] trailingcomma	{
+		// This matches `cmd arg arg, ...`
+		$args->insert_at(0, $expr_nounarymath);
+		$args->insert_at(0, $expr);
+		$$ = $args; }
+	| '(' ')'							{
+		// This matches `cmd()`
+		$$ = new NodeList; }
+	| '(' expr ',' ')' {
+		// This matches `cmd(args,)`
+		NodeList *args = new NodeList;
+		args->push_back($expr);
+		$$ = args; }
+	| '(' expr ',' nonemptyexprlist[args] trailingcomma ')' {
+		// This matches `cmd(args, ...)`
+		$args->insert_at(0, $expr);
+		$$ = $args; }
+	;
+
+trailingcomma: /* empty */ | ',' ;
+
+frameargs:
+	// On the off chance that we encounter something like `play frame done`
+	// we will wrap the frame arg in a FrameNode. This has no purpose other than
+	// to avoid detecting this case as `play done`.
+	tFRAME expr[frame]						{
+		// This matches `play frame arg`
+		NodeList *args = new NodeList;
+		args->push_back(new FrameNode($frame));
+		$$ = args; }
+	| tMOVIE expr[movie]							{
+		// This matches `play movie arg`
+		NodeList *args = new NodeList;
+		args->push_back(new IntNode(1));
+		args->push_back(new MovieNode($movie));
+		$$ = args; }
+	| tFRAME expr[frame] tOF tMOVIE expr[movie]		{
+		// This matches `play frame arg of movie arg`
+		NodeList *args = new NodeList;
+		args->push_back(new FrameNode($frame));
+		args->push_back(new MovieNode($movie));
+		$$ = args; }
+	| expr[frame] tOF tMOVIE expr[movie]			{
+		// This matches `play arg of movie arg` (weird but valid)
+		NodeList *args = new NodeList;
+		args->push_back($frame);
+		args->push_back(new MovieNode($movie));
+		$$ = args; }
+	| tFRAME expr[frame] expr_nounarymath[movie]	{
+		// This matches `play frame arg arg` (also weird but valid)
+		NodeList *args = new NodeList;
+		args->push_back(new FrameNode($frame));
+		args->push_back($movie);
+		$$ = args; }
+	;
+
+asgn: tPUT expr tINTO varorchunk '\n'	{ $$ = new PutIntoNode($expr, $varorchunk); }
+	| tPUT expr tAFTER varorchunk '\n'	{ $$ = new PutAfterNode($expr, $varorchunk); }
+	| tPUT expr tBEFORE varorchunk '\n'	{ $$ = new PutBeforeNode($expr, $varorchunk); }
+	| tSET varorthe to expr '\n'		{ $$ = new SetNode($varorthe, $expr); }
+	;
+
+to: tTO | tEQ ;
+
+definevars: tGLOBAL idlist '\n'			{ $$ = new GlobalNode($idlist); }
+	| tPROPERTY idlist '\n'				{ $$ = new PropertyNode($idlist); }
+	| tINSTANCE idlist '\n'				{ $$ = new InstanceNode($idlist); }
+	;
+
+ifstmt: tIF expr tTHEN stmt {
+		NodeList *stmtlist = new NodeList;
+		stmtlist->push_back($stmt);
+		$$ = new IfStmtNode($expr, stmtlist); }
+	| tIF expr tTHEN '\n' stmtlist_insideif endif {
+		$$ = new IfStmtNode($expr, $stmtlist_insideif); }
+	;
+
+ifelsestmt: tIF expr tTHEN stmt[stmt1] tELSE stmt[stmt2] {
+		NodeList *stmtlist1 = new NodeList;
+		stmtlist1->push_back($stmt1);
+		NodeList *stmtlist2 = new NodeList;
+		stmtlist2->push_back($stmt2);
+		$$ = new IfElseStmtNode($expr, stmtlist1, stmtlist2); }
+	| tIF expr tTHEN stmt[stmt1] tELSE '\n' stmtlist_insideif[stmtlist2] endif {
+		NodeList *stmtlist1 = new NodeList;
+		stmtlist1->push_back($stmt1);
+		$$ = new IfElseStmtNode($expr, stmtlist1, $stmtlist2); }
+	| tIF expr tTHEN '\n' stmtlist_insideif[stmtlist1] tELSE stmt[stmt2] {
+		NodeList *stmtlist2 = new NodeList;
+		stmtlist2->push_back($stmt2);
+		$$ = new IfElseStmtNode($expr, $stmtlist1, stmtlist2); }
+	| tIF expr tTHEN '\n' stmtlist_insideif[stmtlist1] tELSE '\n' stmtlist_insideif[stmtlist2] endif {
+		$$ = new IfElseStmtNode($expr, $stmtlist1, $stmtlist2); }
+	;
+
+endif: /* empty */	{ warning("LingoCompiler::parse: no end if"); }
+	| tENDIF '\n' ;
+
+loop: tREPEAT tWHILE expr '\n' stmtlist tENDREPEAT '\n' {
+		$$ = new RepeatWhileNode($expr, $stmtlist); }
+	| tREPEAT tWITH ID tEQ expr[start] tTO expr[end] '\n' stmtlist tENDREPEAT '\n' {
+		$$ = new RepeatWithToNode($ID, $start, false, $end, $stmtlist); }
+	| tREPEAT tWITH ID tEQ expr[start] tDOWN tTO expr[end] '\n' stmtlist tENDREPEAT '\n' {
+		$$ = new RepeatWithToNode($ID, $start, true, $end, $stmtlist); }
+	| tREPEAT tWITH ID tIN expr '\n' stmtlist tENDREPEAT '\n' {
+		$$ = new RepeatWithInNode($ID, $expr, $stmtlist); }
+	;
+
+tell: tTELL expr tTO stmtoneliner				{
+		NodeList *stmtlist = new NodeList;
+		stmtlist->push_back($stmtoneliner);
+		$$ = new TellNode($expr, stmtlist); }
+	| tTELL expr '\n' stmtlist tENDTELL '\n'	{
+		$$ = new TellNode($expr, $stmtlist); }
+	;
+
+when: tWHEN ID tTHEN expr			{ $$ = new WhenNode($ID, $expr); } ;
+
+stmtlist: /* empty */				{ $$ = new NodeList; }
+	| nonemptystmtlist
+	;
+
+nonemptystmtlist:
+	stmtlistline[item]					{
+		NodeList *list = new NodeList;
+		if ($item) {
+			list->push_back($item);
+		}
+		$$ = list; }
+	| nonemptystmtlist[prev] stmtlistline[item]	{
+		if ($item) {
+			$prev->push_back($item);
+		}
+		$$ = $prev; }
+	;
+
+stmtlistline: '\n'					{ $$ = nullptr; }
+	| stmt
+	;
+
+stmtlist_insideif: /* empty */		{ $$ = new NodeList; }
+	| nonemptystmtlist_insideif
+	;
+
+nonemptystmtlist_insideif:
+	stmtlistline_insideif[item]		{
+		NodeList *list = new NodeList;
+		if ($item) {
+			list->push_back($item);
+		}
+		$$ = list; }
+	| nonemptystmtlist_insideif[prev] stmtlistline_insideif[item]	{
+		if ($item) {
+			$prev->push_back($item);
+		}
+		$$ = $prev; }
+	;
+
+stmtlistline_insideif: '\n'			{ $$ = nullptr; }
+	| stmt_insideif
+	;
+
+// EXPRESSION
+
+simpleexpr_nounarymath:
+	  tINT							{ $$ = new IntNode($tINT); }
+	| tFLOAT						{ $$ = new FloatNode($tFLOAT); }
+	| tSYMBOL						{ $$ = new SymbolNode($tSYMBOL); }	// D3
+	| tSTRING						{ $$ = new StringNode($tSTRING); }
+	| tNOT simpleexpr[arg]  %prec tUNARY	{ $$ = new UnaryOpNode(LC::c_not, $arg); }
+	| ID '(' ')'					{ $$ = new FuncNode($ID, new NodeList); }
+	| ID '(' nonemptyexprlist[args] trailingcomma ')'	{ $$ = new FuncNode($ID, $args); }
+	| '(' expr ')'					{ $$ = $expr; } ;
+	| var
+	| chunk
+	| object
+	| the
+	| list
+	;
+
+var: ID							{ $$ = new VarNode($ID); } ;
+
+varorchunk: var
+	| chunk
+	;
+
+varorthe: var
+	| writablethe
+	;
+
+chunk: tFIELD refargs		{ $$ = new FuncNode(new Common::String("field"), $refargs); }
+	| tCAST refargs			{ $$ = new FuncNode(new Common::String("cast"), $refargs); }
+	| tCHAR expr[idx] tOF simpleexpr[src]	{
+		$$ = new ChunkExprNode(kChunkChar, $idx, nullptr, $src); }
+	| tCHAR expr[start] tTO expr[end] tOF simpleexpr[src]	{
+		$$ = new ChunkExprNode(kChunkChar, $start, $end, $src); }
+	| tWORD expr[idx] tOF simpleexpr[src]	{
+		$$ = new ChunkExprNode(kChunkWord, $idx, nullptr, $src); }
+	| tWORD expr[start] tTO expr[end] tOF simpleexpr[src]	{
+		$$ = new ChunkExprNode(kChunkWord, $start, $end, $src); }
+	| tITEM expr[idx] tOF simpleexpr[src]	{
+		$$ = new ChunkExprNode(kChunkItem, $idx, nullptr, $src); }
+	| tITEM expr[start] tTO expr[end] tOF simpleexpr[src]	{
+		$$ = new ChunkExprNode(kChunkItem, $start, $end, $src); }
+	| tLINE expr[idx] tOF simpleexpr[src]	{
+		$$ = new ChunkExprNode(kChunkLine, $idx, nullptr, $src); }
+	| tLINE expr[start] tTO expr[end] tOF simpleexpr[src]	{
+		$$ = new ChunkExprNode(kChunkLine, $start, $end, $src); }
+	| tTHE tLAST chunktype inof simpleexpr	{ $$ = new TheLastNode($chunktype, $simpleexpr); }
+	;
+
+chunktype: tCHAR				{ $$ = kChunkChar; }
+	| tWORD						{ $$ = kChunkWord; }
+	| tITEM						{ $$ = kChunkItem; }
+	| tLINE						{ $$ = kChunkLine; }
+	;
+
+object: tSCRIPT refargs		{ $$ = new FuncNode(new Common::String("script"), $refargs); }
+	| tWINDOW refargs		{ $$ = new FuncNode(new Common::String("window"), $refargs); }
+	;
+
+refargs: simpleexpr								{
+		// This matches `ref arg` and `ref(arg)`
+		NodeList *args = new NodeList;
+		args->push_back($simpleexpr);
+		$$ = args; }
+	| '(' ')'									{
+		// This matches `ref()`
+		$$ = new NodeList; }
+	| '(' expr ',' ')' {
+		// This matches `ref(args,)`
+		NodeList *args = new NodeList;
+		args->push_back($expr);
+		$$ = args; }
+	| '(' expr ',' nonemptyexprlist[args] trailingcomma ')'	{
+		// This matches `ref(args, ...)`
+		$args->insert_at(0, $expr);
+		$$ = $args; }
+	;
+
+the: tTHE ID							{ $$ = new TheNode($ID); }
+	| tTHE ID tOF theobj				{ $$ = new TheOfNode($ID, $theobj); }
+	| tTHE tNUMBER tOF theobj			{ $$ = new TheOfNode(new Common::String("number"), $theobj); }
+	| thedatetime
+	| thenumberof
+	;
+
+theobj: simpleexpr
+	| menu
+	| tMENUITEM simpleexpr[item] tOF tMENU simpleexpr[menu]	{ $$ = new MenuItemNode($item, $menu); }
+	| tSOUND simpleexpr[arg]			{ $$ = new SoundNode($arg); }
+	| tSPRITE simpleexpr[arg]			{ $$ = new SpriteNode($arg); }
+	;
+
+menu: tMENU	simpleexpr[arg]				{ $$ = new MenuNode($arg); } ;
+
+thedatetime: tTHE tABBREVIATED tDATE	{ $$ = new TheDateTimeNode(kTheAbbr, kTheDate); }
+	| tTHE tABBREVIATED tTIME			{ $$ = new TheDateTimeNode(kTheAbbr, kTheTime); }
+	| tTHE tABBREV tDATE				{ $$ = new TheDateTimeNode(kTheAbbr, kTheDate); }
+	| tTHE tABBREV tTIME				{ $$ = new TheDateTimeNode(kTheAbbr, kTheTime); }
+	| tTHE tABBR tDATE					{ $$ = new TheDateTimeNode(kTheAbbr, kTheDate); }
+	| tTHE tABBR tTIME					{ $$ = new TheDateTimeNode(kTheAbbr, kTheTime); }
+	| tTHE tLONG tDATE					{ $$ = new TheDateTimeNode(kTheLong, kTheDate); }
+	| tTHE tLONG tTIME					{ $$ = new TheDateTimeNode(kTheLong, kTheTime); }
+	| tTHE tSHORT tDATE					{ $$ = new TheDateTimeNode(kTheShort, kTheDate); }
+	| tTHE tSHORT tTIME					{ $$ = new TheDateTimeNode(kTheShort, kTheTime); }
+	;
+
+thenumberof:
+	  tTHE tNUMBER tOF tCHARS inof simpleexpr	{ $$ = new TheNumberOfNode(kNumberOfChars, $simpleexpr); }
+	| tTHE tNUMBER tOF tWORDS inof simpleexpr	{ $$ = new TheNumberOfNode(kNumberOfWords, $simpleexpr); }
+	| tTHE tNUMBER tOF tITEMS inof simpleexpr	{ $$ = new TheNumberOfNode(kNumberOfItems, $simpleexpr); }
+	| tTHE tNUMBER tOF tLINES inof simpleexpr	{ $$ = new TheNumberOfNode(kNumberOfLines, $simpleexpr); }
+	| tTHE tNUMBER tOF tMENUITEMS inof menu		{ $$ = new TheNumberOfNode(kNumberOfMenuItems, $menu); }
+	;
+
+inof: tIN | tOF ;
+
+writablethe: tTHE ID					{ $$ = new TheNode($ID); }
+	| tTHE ID tOF writabletheobj		{ $$ = new TheOfNode($ID, $writabletheobj); }
+	;
+
+writabletheobj: simpleexpr
+	| tMENU	expr_noeq[arg]				{ $$ = new MenuNode($arg); } ;
+	| tMENUITEM expr_noeq[item] tOF tMENU expr_noeq[menu]	{ $$ = new MenuItemNode($item, $menu); }
+	| tSOUND expr_noeq[arg]				{ $$ = new SoundNode($arg); }
+	| tSPRITE expr_noeq[arg]			{ $$ = new SpriteNode($arg); }
+	;
+
+list: '[' exprlist ']'			{ $$ = new ListNode($exprlist); }
+	| '[' ':' ']'				{ $$ = new PropListNode(new NodeList); }
+	| '[' proplist ']'			{ $$ = new PropListNode($proplist); }
+	;
+
+proplist: proppair[item]				{
+		NodeList *list = new NodeList; 
+		list->push_back($item);
+		$$ = list; }
+	| proplist[prev] ',' proppair[item]	{
+		$prev->push_back($item);
+		$$ = $prev; }
+	;
+
+proppair: tSYMBOL ':' expr		{ $$ = new PropPairNode(new SymbolNode($tSYMBOL), $expr); }
+	| ID ':' expr				{ $$ = new PropPairNode(new SymbolNode($ID), $expr); }
+	| tSTRING ':' expr 			{ $$ = new PropPairNode(new StringNode($tSTRING), $expr); }
+	;
+
+unarymath: '+' simpleexpr[arg]  %prec tUNARY	{ $$ = $arg; }
+	| '-' simpleexpr[arg]  %prec tUNARY			{ $$ = new UnaryOpNode(LC::c_negate, $arg); }
+	;
+
+simpleexpr: simpleexpr_nounarymath
+	| unarymath
+	;
+
+// REMEMBER TO SYNC THIS WITH expr_nounarymath and expr_noeq!
+expr: simpleexpr
+	| sprite
+	| expr[a] '+' expr[b]		{ $$ = new BinaryOpNode(LC::c_add, $a, $b); }
+	| expr[a] '-' expr[b]		{ $$ = new BinaryOpNode(LC::c_sub, $a, $b); }
+	| expr[a] '*' expr[b]		{ $$ = new BinaryOpNode(LC::c_mul, $a, $b); }
+	| expr[a] '/' expr[b]		{ $$ = new BinaryOpNode(LC::c_div, $a, $b); }
+	| expr[a] tMOD expr[b]		{ $$ = new BinaryOpNode(LC::c_mod, $a, $b); }
+	| expr[a] '>' expr[b]		{ $$ = new BinaryOpNode(LC::c_gt, $a, $b); }
+	| expr[a] '<' expr[b]		{ $$ = new BinaryOpNode(LC::c_lt, $a, $b); }
+	| expr[a] tEQ expr[b]		{ $$ = new BinaryOpNode(LC::c_eq, $a, $b); }
+	| expr[a] tNEQ expr[b]		{ $$ = new BinaryOpNode(LC::c_neq, $a, $b); }
+	| expr[a] tGE expr[b]		{ $$ = new BinaryOpNode(LC::c_ge, $a, $b); }
+	| expr[a] tLE expr[b]		{ $$ = new BinaryOpNode(LC::c_le, $a, $b); }
+	| expr[a] tAND expr[b]		{ $$ = new BinaryOpNode(LC::c_and, $a, $b); }
+	| expr[a] tOR expr[b]		{ $$ = new BinaryOpNode(LC::c_or, $a, $b); }
+	| expr[a] '&' expr[b]		{ $$ = new BinaryOpNode(LC::c_ampersand, $a, $b); }
+	| expr[a] tCONCAT expr[b]	{ $$ = new BinaryOpNode(LC::c_concat, $a, $b); }
+	| expr[a] tCONTAINS expr[b]	{ $$ = new BinaryOpNode(LC::c_contains, $a, $b); }
+	| expr[a] tSTARTS expr[b]	{ $$ = new BinaryOpNode(LC::c_starts, $a, $b); }
+	;
+
+// This is the same as expr except it can't start with a unary math operator.
+// It's ugly but unfortunately necessary to allow two expressions in a row with no delimeter.
+// Without this, `cmd 1 + 1` could be interpreted as either `cmd(1 + 1)` or `cmd(1, +1)`.
+// We only want to allow the first interpretation, so we must exclude unary math from the second expression.
+expr_nounarymath: simpleexpr_nounarymath
+	| sprite
+	| expr_nounarymath[a] '+' expr[b]		{ $$ = new BinaryOpNode(LC::c_add, $a, $b); }
+	| expr_nounarymath[a] '-' expr[b]		{ $$ = new BinaryOpNode(LC::c_sub, $a, $b); }
+	| expr_nounarymath[a] '*' expr[b]		{ $$ = new BinaryOpNode(LC::c_mul, $a, $b); }
+	| expr_nounarymath[a] '/' expr[b]		{ $$ = new BinaryOpNode(LC::c_div, $a, $b); }
+	| expr_nounarymath[a] tMOD expr[b]		{ $$ = new BinaryOpNode(LC::c_mod, $a, $b); }
+	| expr_nounarymath[a] '>' expr[b]		{ $$ = new BinaryOpNode(LC::c_gt, $a, $b); }
+	| expr_nounarymath[a] '<' expr[b]		{ $$ = new BinaryOpNode(LC::c_lt, $a, $b); }
+	| expr_nounarymath[a] tEQ expr[b]		{ $$ = new BinaryOpNode(LC::c_eq, $a, $b); }
+	| expr_nounarymath[a] tNEQ expr[b]		{ $$ = new BinaryOpNode(LC::c_neq, $a, $b); }
+	| expr_nounarymath[a] tGE expr[b]		{ $$ = new BinaryOpNode(LC::c_ge, $a, $b); }
+	| expr_nounarymath[a] tLE expr[b]		{ $$ = new BinaryOpNode(LC::c_le, $a, $b); }
+	| expr_nounarymath[a] tAND expr[b]		{ $$ = new BinaryOpNode(LC::c_and, $a, $b); }
+	| expr_nounarymath[a] tOR expr[b]		{ $$ = new BinaryOpNode(LC::c_or, $a, $b); }
+	| expr_nounarymath[a] '&' expr[b]		{ $$ = new BinaryOpNode(LC::c_ampersand, $a, $b); }
+	| expr_nounarymath[a] tCONCAT expr[b]	{ $$ = new BinaryOpNode(LC::c_concat, $a, $b); }
+	| expr_nounarymath[a] tCONTAINS expr[b]	{ $$ = new BinaryOpNode(LC::c_contains, $a, $b); }
+	| expr_nounarymath[a] tSTARTS expr[b]	{ $$ = new BinaryOpNode(LC::c_starts, $a, $b); }
+	;
+
+expr_noeq: simpleexpr
+	| sprite
+	| expr_noeq[a] '+' expr_noeq[b]			{ $$ = new BinaryOpNode(LC::c_add, $a, $b); }
+	| expr_noeq[a] '-' expr_noeq[b]			{ $$ = new BinaryOpNode(LC::c_sub, $a, $b); }
+	| expr_noeq[a] '*' expr_noeq[b]			{ $$ = new BinaryOpNode(LC::c_mul, $a, $b); }
+	| expr_noeq[a] '/' expr_noeq[b]			{ $$ = new BinaryOpNode(LC::c_div, $a, $b); }
+	| expr_noeq[a] tMOD expr_noeq[b]		{ $$ = new BinaryOpNode(LC::c_mod, $a, $b); }
+	| expr_noeq[a] '>' expr_noeq[b]			{ $$ = new BinaryOpNode(LC::c_gt, $a, $b); }
+	| expr_noeq[a] '<' expr_noeq[b]			{ $$ = new BinaryOpNode(LC::c_lt, $a, $b); }
+	| expr_noeq[a] tNEQ expr_noeq[b]		{ $$ = new BinaryOpNode(LC::c_neq, $a, $b); }
+	| expr_noeq[a] tGE expr_noeq[b]			{ $$ = new BinaryOpNode(LC::c_ge, $a, $b); }
+	| expr_noeq[a] tLE expr_noeq[b]			{ $$ = new BinaryOpNode(LC::c_le, $a, $b); }
+	| expr_noeq[a] tAND expr_noeq[b]		{ $$ = new BinaryOpNode(LC::c_and, $a, $b); }
+	| expr_noeq[a] tOR expr_noeq[b]			{ $$ = new BinaryOpNode(LC::c_or, $a, $b); }
+	| expr_noeq[a] '&' expr_noeq[b]			{ $$ = new BinaryOpNode(LC::c_ampersand, $a, $b); }
+	| expr_noeq[a] tCONCAT expr_noeq[b]		{ $$ = new BinaryOpNode(LC::c_concat, $a, $b); }
+	| expr_noeq[a] tCONTAINS expr_noeq[b]	{ $$ = new BinaryOpNode(LC::c_contains, $a, $b); }
+	| expr_noeq[a] tSTARTS expr_noeq[b]		{ $$ = new BinaryOpNode(LC::c_starts, $a, $b); }
+	;
+
+sprite: tSPRITE expr tINTERSECTS simpleexpr	{ $$ = new IntersectsNode($expr, $simpleexpr); }
+	| tSPRITE expr tWITHIN simpleexpr		{ $$ = new WithinNode($expr, $simpleexpr); }
+	;
+
+exprlist: /* empty */						{ $$ = new NodeList; }
+	| nonemptyexprlist
+	;
+
+nonemptyexprlist: expr[item]				{
+		NodeList *list = new NodeList; 
+		list->push_back($item);
+		$$ = list; }
+	| nonemptyexprlist[prev] ',' expr[item]	{
+		$prev->push_back($item);
+		$$ = $prev; }
+	;
 
 %%
 

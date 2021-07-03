@@ -24,8 +24,9 @@
 #define PLATFORM_SDL_WIN32_WRAPPER_H
 
 #include "common/scummsys.h"
+#include "common/str.h"
 
-HRESULT SHGetFolderPathFunc(HWND hwnd, int csidl, HANDLE hToken, DWORD dwFlags, LPSTR pszPath);
+HRESULT SHGetFolderPathFunc(HWND hwnd, int csidl, HANDLE hToken, DWORD dwFlags, LPTSTR pszPath);
 
 // Helper functions
 namespace Win32 {
@@ -38,28 +39,81 @@ namespace Win32 {
  * @param minorVersion The minor version number (0.x)
  */
 bool confirmWindowsVersion(int majorVersion, int minorVersion);
+
+/**
+ * Returns true if the drive letter is a CDROM
+ *
+ * @param driveLetter The drive letter to test
+ */
+bool isDriveCD(char driveLetter);
+
 /**
  * Converts a C string into a Windows wide-character string.
  * Used to interact with Win32 Unicode APIs with no ANSI fallback.
+ * If UNICODE is defined then the conversion will use code page CP_UTF8,
+ * otherwise CP_ACP will be used.
  *
  * @param s Source string
- * @param c Code Page, by default is CP_ACP (default Windows ANSI code page)
  * @return Converted string
  *
  * @note Return value must be freed by the caller.
  */
-wchar_t *ansiToUnicode(const char *s, uint codePage = CP_ACP);
+wchar_t *ansiToUnicode(const char *s);
 /**
  * Converts a Windows wide-character string into a C string.
  * Used to interact with Win32 Unicode APIs with no ANSI fallback.
+ * If UNICODE is defined then the conversion will use code page CP_UTF8,
+ * otherwise CP_ACP will be used.
  *
  * @param s Source string
- * @param c Code Page, by default is CP_ACP (default Windows ANSI code page)
  * @return Converted string
  *
  * @note Return value must be freed by the caller.
  */
-char *unicodeToAnsi(const wchar_t *s, uint codePage = CP_ACP);
+char *unicodeToAnsi(const wchar_t *s);
+
+/**
+ * Converts a Common::String to a TCHAR array for the purpose of passing to
+ * a Windows API or CRT call. If UNICODE is defined then the string will be
+ * converted from UTF8 to to wide characters, otherwise the character array
+ * will be copied with no conversion.
+ *
+ * @param s Source string
+ * @return Converted string
+ *
+ * @note Return value must be freed by the caller.
+ */
+TCHAR *stringToTchar(const Common::String& s);
+
+/**
+ * Converts a TCHAR array returned from a Windows API or CRT call to a Common::String.
+ * If UNICODE is defined then the wide character array will be converted to UTF8,
+ * otherwise the char array will be copied with no conversion.
+ *
+ * @param s Source string
+ * @return Converted string
+ */
+Common::String tcharToString(const TCHAR *s);
+
+#ifdef UNICODE
+/**
+ * Returns command line arguments in argc / argv format in UTF8.
+ *
+ * @param argc argument count
+ * @return argument array
+ *
+ * @note Return value must be freed by the caller with freeArgvUtf8()
+ */
+char **getArgvUtf8(int *argc);
+
+/**
+ * Frees an argument array created by getArgvUtf8()
+ *
+ * @param argc argument count in argv
+ * @param argv argument array created by getArgvUtf8()
+ */
+void freeArgvUtf8(int argc, char **argv);
+#endif
 
 }
 

@@ -21,6 +21,7 @@
  */
 
 #include "base/plugins.h"
+#include "common/translation.h"
 #include "engines/advancedDetector.h"
 #include "private/private.h"
 
@@ -42,7 +43,7 @@ static const ADGameDescription gameDescriptions[] = {
 		"private-eye",  // US release
 		0,
 		AD_ENTRY2s("pvteye.z", "b682118cda6a42fa89833cae2b8824bd", 271895,
-		   "bklynlgo.bmp", "1dfb703349a46f8ec183de107992b7f5", 33118),
+		   "intro.smk", "270a1d0a29df122fc3d1d38e655161a7", 7310984),
 		Common::EN_USA,
 		Common::kPlatformWindows,
 		ADGF_TESTING,
@@ -59,13 +60,13 @@ static const ADGameDescription gameDescriptions[] = {
 		GUIO1(GUIO_NOMIDI)
 	},
 	{
-		"private-eye",  // EU release
+		"private-eye",  // EU release (UK)
 		0,
 		AD_ENTRY2s("pvteye.z", "d9ce391395701615e8b5d04bc4bf7ec3", 284699,
 		   "bklynlgo.bmp", "1dfb703349a46f8ec183de107992b7f5", 33118),
 		Common::EN_GRB,
 		Common::kPlatformWindows,
-		ADGF_UNSUPPORTED,
+		ADGF_TESTING,
 		GUIO1(GUIO_NOMIDI)
 	},
 	{
@@ -75,7 +76,7 @@ static const ADGameDescription gameDescriptions[] = {
 		   "bklynlgo.bmp", "1dfb703349a46f8ec183de107992b7f5", 33118),
 		Common::EN_GRB,
 		Common::kPlatformWindows,
-		ADGF_DEMO | ADGF_UNSUPPORTED,
+		ADGF_DEMO | ADGF_TESTING,
 		GUIO1(GUIO_NOMIDI)
 	},
 	{
@@ -100,65 +101,102 @@ static const ADGameDescription gameDescriptions[] = {
 	},
 	{
 		"private-eye", // EU release (ES)
-		"It uses different file format for the assest",
+		0,
 		AD_ENTRY2s("pvteye.ex_", "f41770550ab717086b2d0c805fef4b8f", 498176,
 		   "bklynlgo.bmp", "1dfb703349a46f8ec183de107992b7f5", 33118),
 		Common::ES_ESP,
 		Common::kPlatformWindows,
-		ADGF_UNSUPPORTED,
+		ADGF_TESTING,
 		GUIO1(GUIO_NOMIDI)
 	},
 	{
-		"private-eye", // Demo from the  EU release (ES)
-		"It uses different file format for the assest",
+		"private-eye", // Demo from the EU release (ES)
+		"Demo",
 		AD_ENTRY2s("pvtdemo.ex_", "048f751acd7a0f1a87b20d6dc5229210", 497152,
 		   "bklynlgo.bmp", "1dfb703349a46f8ec183de107992b7f5", 33118),
 		Common::ES_ESP,
 		Common::kPlatformWindows,
-		ADGF_DEMO | ADGF_UNSUPPORTED,
+		ADGF_DEMO | ADGF_TESTING,
 		GUIO1(GUIO_NOMIDI)
 	},
 	{
 		"private-eye", // EU release (FR)
-		"It uses different file format for the assest",
+		0,
 		AD_ENTRY2s("pvteye.ex_", "ae0dec43b2f54d45c8a1c93e97092141", 600576,
 		   "bklynlgo.bmp", "1dfb703349a46f8ec183de107992b7f5", 33118),
 		Common::FR_FRA,
 		Common::kPlatformWindows,
-		ADGF_UNSUPPORTED,
+		ADGF_TESTING,
 		GUIO1(GUIO_NOMIDI)
 	},
 	{
 		"private-eye", // EU release (DE)
-		"It uses different file format for the assest",
+		0,
 		AD_ENTRY2s("pvteye.ex_", "5ca171c4e8d804c7277887277d049f03", 600576,
 		   "bklynlgo.bmp", "1dfb703349a46f8ec183de107992b7f5", 33118),
 		Common::DE_DEU,
 		Common::kPlatformWindows,
+		ADGF_TESTING,
+		GUIO1(GUIO_NOMIDI)
+	},
+	{
+		"private-eye", // Demo from the EU release (DE)
+		"Demo",
+		AD_ENTRY2s("pvtdemo.ex_", "17156cbac7d14b08f4e351ac0e16a889", 599040,
+		    "bklynlgo.bmp", "1dfb703349a46f8ec183de107992b7f5", 33118),
+		Common::DE_DEU,
+		Common::kPlatformWindows,
+		ADGF_DEMO | ADGF_TESTING,
+		GUIO1(GUIO_NOMIDI)
+	},
+	{
+		"private-eye",  // RU release
+		0,
+		AD_ENTRY2s("pvteye.z", "b682118cda6a42fa89833cae2b8824bd", 271895,
+		   "intro.smk", "61cc13c9e4e2affd574087209df5c4a4", 7241368),
+		Common::RU_RUS,
+		Common::kPlatformWindows,
+		ADGF_TESTING,
+		GUIO1(GUIO_NOMIDI)
+	},
+	{
+		"private-eye", // MacOS release (US)
+		0,
+		AD_ENTRY2s("game.mac", "33553cc04813d3f658bbe9d548377878", 81894,
+		   "bklynlgo.bmp", "1dfb703349a46f8ec183de107992b7f5", 33118),
+		Common::EN_USA,
+		Common::kPlatformMacintosh,
+		ADGF_TESTING,
+		GUIO1(GUIO_NOMIDI)
+	},
+	{
+		"private-eye", // MacOS release (US) uninstalled
+		_s("Compressed game detected. Please uncompress it as specified in the game description on our Wiki"),
+		AD_ENTRY1s("Private Eye Installer", "02533427ebdf26d5dd12cee8e9f4de4d", 1647309),
+		Common::EN_USA,
+		Common::kPlatformMacintosh,
 		ADGF_UNSUPPORTED,
 		GUIO1(GUIO_NOMIDI)
 	},
 	{
-		"private-eye", // Demo from the EU release
-		"Demo",
-		AD_ENTRY2s("Private Eye Demo", "", 284129,
-		   "bklynlgo.bmp", "1dfb703349a46f8ec183de107992b7f5", 33118),
-		Common::EN_GRB,
-		Common::kPlatformWindows,
-		ADGF_DEMO | ADGF_UNSUPPORTED,
+		"private-eye", // MacOS demo (US)
+		0,
+		AD_ENTRY2s("demogame.mac", "cfbceaa8b91f0f53c745db61d1bc9749", 6103,
+		    "bklynlgo.bmp", "1dfb703349a46f8ec183de107992b7f5", 33118),
+		Common::EN_USA,
+		Common::kPlatformMacintosh,
+		ADGF_DEMO | ADGF_TESTING,
 		GUIO1(GUIO_NOMIDI)
 	},
-	/*
 	{
-		"private-eye", // Demo from the EU release
-		"Demo",
-		AD_ENTRY1s("PVTEYE.Z", "", 0),
-		Common::EN_GRB,
-		Common::kPlatformWindows,
+		"private-eye", // MacOS demo (US) uninstalled
+		_s("Compressed game detected. Please uncompress it as specified in the game description on our Wiki"),
+		AD_ENTRY1s("Private Eye Demo Installer", "e7665ddc5e6d932c4a65598ecc4ec7d2", 1626393),
+		Common::EN_USA,
+		Common::kPlatformMacintosh,
 		ADGF_DEMO | ADGF_UNSUPPORTED,
 		GUIO1(GUIO_NOMIDI)
 	},
-	*/
 	AD_TABLE_END_MARKER
 };
 } // End of namespace Private

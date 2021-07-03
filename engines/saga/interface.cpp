@@ -124,32 +124,10 @@ Interface::Interface(SagaEngine *vm) : _vm(vm) {
 	ByteArray resourceData;
 	int i;
 
-#if 0
-	// FTA2 related test code
-
-	// TODO: this will probably have to be moved to a new class
-	// It's left here for now till the code differences are figured out
-	if (_vm->getGameId() == GID_FTA2) {
-		_interfaceContext = _vm->_resource->getContext(GAME_IMAGEFILE);
-		_vm->_resource->loadResource(_interfaceContext, 22, resource, resourceLength);	// Julian's portrait
-
-		_vm->decodeBGImage(resource, resourceLength, &_mainPanel.image,
-			&_mainPanel.imageLength, &_mainPanel.imageWidth, &_mainPanel.imageHeight);
-
-		free(resource);
-		return;
-	}
-#endif
-
 	// Load interface module resource file context
 	_interfaceContext = _vm->_resource->getContext(GAME_RESOURCEFILE);
 	if (_interfaceContext == NULL) {
 		error("Interface::Interface() resource context not found");
-	}
-
-	// Do nothing for SAGA2 games for now
-	if (_vm->isSaga2()) {
-		return;
 	}
 
 	// Main panel
@@ -720,11 +698,6 @@ bool Interface::processAscii(Common::KeyState keystate) {
 }
 
 void Interface::setStatusText(const char *text, int statusColor) {
-	if (_vm->getGameId() == GID_FTA2 || _vm->getGameId() == GID_DINO) {
-		warning("setStatusText not implemented for SAGA2");
-		return;
-	}
-
 	if (_vm->getGameId() == GID_IHNM) {
 		// Don't show the status text for the IHNM chapter selection screens (chapter 8), or
 		// scene 0 (IHNM demo introduction)

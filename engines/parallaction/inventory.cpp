@@ -122,8 +122,14 @@ int16 Parallaction::getInventoryItemIndex(int16 pos) {
 	return _inventory->getItemName(pos);
 }
 
-void Parallaction::cleanInventory(bool keepVerbs) {
+void Parallaction_ns::cleanInventory(bool keepVerbs) {
 	_inventory->clear(keepVerbs);
+}
+
+void Parallaction_br::cleanInventory(bool keepVerbs) {
+	_dinoInventory->clear(keepVerbs);
+	_donnaInventory->clear(keepVerbs);
+	_dougInventory->clear(keepVerbs);
 }
 
 void Parallaction::openInventory() {
@@ -134,15 +140,29 @@ void Parallaction::closeInventory() {
 	_inventoryRenderer->hideInventory();
 }
 
+Inventory *Parallaction_br::findInventory(const char *name) {
+	if (!scumm_stricmp(name, "dino")) {
+		return _dinoInventory;
+	}
+	if (!scumm_stricmp(name, "donna")) {
+		return _donnaInventory;
+	}
+	if (!scumm_stricmp(name, "doug")) {
+		return _dougInventory;
+	}
+	return 0;
+}
 
-
-
-InventoryRenderer::InventoryRenderer(Parallaction *vm, InventoryProperties *props, Inventory *inv) : _vm(vm), _props(props), _inv(inv) {
+InventoryRenderer::InventoryRenderer(Parallaction *vm, InventoryProperties *props) : _vm(vm), _props(props) {
 	_surf.create(_props->_width, _props->_height, Graphics::PixelFormat::createFormatCLUT8());
 }
 
 InventoryRenderer::~InventoryRenderer() {
 	_surf.free();
+}
+
+void InventoryRenderer::setInventory(Inventory *inventory) {
+	_inv = inventory;
 }
 
 void InventoryRenderer::showInventory() {
@@ -338,19 +358,18 @@ const InventoryItem* Inventory::getItem(ItemPosition pos) const {
 void Parallaction_ns::initInventory() {
 	_inventory = new Inventory(_invProps_NS._maxItems, _verbs_NS);
 	assert(_inventory);
-	_inventoryRenderer = new InventoryRenderer(this, &_invProps_NS, _inventory);
+	_inventoryRenderer = new InventoryRenderer(this, &_invProps_NS);
 	assert(_inventoryRenderer);
+	_inventoryRenderer->setInventory(_inventory);
 }
 
 void Parallaction_br::initInventory() {
-	_inventory = new Inventory(_invProps_BR._maxItems, _verbs_BR);
-	assert(_inventory);
-	_inventoryRenderer = new InventoryRenderer(this, &_invProps_BR, _inventory);
+	_inventoryRenderer = new InventoryRenderer(this, &_invProps_BR);
 	assert(_inventoryRenderer);
 
-	_charInventories[0] = new Inventory(_invProps_BR._maxItems, _verbs_BR);
-	_charInventories[1] = new Inventory(_invProps_BR._maxItems, _verbs_BR);
-	_charInventories[2] = new Inventory(_invProps_BR._maxItems, _verbs_BR);
+	_dinoInventory = new Inventory(_invProps_BR._maxItems, _verbs_BR);
+	_donnaInventory = new Inventory(_invProps_BR._maxItems, _verbs_BR);
+	_dougInventory = new Inventory(_invProps_BR._maxItems, _verbs_BR);
 }
 
 void Parallaction_ns::destroyInventory() {
@@ -362,16 +381,15 @@ void Parallaction_ns::destroyInventory() {
 
 void Parallaction_br::destroyInventory() {
 	delete _inventoryRenderer;
-	delete _inventory;
 	_inventory = 0;
 	_inventoryRenderer = 0;
 
-	delete _charInventories[0];
-	delete _charInventories[1];
-	delete _charInventories[2];
-	_charInventories[0] = 0;
-	_charInventories[1] = 0;
-	_charInventories[2] = 0;
+	delete _dinoInventory;
+	delete _donnaInventory;
+	delete _dougInventory;
+	_dinoInventory = 0;
+	_donnaInventory = 0;
+	_dougInventory = 0;
 }
 
 

@@ -20,31 +20,32 @@
  *
  */
 
-#include "audio/decoders/wave.h"
 #include "audio/audiostream.h"
+#include "audio/decoders/wave.h"
 #include "common/archive.h"
 #include "common/config-manager.h"
-#include "common/debug.h"
 #include "common/debug-channels.h"
+#include "common/debug.h"
 #include "common/error.h"
 #include "common/events.h"
 #include "common/file.h"
 #include "common/savefile.h"
-#include "common/system.h"
 #include "common/str.h"
+#include "common/system.h"
 #include "common/timer.h"
 #include "engines/util.h"
 #include "image/bmp.h"
 
+#include "private/decompiler.h"
+#include "private/grammar.h"
 #include "private/private.h"
 #include "private/tokens.h"
-#include "private/grammar.h"
 
 namespace Private {
 
 PrivateEngine *g_private = NULL;
 
-extern int parse(char *);
+extern int parse(const char *);
 
 PrivateEngine::PrivateEngine(OSystem *syst, const ADGameDescription *gd)
 	: Engine(syst), _gameDescription(gd), _image(nullptr), _videoDecoder(nullptr),
@@ -120,40 +121,73 @@ void PrivateEngine::initializePath(const Common::FSNode &gamePath) {
 	SearchMan.addDirectory(gamePath.getPath(), gamePath, 0, 10);
 }
 
-Common::Error PrivateEngine::run() {
+Common::SeekableReadStream *PrivateEngine::loadAssets() {
 
-	assert(_installerArchive.open("SUPPORT/ASSETS.Z"));
+	Common::File *test = new Common::File();
 	Common::SeekableReadStream *file = NULL;
-	// if the full game is used
-	if (!isDemo()) {
-		assert(_installerArchive.hasFile("GAME.DAT"));
-		file = _installerArchive.createReadStreamForMember("GAME.DAT");
-	} else {
-		// if the demo from archive.org is used
-		if (_installerArchive.hasFile("GAME.TXT"))
-			file = _installerArchive.createReadStreamForMember("GAME.TXT");
 
-		// if the demo from the full retail CDROM is used
-		else {
-			if (_installerArchive.hasFile("DEMOGAME.DAT"))
+	if (isDemo() && test->open("SUPPORT/ASSETS/DEMOGAME.WIN"))
+		file = test;
+	else if (isDemo() && test->open("SUPPORT/DEMOGAME.MAC"))
+		file = test;
+	else if (test->open("SUPPORT/ASSETS/GAME.WIN")) {
+		file = test;
+	} else if (test->open("SUPPORT/GAME.MAC")) {
+		file = test;
+	} else {
+		delete test;
+		assert(_installerArchive.open("SUPPORT/ASSETS.Z"));
+		// if the full game is used
+		if (!isDemo()) {
+			if (_installerArchive.hasFile("GAME.DAT"))
+				file = _installerArchive.createReadStreamForMember("GAME.DAT");
+			else if (_installerArchive.hasFile("GAME.WIN"))
+				file = _installerArchive.createReadStreamForMember("GAME.WIN");
+			else
+				error("Unknown version");
+		} else {
+			// if the demo from archive.org is used
+			if (_installerArchive.hasFile("GAME.TXT"))
+				file = _installerArchive.createReadStreamForMember("GAME.TXT");
+
+			// if the demo from the full retail CDROM is used
+			else if (_installerArchive.hasFile("DEMOGAME.DAT"))
 				file = _installerArchive.createReadStreamForMember("DEMOGAME.DAT");
+			else if (_installerArchive.hasFile("DEMOGAME.WIN"))
+				file = _installerArchive.createReadStreamForMember("DEMOGAME.WIN");
+			else {
+				error("Unknown version");
+			}
 		}
 	}
-
-	// Read assets file
 	assert(file != NULL);
-	const int32 fileSize = file->size();
+	return file;
+}
+
+Common::Error PrivateEngine::run() {
+
+	_language = Common::parseLanguage(ConfMan.get("language"));
+	_platform = Common::parsePlatform(ConfMan.get("platform"));
+
+	Common::SeekableReadStream *file = loadAssets();
+	// Read assets file
+	const uint32 fileSize = file->size();
 	char *buf = (char *)malloc(fileSize + 1);
 	file->read(buf, fileSize);
 	buf[fileSize] = '\0';
+
+	Decompiler decomp(buf, fileSize, _platform == Common::kPlatformMacintosh);
+	free(buf);
+
+	Common::String scripts = decomp.getResult();
+	debugC(1, kPrivateDebugCode, "code:\n%s", scripts.c_str());
 
 	// Initialize stuff
 	Gen::g_vm = new Gen::VM();
 	Settings::g_setts = new Settings::SettingMaps();
 
 	initFuncs();
-	parse(buf);
-	free(buf);
+	parse(scripts.c_str());
 	delete file;
 	assert(maps.constants.size() > 0);
 
@@ -179,12 +213,11 @@ Common::Error PrivateEngine::run() {
 	Common::Event event;
 	Common::Point mousePos;
 	_videoDecoder = nullptr;
-
 	int saveSlot = ConfMan.getInt("save_slot");
 	if (saveSlot >= 0) { // load the savegame
 		loadGameState(saveSlot);
 	} else {
-		_nextSetting = "kGoIntro";
+		_nextSetting = getGoIntroSetting();
 	}
 
 	while (!shouldQuit()) {
@@ -232,9 +265,10 @@ Common::Error PrivateEngine::run() {
 				changeCursor("default");
 				// The following functions will return true
 				// if the cursor is changed
-				if	  (cursorPauseMovie(mousePos)) {}
-				else if (cursorMask(mousePos))	   {}
-				else	 cursorExit(mousePos);
+				if (cursorPauseMovie(mousePos)) {
+				} else if (cursorMask(mousePos)) {
+				} else
+					cursorExit(mousePos);
 				break;
 
 			default:
@@ -254,7 +288,7 @@ Common::Error PrivateEngine::run() {
 			continue;
 		}
 
-		if (!_nextVS.empty() && _currentSetting == "kMainDesktop") {
+		if (!_nextVS.empty() && (_currentSetting == getMainDesktopSetting())) {
 			loadImage(_nextVS, 160, 120);
 			drawScreen();
 		}
@@ -357,7 +391,7 @@ void PrivateEngine::clearAreas() {
 
 void PrivateEngine::startPoliceBust() {
 	// This logic was extracted from the binary
-	int policeIndex = maps.variables.getVal("kPoliceIndex")->u.val;
+	int policeIndex = maps.variables.getVal(getPoliceIndexVariable())->u.val;
 	int r = _rnd->getRandomNumber(0xc);
 	if (policeIndex > 0x14) {
 		policeIndex = 0x15;
@@ -383,13 +417,13 @@ void PrivateEngine::checkPoliceBust() {
 		return;
 	}
 
-	if (_numberClicks == _maxNumberClicks+1) {
-		uint policeIndex = maps.variables.getVal("kPoliceIndex")->u.val;
+	if (_numberClicks == _maxNumberClicks + 1) {
+		uint policeIndex = maps.variables.getVal(getPoliceIndexVariable())->u.val;
 		_policeBustSetting = _currentSetting;
 		if (policeIndex <= 13) {
-			_nextSetting = "kPOGoBustMovie";
+			_nextSetting = getPOGoBustMovieSetting();
 		} else {
-			_nextSetting = "kPoliceBustFromMO";
+			_nextSetting = getPoliceBustFromMOSetting();
 		}
 		clearAreas();
 		_policeBustEnabled = false;
@@ -407,7 +441,7 @@ bool PrivateEngine::cursorExit(Common::Point mousePos) {
 
 	for (ExitList::const_iterator it = _exits.begin(); it != _exits.end(); ++it) {
 		const ExitInfo &e = *it;
-		cs = e.rect.width()*e.rect.height();
+		cs = e.rect.width() * e.rect.height();
 
 		if (e.rect.contains(mousePos)) {
 			if (cs < rs && !e.cursor.empty()) {
@@ -439,7 +473,6 @@ bool PrivateEngine::inMask(Graphics::Surface *surf, Common::Point mousePos) {
 	return (surf->getPixel(mousePos.x, mousePos.y) != _transparentColor);
 }
 
-
 bool PrivateEngine::cursorMask(Common::Point mousePos) {
 	bool inside = false;
 	for (MaskList::const_iterator it = _masks.begin(); it != _masks.end(); ++it) {
@@ -467,6 +500,72 @@ bool PrivateEngine::cursorPauseMovie(Common::Point mousePos) {
 	return false;
 }
 
+Common::String PrivateEngine::getPauseMovieSetting() {
+	if ((_language == Common::EN_USA || _language == Common::RU_RUS) && _platform != Common::kPlatformMacintosh)
+		return "kPauseMovie";
+
+	return "k3";
+}
+
+Common::String PrivateEngine::getGoIntroSetting() {
+	if ((_language == Common::EN_USA || _language == Common::RU_RUS) && _platform != Common::kPlatformMacintosh)
+		return "kGoIntro";
+
+	return "k1";
+}
+
+Common::String PrivateEngine::getAlternateGameVariable() {
+	if ((_language == Common::EN_USA || _language == Common::RU_RUS) && _platform != Common::kPlatformMacintosh)
+		return "kAlternateGame";
+
+	return "k2";
+}
+
+Common::String PrivateEngine::getMainDesktopSetting() {
+	if ((_language == Common::EN_USA || _language == Common::RU_RUS) && _platform != Common::kPlatformMacintosh)
+		return "kMainDesktop";
+
+	if (isDemo())
+		return "k45";
+
+	return "k183";
+}
+
+Common::String PrivateEngine::getPoliceIndexVariable() {
+	if ((_language == Common::EN_USA || _language == Common::RU_RUS) && _platform != Common::kPlatformMacintosh)
+		return "kPoliceIndex";
+
+	return "k0";
+}
+
+Common::String PrivateEngine::getPOGoBustMovieSetting() {
+	if ((_language == Common::EN_USA || _language == Common::RU_RUS) && _platform != Common::kPlatformMacintosh)
+		return "kPOGoBustMovie";
+
+	return "k7";
+}
+
+Common::String PrivateEngine::getPoliceBustFromMOSetting() {
+	if ((_language == Common::EN_USA || _language == Common::RU_RUS) && _platform != Common::kPlatformMacintosh)
+		return "kPoliceBustFromMO";
+
+	return "k6";
+}
+
+Common::String PrivateEngine::getExitCursor() {
+	if ((_language == Common::EN_USA || _language == Common::RU_RUS) && _platform != Common::kPlatformMacintosh)
+		return "kExit";
+
+	return "k5";
+}
+
+Common::String PrivateEngine::getInventoryCursor() {
+	if ((_language == Common::EN_USA || _language == Common::RU_RUS) && _platform != Common::kPlatformMacintosh)
+		return "kInventory";
+
+	return "k7";
+}
+
 void PrivateEngine::selectPauseMovie(Common::Point mousePos) {
 	if (_mode == 1) {
 		uint32 tol = 15;
@@ -478,7 +577,7 @@ void PrivateEngine::selectPauseMovie(Common::Point mousePos) {
 				else
 					_pausedSetting = _currentSetting;
 
-				_nextSetting = "kPauseMovie";
+				_nextSetting = getPauseMovieSetting();
 				if (_videoDecoder) {
 					_videoDecoder->pauseVideo(true);
 				}
@@ -497,7 +596,7 @@ void PrivateEngine::selectExit(Common::Point mousePos) {
 	int cs = 0;
 	for (ExitList::const_iterator it = _exits.begin(); it != _exits.end(); ++it) {
 		const ExitInfo &e = *it;
-		cs = e.rect.width()*e.rect.height();
+		cs = e.rect.width() * e.rect.height();
 		//debug("Testing exit %s %d", e.nextSetting->c_str(), cs);
 		if (e.rect.contains(mousePos)) {
 			//debug("Inside! %d %d", cs, rs);
@@ -720,7 +819,7 @@ void PrivateEngine::restartGame() {
 
 	for (NameList::iterator it = maps.variableList.begin(); it != maps.variableList.end(); ++it) {
 		Private::Symbol *sym = maps.variables.getVal(*it);
-		if (*(sym->name) != "kAlternateGame")
+		if (*(sym->name) != getAlternateGameVariable())
 			sym->u.val = 0;
 	}
 
@@ -805,10 +904,12 @@ Common::Error PrivateEngine::loadGameStream(Common::SeekableReadStream *stream) 
 	size = stream->readUint32LE();
 	_phone.clear();
 	PhoneInfo p;
+	Common::String name;
 	for (uint32 j = 0; j < size; ++j) {
 		p.sound = stream->readString();
-		p.flag  = maps.variables.getVal(stream->readString());
-		p.val   = stream->readUint32LE();
+		name = stream->readString();
+		p.flag = maps.lookupVariable(&name);
+		p.val = stream->readUint32LE();
 		_phone.push_back(p);
 	}
 
@@ -844,9 +945,9 @@ Common::Error PrivateEngine::loadGameStream(Common::SeekableReadStream *stream) 
 	}
 
 	if (_pausedSetting.empty())
-		_nextSetting = "kStartGame";
+		_nextSetting = getMainDesktopSetting();
 	else
-		_nextSetting = "kPauseMovie";
+		_nextSetting = getPauseMovieSetting();
 
 	return Common::kNoError;
 }
@@ -1036,7 +1137,7 @@ Graphics::Surface *PrivateEngine::decodeImage(const Common::String &name) {
 void PrivateEngine::loadImage(const Common::String &name, int x, int y) {
 	debugC(1, kPrivateDebugFunction, "%s(%s,%d,%d)", __FUNCTION__, name.c_str(), x, y);
 	Graphics::Surface *surf = decodeImage(name);
-	_compositeSurface->transBlitFrom(*surf, _origin + Common::Point(x,y), _transparentColor);
+	_compositeSurface->transBlitFrom(*surf, _origin + Common::Point(x, y), _transparentColor);
 	surf->free();
 	delete surf;
 	_image->destroy();
@@ -1045,7 +1146,6 @@ void PrivateEngine::loadImage(const Common::String &name, int x, int y) {
 void PrivateEngine::drawScreenFrame() {
 	g_system->copyRectToScreen(_frame->getPixels(), _frame->pitch, 0, 0, _screenW, _screenH);
 }
-
 
 Graphics::Surface *PrivateEngine::loadMask(const Common::String &name, int x, int y, bool drawn) {
 	debugC(1, kPrivateDebugFunction, "%s(%s,%d,%d,%d)", __FUNCTION__, name.c_str(), x, y, drawn);
@@ -1057,10 +1157,10 @@ Graphics::Surface *PrivateEngine::loadMask(const Common::String &name, int x, in
 	uint32 hdiff = 0;
 	uint32 wdiff = 0;
 
-	if (x+csurf->h > _screenH)
-		hdiff = x+csurf->h - _screenH;
-	if (y+csurf->w > _screenW)
-		wdiff = y+csurf->w - _screenW;
+	if (x + csurf->h > _screenH)
+		hdiff = x + csurf->h - _screenH;
+	if (y + csurf->w > _screenW)
+		wdiff = y + csurf->w - _screenW;
 
 	Common::Rect crect(csurf->w - wdiff, csurf->h - hdiff);
 	surf->copyRectToSurface(*csurf, x, y, crect);
@@ -1085,7 +1185,7 @@ void PrivateEngine::drawScreen() {
 	if (_videoDecoder && !_videoDecoder->isPaused()) {
 		const Graphics::Surface *frame = _videoDecoder->decodeNextFrame();
 		Graphics::Surface *cframe = frame->convertTo(_pixelFormat, _videoDecoder->getPalette());
-		Common::Point center((_screenW - _videoDecoder->getWidth())/2, (_screenH - _videoDecoder->getHeight())/2);
+		Common::Point center((_screenW - _videoDecoder->getWidth()) / 2, (_screenH - _videoDecoder->getHeight()) / 2);
 		surface->blitFrom(*cframe, center);
 		cframe->free();
 		delete cframe;
@@ -1101,7 +1201,6 @@ void PrivateEngine::drawScreen() {
 	//if (_image->getPalette() != nullptr)
 	//	g_system->getPaletteManager()->setPalette(_image->getPalette(), _image->getPaletteStartIndex(), _image->getPaletteColorCount());
 	g_system->updateScreen();
-
 }
 
 bool PrivateEngine::getRandomBool(uint p) {
@@ -1169,7 +1268,7 @@ void PrivateEngine::loadLocations(const Common::Rect &rect) {
 		if (sym->u.val) {
 			offset = offset + 22;
 			Common::String s =
-			  Common::String::format("%sdryloc%d.bmp", _diaryLocPrefix.c_str(), i);
+				Common::String::format("%sdryloc%d.bmp", _diaryLocPrefix.c_str(), i);
 
 			loadMask(s, rect.left + 120, rect.top + offset, true);
 		}

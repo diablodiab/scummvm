@@ -58,16 +58,19 @@ public:
 	void setWidth(int w);
 	void setHeight(int h);
 	void setBbox(int l, int t, int r, int b);
-	void setCast(uint16 castId);
+	void setCast(CastMemberID memberID);
 	void setClean(Sprite *nextSprite, int spriteId, bool partial = false);
 	void setEditable(bool editable);
 	void replaceSprite(Sprite *nextSprite);
-	void replaceWidget();
+	void replaceWidget(CastMemberID previousCastId = CastMemberID(0, 0));
 	bool updateWidget();
+	void updateTextCast();
 
 	void updateGlobalAttr();
 
 	void addDelta(Common::Point pos);
+	bool canKeepWidget(CastMemberID castId);
+	bool canKeepWidget(Sprite *currentSprite, Sprite *nextSprite);
 
 public:
 	Sprite *_sprite;

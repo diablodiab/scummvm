@@ -93,6 +93,7 @@ public:
 
 	Channel *getChannelById(uint16 id);
 	Sprite *getSpriteById(uint16 id);
+	Sprite *getOriginalSpriteById(uint16 id);
 
 	void setSpriteCasts();
 
@@ -105,7 +106,7 @@ public:
 	uint16 getActiveSpriteIDFromPos(Common::Point pos);
 	bool checkSpriteIntersection(uint16 spriteId, Common::Point pos);
 	Common::List<Channel *> getSpriteIntersections(const Common::Rect &r);
-	uint16 getSpriteIdByMemberId(uint16 id);
+	uint16 getSpriteIdByMemberId(CastMemberID id);
 
 	bool renderTransition(uint16 frameId);
 	void renderFrame(uint16 frameId, RenderMode mode = kRenderModeNormal);

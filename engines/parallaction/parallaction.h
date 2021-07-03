@@ -358,7 +358,6 @@ public:
 	bool		isItemInInventory(int32 v);
 	const		InventoryItem* getInventoryItem(int16 pos);
 	int16		getInventoryItemIndex(int16 pos);
-	void		cleanInventory(bool keepVerbs = true);
 	void		openInventory();
 	void		closeInventory();
 
@@ -403,7 +402,7 @@ public:
 	void scheduleWalk(int16 x, int16 y, bool fromUser) override;
 	DialogueManager *createDialogueManager(ZonePtr z) override;
 	bool processGameEvent(int event) override;
-
+	void cleanInventory(bool keepVerbs);
 	void	changeBackground(const char *background, const char *mask = 0, const char *path = 0);
 
 private:
@@ -512,6 +511,9 @@ public:
 	void setupSubtitles(const char *s, const char *s2, int y);
 	void clearSubtitles();
 
+	Inventory *findInventory(const char *name);
+	void linkUnlinkedZoneAnimations();
+
 	void testCounterCondition(const Common::String &name, int op, int value);
 	void restoreOrSaveZoneFlags(ZonePtr z, bool restore);
 
@@ -542,12 +544,13 @@ public:
 	ZonePtr		_activeZone2;
 	uint32		_zoneFlags[NUM_LOCATIONS][NUM_ZONES];
 
-
 private:
 	LocationParser_br		*_locationParser;
 	ProgramParser_br		*_programParser;
 	SoundMan_br				*_soundManI;
-	Inventory				*_charInventories[3];	// all the inventories
+	Inventory				*_dinoInventory;
+	Inventory				*_donnaInventory;
+	Inventory				*_dougInventory;
 
 	int32		_counters[32];
 	Table		*_countersNames;
@@ -556,6 +559,8 @@ private:
 	void	initResources();
 	void	initInventory();
 	void	destroyInventory();
+
+	void	cleanInventory(bool keepVerbs);
 	void	setupBalloonManager();
 	void	initFonts();
 	void	freeFonts();
@@ -573,6 +578,7 @@ private:
 	Common::String		_followerName;
 	AnimationPtr		_follower;
 	PathWalker_BR		*_walker;
+	int					_ferrcycleMode;
 
 	// dos callables
 	void _c_null(void *);

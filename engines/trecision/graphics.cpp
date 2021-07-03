@@ -39,9 +39,14 @@
 
 namespace Trecision {
 
-GraphicsManager::GraphicsManager(TrecisionEngine *vm) : _vm(vm),  _font(nullptr) {	
+GraphicsManager::GraphicsManager(TrecisionEngine *vm) : _vm(vm), _rgb555Format(2, 5, 5, 5, 0, 10, 5, 0, 0) {	
 	for (int i = 0; i < 3; ++i)
 		_bitMask[i] = 0;
+
+	for (int i = 0; i < 256; ++i) {
+		_fonts[i]._width = 0;
+		_fonts[i]._data = nullptr;
+	}
 }
 
 GraphicsManager::~GraphicsManager() {
@@ -54,19 +59,19 @@ GraphicsManager::~GraphicsManager() {
 	_saveSlotThumbnails.free();
 	_textureMat.free();
 
-	delete[] _font;
+	for (int i = 0; i < 256; ++i)
+		delete[] _fonts[i]._data;
 }
 
 bool GraphicsManager::init() {
-	// Find a suitable 16-bit format
-	const Graphics::PixelFormat rgb555(2, 5, 5, 5, 0, 10, 5, 0, 0);
+	// Find a suitable 16-bit format, currently we don't support other color depths
 	Common::List<Graphics::PixelFormat> formats = g_system->getSupportedFormats();
 	for (Common::List<Graphics::PixelFormat>::iterator it = formats.begin(); it != formats.end(); ++it) {
 		if (it->bytesPerPixel != 2 || it->aBits()) {
 			it = formats.reverse_erase(it);
-		} else if (*it == rgb555) {
+		} else if (*it == _rgb555Format) {
 			formats.clear();
-			formats.push_back(rgb555);
+			formats.push_back(_rgb555Format);
 			break;
 		}
 	}
@@ -110,38 +115,39 @@ void GraphicsManager::drawObj(int index, bool mask, Common::Rect drawRect, Commo
 
 	// If we have a valid object, draw it, otherwise erase it
 	// by using the background buffer
-	const uint16 *buf = index >= 0 ? _vm->_objPointers[index] : (uint16 *)_smkBackground.getPixels();
+	const uint16 *buf = index >= 0 ? _vm->_objectGraphics[index].buf : (uint16 *)_smkBackground.getPixels();
 	if (mask && index >= 0) {
-		uint8 *maskPtr = _vm->_maskPointers[index];
+		uint8 *maskPtr = _vm->_objectGraphics[index].mask;
 
 		for (uint16 y = drawRect.top; y < drawRect.bottom; ++y) {
-			uint16 sco = 0;
-			uint16 c = 0;
-			while (sco < drawRect.width()) {
-				if (c == 0) { // jump
-					sco += *maskPtr;
+			uint16 x = 0;
+			bool copyBytes = false;
+			while (x < drawRect.width()) {
+				if (!copyBytes) { // jump
+					x += *maskPtr;
 					++maskPtr;
 
-					c = 1;
+					copyBytes = true;
 				} else { // copy
 					const uint16 maskOffset = *maskPtr;
 
 					if (maskOffset != 0 && y >= drawRect.top + drawObjRect.top && y < drawRect.top + drawObjRect.bottom) {
-						if (sco >= drawObjRect.left && sco + maskOffset < drawObjRect.right)
-							memcpy(_screenBuffer.getBasePtr(sco + drawRect.left, y), buf, maskOffset * 2);
+						const void *src = (x >= drawObjRect.left) ? buf : buf + drawObjRect.left - x;
+						int offset = (x >= drawObjRect.left) ? x : drawObjRect.left;
+						void *dst = _screenBuffer.getBasePtr(offset + drawRect.left, y);
 
-						else if (sco < drawObjRect.left && sco + maskOffset < drawObjRect.right && sco + maskOffset >= drawObjRect.left)
-							memcpy(_screenBuffer.getBasePtr(drawObjRect.left + drawRect.left, y), buf + drawObjRect.left - sco, (maskOffset + sco - drawObjRect.left) * 2);
-
-						else if (sco >= drawObjRect.left && sco + maskOffset >= drawObjRect.right && sco < drawObjRect.right)
-							memcpy(_screenBuffer.getBasePtr(sco + drawRect.left, y), buf, (drawObjRect.right - sco) * 2);
-
-						else if (sco < drawObjRect.left && sco + maskOffset >= drawObjRect.right)
-							memcpy(_screenBuffer.getBasePtr(drawObjRect.left + drawRect.left, y), buf + drawObjRect.left - sco, (drawObjRect.right - drawObjRect.left) * 2);
+						if (x >= drawObjRect.left && x + maskOffset < drawObjRect.right)
+							memcpy(dst, src, maskOffset * 2);
+						else if (x < drawObjRect.left && x + maskOffset < drawObjRect.right && x + maskOffset >= drawObjRect.left)
+							memcpy(dst, src, (maskOffset + x - drawObjRect.left) * 2);
+						else if (x >= drawObjRect.left && x + maskOffset >= drawObjRect.right && x < drawObjRect.right)
+							memcpy(dst, src, (drawObjRect.right - x) * 2);
+						else if (x < drawObjRect.left && x + maskOffset >= drawObjRect.right)
+							memcpy(dst, src, (drawObjRect.right - drawObjRect.left) * 2);
 					}
-					sco += *maskPtr;
+					x += *maskPtr;
 					buf += *maskPtr++;
-					c = 0;
+					copyBytes = false;
 				}
 			}
 		}
@@ -234,13 +240,13 @@ void GraphicsManager::copyToScreen(int x, int y, int w, int h) {
 }
 
 void GraphicsManager::readSurface(Common::SeekableReadStream *stream, Graphics::Surface *surface, uint16 width, uint16 height, uint16 count) {
-	Graphics::PixelFormat pixelFormat = g_system->getScreenFormat();
-	surface->create(width * count, height, pixelFormat);
+	surface->create(width * count, height, _rgb555Format);
 
 	for (uint16 i = 0; i < count; ++i) {
 		for (uint16 y = 0; y < height; ++y) {
-			void *p = surface->getBasePtr(width * i, y);
-			stream->read(p, width * pixelFormat.bytesPerPixel);
+			for (uint16 x = 0; x < width; ++x) {
+				surface->setPixel(width * i + x, y, stream->readUint16LE());
+			}
 		}
 	}
 
@@ -274,7 +280,7 @@ void GraphicsManager::loadData() {
 	readSurface(iconsDataFile, &_inventoryIcons, ICONDX, ICONDY, READICON);
 	delete iconsDataFile;
 
-	_font = _vm->readData("nlfont.fnt");
+	loadFont();
 }
 
 void GraphicsManager::setSaveSlotThumbnail(byte iconSlot, const Graphics::Surface *thumbnail) {
@@ -344,7 +350,7 @@ void GraphicsManager::clearScreenBufferSaveSlotDescriptions() {
 
 uint16 GraphicsManager::convertToScreenFormat(uint16 color) const {
 	uint8 r, g, b;
-	g_system->getScreenFormat().colorToRGB(color, r, g, b);
+	_rgb555Format.colorToRGB(color, r, g, b);
 	return (uint16)_screenFormat.RGBToColor(r, g, b);
 }
 
@@ -359,11 +365,11 @@ void GraphicsManager::shadow(uint16 x, uint16 y, uint8 num) {
 	}
 
 	const uint16 val = (uint16)_screenBuffer.getPixel(x, y);
-	const uint16 shadow =
+	const uint16 shadowVal =
 			((((val & _bitMask[2]) * num >> 7) & _bitMask[2]) |
 			(((val & _bitMask[1]) * num >> 7) & _bitMask[1]) |
 			(((val & _bitMask[0]) * num >> 7) & _bitMask[0]));
-	_screenBuffer.setPixel(x, y, shadow);
+	_screenBuffer.setPixel(x, y, shadowVal);
 }
 
 void GraphicsManager::pixelAliasing(uint16 x, uint16 y) {
@@ -643,12 +649,11 @@ void GraphicsManager::paintObjAnm(uint16 curBox) {
 }
 
 uint16 GraphicsManager::getCharWidth(byte character) {
-	return _font[character * 3 + 2];
+	return _fonts[character]._width;
 }
 
 void GraphicsManager::drawChar(byte curChar, uint16 textColor, uint16 line, Common::Rect rect, Common::Rect subtitleRect, uint16 inc, Graphics::Surface *externalSurface) {
-	const uint16 charOffset = _font[curChar * 3] + (uint16)(_font[curChar * 3 + 1] << 8);
-	uint16 fontDataOffset = 768;
+	uint16 fontDataOffset = 0;
 	const uint16 charWidth = getCharWidth(curChar);
 
 	for (uint16 y = line * CARHEI; y < (line + 1) * CARHEI; ++y) {
@@ -657,9 +662,9 @@ void GraphicsManager::drawChar(byte curChar, uint16 textColor, uint16 line, Comm
 
 		while (curPos <= charWidth - 1) {
 			if (y >= subtitleRect.top && y < subtitleRect.bottom) {
-				if (curColor != MASKCOL && (_font[charOffset + fontDataOffset])) {
+				if (curColor != MASKCOL && _fonts[curChar]._data[fontDataOffset]) {
 					const uint16 charLeft = inc + curPos;
-					const uint16 charRight = charLeft + _font[charOffset + fontDataOffset];
+					const uint16 charRight = charLeft + _fonts[curChar]._data[fontDataOffset];
 					drawCharPixel(
 						y,
 						charLeft,
@@ -672,7 +677,7 @@ void GraphicsManager::drawChar(byte curChar, uint16 textColor, uint16 line, Comm
 				}
 			}
 
-			curPos += _font[charOffset + fontDataOffset];
+			curPos += _fonts[curChar]._data[fontDataOffset];
 			++fontDataOffset;
 
 			if (curColor == MASKCOL)
@@ -737,6 +742,79 @@ void GraphicsManager::showCursor() {
 
 void GraphicsManager::hideCursor() {
 	CursorMan.showMouse(false);
+}
+
+void GraphicsManager::loadFont() {
+	Common::String fileName = "nlfont.fnt";
+	Common::SeekableReadStream *fontStream = _vm->_dataFile.createReadStreamForMember(fileName);
+	if (fontStream == nullptr)
+		error("readData(): File %s not found", fileName.c_str());
+
+	uint16 fontDataOffset = 768;
+
+	for (int i = 0; i < 256; ++i) {
+		uint16 offset = fontStream->readSint16LE();
+		_fonts[i]._width = fontStream->readByte();
+
+		int tmpPos = fontStream->pos();
+		fontStream->seek(offset + fontDataOffset);
+
+		int cpt = 0;
+		for (uint16 y = 0; y < CARHEI; ++y) {
+			uint16 curPos = 0;
+			while (curPos <= _fonts[i]._width - 1) {
+				curPos += fontStream->readByte();
+				++cpt;
+			}
+		}
+
+		fontStream->seek(offset + fontDataOffset);
+		_fonts[i]._data = new int8[cpt];
+		fontStream->read(_fonts[i]._data, cpt);
+		fontStream->seek(tmpPos);
+	}
+
+	// Fix o+e ligature character (lowercase and uppercase). Ticket #12623
+
+	// Format is :
+	// - Each line represents a line of pixels
+	// - colors are in this order : none, shadow, text. Colors are looping until the total number of pixels corresponds to the character width
+	// - each number correspond to a number of pixels of the corresponding color
+	// So, 1, 6, 0, 2 means : 1 pixel unchanged, 6 pixels shadow, 0 pixel in text color, 2 pixels unchanged
+	static const int8 fix140[67] = {
+		1, 8,
+		0, 2, 2, 0, 1, 3, 0, 1,
+		0, 1, 1, 0, 2, 2, 0, 3,
+		0, 1, 1, 0, 3, 1, 0, 2, 0, 1,
+		0, 1, 1, 0, 3, 2, 0, 1, 0, 1,
+		0, 1, 1, 0, 3, 1, 0, 2, 0, 1,
+		0, 1, 1, 0, 2, 2, 0, 3,
+		0, 2, 2, 0, 1, 3, 0, 1,
+		1, 8,
+		9
+	};
+
+	static const int8 fix156[54] = {
+		9,
+		9,
+		1, 6, 0, 2,
+		0, 2, 2, 0, 1, 2, 0, 1, 0, 1,
+		0, 1, 1, 0, 2, 1, 0, 2, 1, 0, 1,
+		0, 1, 1, 0, 2, 4, 0, 1,
+		0, 1, 1, 0, 2, 1, 0, 4,
+		0, 2, 2, 0, 1, 3, 0, 1,
+		1, 8,
+		9
+	};
+
+	delete _fonts[140]._data;
+	delete _fonts[156]._data;
+	_fonts[140]._width = _fonts[156]._width = 9;
+	_fonts[140]._data = new int8[67];
+	_fonts[156]._data = new int8[54];
+
+	memcpy(_fonts[140]._data, fix140, 67);
+	memcpy(_fonts[156]._data, fix156, 54);
 }
 
 bool GraphicsManager::isCursorVisible() {

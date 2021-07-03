@@ -126,6 +126,9 @@ public:
 
 	void setArrowCursor();
 	void setInventoryCursor(ItemName name);
+
+	void setMenuPointer();
+	void setCharacterPointer(const char *name);
 };
 
 } // namespace Parallaction

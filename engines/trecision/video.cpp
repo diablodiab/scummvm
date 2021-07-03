@@ -82,7 +82,7 @@ bool NightlongSmackerDecoder::forceSeekToFrame(uint frame) {
 
 	stopAudio();
 	SmackerVideoTrack *videoTrack = (SmackerVideoTrack *)getTrack(0);
-	uint32 start = _fileStream->pos();
+	uint32 startPos = _fileStream->pos();
 	uint32 offset = 0;
 	for (uint32 i = 0; i < seekFrame; i++) {
 		videoTrack->increaseCurFrame();
@@ -90,13 +90,13 @@ bool NightlongSmackerDecoder::forceSeekToFrame(uint frame) {
 		// the previous palette as their base. Therefore, we need to
 		// parse all palette entries up to the requested frame
 		if (_frameTypes[videoTrack->getCurFrame()] & 1) {
-			_fileStream->seek(start + offset, SEEK_SET);
+			_fileStream->seek(startPos + offset, SEEK_SET);
 			videoTrack->unpackPalette(_fileStream);
 		}
 		offset += _frameSizes[i] & ~3;
 	}
 
-	if (!_fileStream->seek(start + offset, SEEK_SET))
+	if (!_fileStream->seek(startPos + offset, SEEK_SET))
 		return false;
 
 	while (getCurFrame() < (int)frame) {
@@ -322,32 +322,34 @@ void AnimManager::startSmkAnim(uint16 animation) {
 }
 
 void AnimManager::toggleMuteBgAnim(uint16 animation) {
-	uint16 animFlag = _animTab[animation]._flag;
+	const bool area1Shown = _animTab[animation].isAnimAreaShown(1);
+	const bool area2Shown = _animTab[animation].isAnimAreaShown(2);
+	const bool area4Shown = _animTab[animation].isAnimAreaShown(4);
 	NightlongSmackerDecoder *decoder = _smkAnims[kSmackerBackground];
 	if (decoder == nullptr)
 		return;
 
 	// Turns off when not needed
-	if (animation == aBKG11 && (animFlag & SMKANIM_OFF1))
+	if (animation == aBKG11 && !area1Shown)
 		decoder->muteTrack(1, true);
-	else if (animation == aBKG14 && (animFlag & SMKANIM_OFF1))
+	else if (animation == aBKG14 && !area1Shown)
 		decoder->muteTrack(1, true);
 	else if (animation == aBKG1C && _vm->_obj[oFAX17].isFlagExtra()) {
-		_animTab[animation]._flag |= SMKANIM_OFF1;
+		_animTab[animation].toggleAnimArea(1, false);
 		decoder->muteTrack(1, true);
-	} else if (animation == aBKG1D && (animFlag & SMKANIM_OFF1))
+	} else if (animation == aBKG1D && !area1Shown)
 		decoder->muteTrack(1, true);
-	else if (animation == aBKG22 && (animFlag & SMKANIM_OFF1))
+	else if (animation == aBKG22 && !area1Shown)
 		decoder->muteTrack(1, true);
-	else if (animation == aBKG48 && (animFlag & SMKANIM_OFF1))
+	else if (animation == aBKG48 && !area1Shown)
 		decoder->muteTrack(1, true);
-	else if (animation == aBKG4P && (animFlag & SMKANIM_OFF1))
+	else if (animation == aBKG4P && !area1Shown)
 		decoder->muteTrack(1, true);
-	else if (animation == aBKG28 && (animFlag & SMKANIM_OFF4))
+	else if (animation == aBKG28 && area4Shown)
 		decoder->muteTrack(1, true);
 	else if (animation == aBKG37 && !_vm->_room[_vm->_curRoom].hasExtra())
 		decoder->muteTrack(1, true);
-	else if (animation == aBKG2E && (animFlag & SMKANIM_OFF2))
+	else if (animation == aBKG2E && area2Shown)
 		decoder->muteTrack(2, true);
 	else if (animation == aBKG2G && _vm->_dialogMgr->isDialogFinished(556))
 		decoder->muteTrack(2, true);
@@ -441,8 +443,8 @@ void AnimManager::refreshSmkAnim(uint16 animation) {
 		handleEndOfVideo(animation, kSmackerAction);
 	}
 
-	for (int32 i = 0; i < MAXCHILD; i++) {
-		if (!(_animTab[animation]._flag & (SMKANIM_OFF1 << i)) && _animTab[animation]._lim[i].bottom != 0) {
+	for (int32 i = 0; i < MAXAREA; i++) {
+		if (_animTab[animation].isAnimAreaShown(i + 1) && _animTab[animation]._lim[i].bottom != 0) {
 			_vm->_graphicsMgr->addDirtyRect(_animTab[animation]._lim[i], true);
 		}
 	}
@@ -472,6 +474,16 @@ static bool rectsIntersect(Common::Rect r1, Common::Rect r2) {
 	return (r1.left <= r2.right) && (r1.right >= r2.left) && (r1.top <= r2.bottom) && (r1.bottom >= r2.top);
 }
 
+bool AnimManager::shouldShowAnim(int animation, Common::Rect curRect) {
+	for (int32 i = 0; i < MAXAREA; i++) {
+		const bool intersect = rectsIntersect(_animTab[animation]._lim[i], curRect);
+		if (intersect && !_animTab[animation].isAnimAreaShown(i + 1))
+			return false;
+	}
+
+	return true;
+}
+
 void AnimManager::drawSmkBackgroundFrame(int animation) {
 	NightlongSmackerDecoder *smkDecoder = _smkAnims[kSmackerBackground];
 	if (smkDecoder == nullptr)
@@ -483,31 +495,11 @@ void AnimManager::drawSmkBackgroundFrame(int animation) {
 	const Common::Rect *lastRect = smkDecoder->getNextDirtyRect();
 	const byte *palette = smkDecoder->getPalette();
 
-	if (smkDecoder->getCurFrame() == 0 && !_bgAnimRestarted) {
-		bool drawFrame = true;
-
-		for (int32 i = 0; i < MAXCHILD; i++) {
-			if ((_animTab[animation]._flag & (SMKANIM_OFF1 << i))) {
-				drawFrame = false;
-				break;
-			}
-		}
-
-		if (drawFrame)
-			_vm->_graphicsMgr->blitToScreenBuffer(frame, 0, TOP, palette, true);
+	if (smkDecoder->getCurFrame() == 0 && shouldShowAnim(animation, *lastRect) && !_bgAnimRestarted) {
+		_vm->_graphicsMgr->blitToScreenBuffer(frame, 0, TOP, palette, true);
 	} else {
 		while (lastRect) {
-			bool drawDirtyRect = true;
-
-			for (int32 i = 0; i < MAXCHILD; i++) {
-				const bool intersect = rectsIntersect(_animTab[animation]._lim[i], *lastRect);
-				if ((_animTab[animation]._flag & (SMKANIM_OFF1 << i)) && intersect) {
-					drawDirtyRect = false;
-					break;
-				}
-			}
-
-			if (smkDecoder->getCurFrame() > 0 && drawDirtyRect) {
+			if (smkDecoder->getCurFrame() > 0 && shouldShowAnim(animation, *lastRect)) {
 				Graphics::Surface anim = frame->getSubArea(*lastRect);
 				_vm->_graphicsMgr->blitToScreenBuffer(&anim, lastRect->left, lastRect->top + TOP, palette, true);
 			}
@@ -578,7 +570,7 @@ void AnimManager::syncGameStream(Common::Serializer &ser) {
 		SAnim *cur = &_animTab[i];
 		ser.syncBytes((byte *)cur->_name, 14);
 		ser.syncAsUint16LE(cur->_flag);
-		for (uint8 j = 0; j < MAXCHILD; ++j) {
+		for (uint8 j = 0; j < MAXAREA; ++j) {
 			ser.syncAsUint16LE(cur->_lim[j].left);
 			ser.syncAsUint16LE(cur->_lim[j].top);
 			ser.syncAsUint16LE(cur->_lim[j].right);
@@ -588,7 +580,7 @@ void AnimManager::syncGameStream(Common::Serializer &ser) {
 		ser.skip(1, SAVE_VERSION_ORIGINAL_MIN, SAVE_VERSION_ORIGINAL_MAX);
 		for (uint8 j = 0; j < MAXATFRAME; ++j) {
 			ser.syncAsByte(cur->_atFrame[j]._type);
-			ser.syncAsByte(cur->_atFrame[j]._child);
+			ser.syncAsByte(cur->_atFrame[j]._area);
 			ser.syncAsUint16LE(cur->_atFrame[j]._numFrame);
 			ser.syncAsUint16LE(cur->_atFrame[j]._index);
 		}
@@ -601,7 +593,7 @@ void AnimManager::loadAnimTab(Common::SeekableReadStreamEndian *stream) {
 
 		_animTab[i]._flag = stream->readUint16();
 
-		for (uint8 j = 0; j < MAXCHILD; ++j) {
+		for (uint8 j = 0; j < MAXAREA; ++j) {
 			_animTab[i]._lim[j].left = stream->readUint16();
 			_animTab[i]._lim[j].top = stream->readUint16();
 			_animTab[i]._lim[j].right = stream->readUint16();
@@ -613,7 +605,7 @@ void AnimManager::loadAnimTab(Common::SeekableReadStreamEndian *stream) {
 
 		for (uint8 j = 0; j < MAXATFRAME; ++j) {
 			_animTab[i]._atFrame[j]._type = stream->readByte();
-			_animTab[i]._atFrame[j]._child = stream->readByte();
+			_animTab[i]._atFrame[j]._area = stream->readByte();
 			_animTab[i]._atFrame[j]._numFrame = stream->readUint16();
 			_animTab[i]._atFrame[j]._index = stream->readUint16();
 		}

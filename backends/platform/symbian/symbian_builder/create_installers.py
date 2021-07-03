@@ -21,7 +21,6 @@
 
 
 from __future__ import with_statement
-from prj_generator import SafeWriteFile
 import os, subprocess
 from common_names import *
 

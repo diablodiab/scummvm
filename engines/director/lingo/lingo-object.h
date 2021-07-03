@@ -23,9 +23,8 @@
 #ifndef DIRECTOR_LINGO_OBJECT_H
 #define DIRECTOR_LINGO_OBJECT_H
 
-// FIXME: Basic Lingo types like Datum should probably be in a separate, smaller header
+#include "director/director.h"
 #include "director/lingo/lingo.h"
-#include "director/lingo/lingo-gr.h"
 
 namespace Director {
 
@@ -212,7 +211,7 @@ public:
 	Datum getProp(const Common::String &propName) override;
 	bool setProp(const Common::String &propName, const Datum &value) override;
 
-	Symbol define(Common::String &name, int nargs, ScriptData *code, Common::Array<Common::String> *argNames, Common::Array<Common::String> *varNames);
+	Symbol define(const Common::String &name, ScriptData *code, Common::Array<Common::String> *argNames, Common::Array<Common::String> *varNames);
 };
 
 namespace LM {

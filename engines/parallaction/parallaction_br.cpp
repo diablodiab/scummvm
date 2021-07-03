@@ -51,9 +51,6 @@ Parallaction_br::Parallaction_br(OSystem* syst, const PARALLACTIONGameDescriptio
 	_subtitleY = 0;
 	_subtitle[0] = 0;
 	_subtitle[1] = 0;
-	_charInventories[0] = 0;
-	_charInventories[1] = 0;
-	_charInventories[2] = 0;
 	_countersNames = 0;
 	_callables = 0;
 	_walker = 0;
@@ -168,6 +165,7 @@ Common::Error Parallaction_br::go() {
 			_nextPart = 1;
 			_input->_inputMode = Input::kInputModeGame;
 		} else {
+			_input->setMenuPointer();
 			startGui(splash);
 			 // don't show splash after first time
 			splash = false;
@@ -459,7 +457,14 @@ void Parallaction_br::loadProgram(AnimationPtr a, const char *filename) {
 	return;
 }
 
-
+void Parallaction_br::linkUnlinkedZoneAnimations() {
+	ZoneList::iterator zit = _location._zones.begin();
+	for ( ; zit != _location._zones.end(); ++zit) {
+		if ((*zit)->_flags & kFlagsActive) {
+			(*zit)->_linkedAnim = _location.findAnimation((*zit)->_linkedName.c_str());
+		}
+	}
+}
 
 void Parallaction_br::changeCharacter(const char *name) {
 
@@ -474,10 +479,10 @@ void Parallaction_br::changeCharacter(const char *name) {
 		_char._ani->gfxobj = _gfx->loadCharacterAnim(name);
 		_char._talk = _disk->loadTalk(name);
 
-		/* TODO: adjust inventories as following
-		 * 1) if not on game load, then copy _inventory to the right slot of _charInventories
-		 * 2) copy the new inventory from the right slot of _charInventories
-		 */
+		_inventory = findInventory(name);
+		_inventoryRenderer->setInventory(_inventory);
+
+		_input->setCharacterPointer(name);
 	}
 
 	_char._ani->_flags |= kFlagsActive;

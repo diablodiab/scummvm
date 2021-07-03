@@ -27,7 +27,11 @@
 
 namespace BladeRunner {
 
-struct Color {
+class Color {
+
+	static const uint8 map5BitsTo8Bits[32];
+
+public:
 	float r;
 	float g;
 	float b;
@@ -35,6 +39,8 @@ struct Color {
 	Color() : r(0.0f), g(0.0f), b(0.0f) {}
 
 	Color(float r_, float g_, float b_) : r(r_), g(g_), b(b_) {}
+
+	static uint8 get8BitColorFrom5Bit(uint8 col5b);
 };
 
 #include "common/pack-start.h"

@@ -300,6 +300,7 @@ public:
 
 	void passPalette(const byte *palette, uint size);
 	uint findBestColor(byte cr, byte cg, byte cb);
+	uint findBestColor(uint32 color);
 	void decomposeColor(uint32 color, byte &r, byte &g, byte &b);
 
 	const byte *getPalette() { return _palette; }
@@ -323,6 +324,13 @@ public:
 	 * @return the text in clipboard, which may contained the format
 	 */
 	Common::U32String getTextFromClipboard(const Common::U32String &format = Common::U32String(), int *size = nullptr);
+
+	/**
+	 * reset events for current widgets. i.e. we reset those variables which are used for handling events for macwidgets.
+	 * e.g. we clear the active widget, set mouse down false, clear the hoveredWidget
+	 * this function should be called when we are going to other level to handling events. thus wm may not handle events correctly.
+	 */
+	void clearHandlingWidgets();
 
 public:
 	MacFontManager *_fontMan;

@@ -48,7 +48,7 @@ struct SRoom {
 	void loadRoom(Common::SeekableReadStreamEndian *stream);
 
 private:
-	uint8 _flag = 0; // Room visited or not, extra or not
+	uint8 _flag; // Room visited or not, extra or not
 };
 
 struct SObject {
@@ -97,8 +97,8 @@ struct SObject {
 	void loadObj(Common::SeekableReadStreamEndian *stream);
 
 private:
-	uint8 _flag = 0;
-	uint8 _mode = 0;
+	uint8 _flag;
+	uint8 _mode;
 };
 
 struct SInvObject {
@@ -116,22 +116,48 @@ struct SInvObject {
 	void loadObj(Common::SeekableReadStreamEndian *stream);
 
 private:
-	uint8 _flag = 0;
+	uint8 _flag;
 };
 
 struct SAtFrame {
 	uint8 _type;	   //ATFTEXT, ATFSND, ATFEVENT
-	uint8 _child;	   // 0 1 2 3 4
+	uint8 _area;	   // 0 1 2 3 4
 	uint16 _numFrame;
 	uint16 _index;
 };
 
+// Shifted left by 1 - 4, depending on the subarea
+#define SMKANIM_OFF_BASE 16
+
 struct SAnim {
 	char _name[14];
 	uint16 _flag;		// 1- background 2- icon 3- action 4- active  -  4bits per child
-	Common::Rect _lim[MAXCHILD];
+	Common::Rect _lim[MAXAREA];
 	uint8 _nbox;
 	SAtFrame _atFrame[MAXATFRAME];
+
+	/**
+	 * Toggle the animation of a subarea
+	 * @param area: 1 - 4
+	 * @param show: show or hide the animation area
+	*/
+	void toggleAnimArea(uint8 area, bool show) {
+		assert(area >= 1 && area <= 4);
+		if (show)
+			_flag &= ~(SMKANIM_OFF_BASE << area);
+		else
+			_flag |= (SMKANIM_OFF_BASE << area);
+	}
+
+	/**
+	 * Checks if an animation subarea is shown
+	 * @param area: 1 - 4
+	 * @return true if the subarea is shown 
+	*/
+	bool isAnimAreaShown(uint8 area) {
+		assert(area >= 1 && area <= 4);
+		return !(_flag & (SMKANIM_OFF_BASE << area));
+	}
 };
 
 struct SSortTable {
@@ -184,7 +210,7 @@ struct STexture {
 	bool isActive() { return _active; };
 
 private:
-	bool _active = false;
+	bool _active;
 };
 
 struct SVertex {

@@ -35,6 +35,11 @@ class SeekableReadStream;
 namespace Trecision {
 class TrecisionEngine;
 
+struct Font {
+	int8 *_data;
+	uint16 _width;
+};
+
 class GraphicsManager {
 	TrecisionEngine *_vm;
 
@@ -49,9 +54,11 @@ class GraphicsManager {
 
 	Graphics::PixelFormat _screenFormat;
 	uint16 _bitMask[3];
-	uint8 *_font;
+	Font _fonts[256];
 
 	Common::List<Common::Rect> _dirtyRects;
+
+	const Graphics::PixelFormat _rgb555Format;
 
 	uint16 aliasing(uint32 val1, uint32 val2, uint8 num);
 	void drawCharPixel(uint16 y, uint16 charLeft, uint16 charRight, Common::Rect rect, Common::Rect subtitleRect, uint16 color, Graphics::Surface *externalSurface = nullptr);
@@ -100,8 +107,10 @@ public:
 	void showCursor();
 	void hideCursor();
 
+	void loadFont();
 	void loadData();
 	void showDemoPic();
+	
 };
 
 } // End of namespace Trecision

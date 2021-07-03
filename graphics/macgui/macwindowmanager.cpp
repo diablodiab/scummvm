@@ -282,6 +282,17 @@ void MacWindowManager::setMode(uint32 mode) {
 		_fontMan->forceBuiltinFonts();
 }
 
+void MacWindowManager::clearHandlingWidgets() {
+	// pass a LBUTTONUP event to those widgets should clear those state
+	Common::Event event;
+	event.type = Common::EVENT_LBUTTONUP;
+	event.mouse = _lastClickPos;
+	processEvent(event);
+
+	setActiveWidget(nullptr);
+	_hoveredWidget = nullptr;
+}
+
 void MacWindowManager::setActiveWidget(MacWidget *widget) {
 	if (_activeWidget == widget)
 		return;
@@ -1152,6 +1163,12 @@ void MacWindowManager::passPalette(const byte *pal, uint size) {
 
 	drawDesktop();
 	setFullRefresh(true);
+}
+
+uint MacWindowManager::findBestColor(uint32 color) {
+	byte r, g, b;
+	decomposeColor(color, r, g, b);
+	return findBestColor(r, g, b);
 }
 
 uint MacWindowManager::findBestColor(byte cr, byte cg, byte cb) {

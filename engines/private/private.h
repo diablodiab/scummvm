@@ -145,6 +145,8 @@ public:
 
 	const ADGameDescription *_gameDescription;
 	bool isDemo() const;
+	Common::Language _language;
+	Common::Platform _platform;
 
 	SymbolMaps maps;
 
@@ -157,6 +159,7 @@ public:
 	void restartGame();
 	void clearAreas();
 	void initializePath(const Common::FSNode &gamePath) override;
+	Common::SeekableReadStream *loadAssets();
 
 	// Functions
 
@@ -199,7 +202,10 @@ public:
 	void loadImage(const Common::String &file, int x, int y);
 	void drawScreenFrame();
 
+	// Cursors
 	void changeCursor(const Common::String &);
+	Common::String getInventoryCursor();
+	Common::String getExitCursor();
 
 	// Rendering
 	Graphics::ManagedSurface *_compositeSurface;
@@ -218,6 +224,13 @@ public:
 	Common::String _nextSetting;
 	Common::String _pausedSetting;
 	Common::String _currentSetting;
+	Common::String getPauseMovieSetting();
+	Common::String getGoIntroSetting();
+	Common::String getMainDesktopSetting();
+	Common::String getPOGoBustMovieSetting();
+	Common::String getPoliceBustFromMOSetting();
+	Common::String getAlternateGameVariable();
+	Common::String getPoliceIndexVariable();
 
 	// movies
 	Common::String _nextMovie;
@@ -225,8 +238,8 @@ public:
 
 	// Dossiers
 	DossierArray _dossiers;
-	unsigned int _dossierSuspect;
-	unsigned int _dossierPage;
+	uint _dossierSuspect;
+	uint _dossierPage;
 	MaskInfo _dossierNextSuspectMask;
 	MaskInfo _dossierPrevSuspectMask;
 	MaskInfo _dossierNextSheetMask;

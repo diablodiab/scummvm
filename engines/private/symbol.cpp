@@ -20,7 +20,6 @@
  *
  */
 
-
 // Heavily inspired by hoc
 // Copyright (C) AT&T 1995
 // All Rights Reserved
@@ -44,10 +43,10 @@
 // ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 // THIS SOFTWARE.
 
+#include "common/str.h"
 #include "private/grammar.h"
 #include "private/private.h"
 #include "private/tokens.h"
-#include "common/str.h"
 
 namespace Private {
 
@@ -82,16 +81,17 @@ static Symbol *lookup(const Common::String &s, const SymbolMap &symlist) {
 
 /* install some symbol s in a symbol table */
 static Symbol *install(const Common::String &n, int t, int d, const char *s, Common::Rect *r, SymbolMap *symlist) {
-	Common::String *name = new Common::String(n);
-
 	Symbol *sp;
-
 	sp = (Symbol *)malloc(sizeof(Symbol));
-	sp->name = name;
+	sp->name = new Common::String(n);
 	sp->type = t;
-	if (t == NUM || t == NAME)
+	if (t == NUM) {
 		sp->u.val = d;
-	else if (t == STRING)
+		//debug("install NUM: %s %d", name->c_str(), d);
+	} else if (t == NAME) {
+		sp->u.val = d;
+		//debug("installing NAME: %s %d", name->c_str(), d);
+	} else if (t == STRING)
 		sp->u.str = scumm_strdup(s); // FIXME: leaks a string here.
 	else if (t == RECT)
 		sp->u.rect = r;
@@ -104,29 +104,31 @@ static Symbol *install(const Common::String &n, int t, int d, const char *s, Com
 }
 
 /* lookup some name in some symbol table */
+Symbol *SymbolMaps::lookupRect(Common::String *n) {
+	assert(rects.contains(*n));
+	return lookup(*n, rects);
+}
+
+Symbol *SymbolMaps::lookupVariable(Common::String *n) {
+	assert(variables.contains(*n));
+	return lookup(*n, variables);
+}
+
+Symbol *SymbolMaps::lookupLocation(Common::String *n) {
+	assert(locations.contains(*n));
+	return lookup(*n, locations);
+}
+
+/* lookup some name in some symbol table */
 Symbol *SymbolMaps::lookupName(const char *n) {
-	//debug("looking up %s", n);
-	Common::String s(n);
 
-	if (settings.contains(s))
-		return lookup(s, settings);
+	Symbol *s = (Symbol *)malloc(sizeof(Symbol));
+	Common::String *name = new Common::String(n);
+	s->name = name;
+	s->type = NAME;
+	s->u.val = 0;
 
-	else if (variables.contains(s))
-		return lookup(s, variables);
-
-	else if (cursors.contains(s))
-		return lookup(s, cursors);
-
-	else if (locations.contains(s))
-		return lookup(s, locations);
-
-	else if (rects.contains(s))
-		return lookup(s, rects);
-
-	else {
-		debugC(1, kPrivateDebugCode, "WARNING: %s not defined", n);
-		return constant(STRING, 0, n);
-	}
+	return s;
 }
 
 void SymbolMaps::installAll(const char *n) {
@@ -138,8 +140,9 @@ void SymbolMaps::installAll(const char *n) {
 
 		//debug("name %s", s.c_str());
 		if (strcmp(n, "settings") == 0) {
+			//debug("new setting %s", n);
 			assert(r == NULL);
-			install(s, STRING, 0, s.c_str(), r, &settings);
+			install(s, NAME, 0, s.c_str(), r, &settings);
 		} else if (strcmp(n, "variables") == 0) {
 			assert(r == NULL);
 			install(s, NAME, 0, NULL, r, &variables);

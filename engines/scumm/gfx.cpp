@@ -343,6 +343,11 @@ void ScummEngine::initScreens(int b, int h) {
 	}
 #endif
 
+	if (_macScreen) {
+		_macScreen->fillRect(Common::Rect(_macScreen->w, _macScreen->h), 0);
+		clearTextSurface();
+	}
+
 	if (!getResourceAddress(rtBuffer, 4)) {
 		// Since the size of screen 3 is fixed, there is no need to reallocate
 		// it if its size changed.
@@ -1124,6 +1129,11 @@ void ScummEngine::restoreCharsetBg() {
 		_charset->_str.left = -1;
 		_charset->_left = -1;
 
+		if (_macScreen && _game.id == GID_INDY3 && _charset->_textScreenID == kTextVirtScreen) {
+			mac_undrawIndy3TextBox();
+			return;
+		}
+
 		// Restore background on the whole text area. This code is based on
 		// restoreBackground(), but was changed to only restore those parts which are
 		// currently covered by the charset mask.
@@ -1150,7 +1160,7 @@ void ScummEngine::restoreCharsetBg() {
 				memset(screenBuf, 0, vs->h * vs->pitch);
 		}
 
-		if (vs->hasTwoBuffers) {
+		if (vs->hasTwoBuffers || _macScreen) {
 			// Clean out the charset mask
 			clearTextSurface();
 		}

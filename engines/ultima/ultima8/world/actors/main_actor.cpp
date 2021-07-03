@@ -194,7 +194,7 @@ int16 MainActor::addItemCru(Item *item, bool showtoast) {
 			item->callUsecodeEvent_combine();
 			item->moveToContainer(this);
 			if (showtoast)
-				pickupArea->addPickup(item, true);
+				pickupArea->addPickup(item, false);
 			return 1;
 		} else {
 			// already have this, add some ammo.
@@ -203,7 +203,7 @@ int16 MainActor::addItemCru(Item *item, bool showtoast) {
 				ammo->setQuality(q + 1);
 				ammo->callUsecodeEvent_combine();
 				if (showtoast)
-					pickupArea->addPickup(item, true);
+					pickupArea->addPickup(item, false);
 				item->destroy();
 				return 1;
 			}
@@ -724,6 +724,11 @@ void MainActor::nextInvItem() {
 	Std::vector<Item *> items;
 	getItemsWithShapeFamily(items, ShapeInfo::SF_CRUINVITEM, true);
 	getItemsWithShapeFamily(items, ShapeInfo::SF_CRUBOMB, true);
+	if (GAME_IS_REMORSE) {
+		Item *credits = getFirstItemWithShape(0x4ed, true);
+		if (credits)
+			items.push_back(credits);
+	}
 	_activeInvItem = getIdOfNextItemInList(items, _activeInvItem);
 }
 

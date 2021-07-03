@@ -69,7 +69,7 @@ Movie::Movie(Window *window) {
 
 	_movieArchive = nullptr;
 
-	_cast = new Cast(this);
+	_cast = new Cast(this, 0);
 	_sharedCast = nullptr;
 	_score = new Score(this);
 
@@ -230,12 +230,11 @@ void Movie::loadFileInfo(Common::SeekableReadStreamEndian &stream) {
 	_script = fileInfo.strings[0].readString(false);
 
 	if (!_script.empty() && ConfMan.getBool("dump_scripts"))
-		_cast->dumpScript(_script.c_str(), kMovieScript, _cast->_movieScriptCount);
+		_cast->dumpScript(_script.c_str(), kMovieScript, 0);
 
 	if (!_script.empty())
-		_cast->_lingoArchive->addCode(_script.c_str(), kMovieScript, _cast->_movieScriptCount);
+		_cast->_lingoArchive->addCode(_script.c_str(), kMovieScript, 0);
 
-	_cast->_movieScriptCount++;
 	_changedBy = fileInfo.strings[1].readString();
 	_createdBy = fileInfo.strings[2].readString();
 	_createdBy = fileInfo.strings[3].readString();
@@ -291,47 +290,59 @@ void Movie::loadSharedCastsFrom(Common::String filename) {
 	debug(0, "@@@@   Loading shared cast '%s'", filename.c_str());
 	debug(0, "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
 
-	_sharedCast = new Cast(this, true);
+	_sharedCast = new Cast(this, 0, true);
 	_sharedCast->setArchive(sharedCast);
 	_sharedCast->loadArchive();
 }
 
-CastMember *Movie::getCastMember(int castId) {
-	CastMember *result = _cast->getCastMember(castId);
-	if (result == nullptr && _sharedCast) {
-		result = _sharedCast->getCastMember(castId);
+CastMember *Movie::getCastMember(CastMemberID memberID) {
+	CastMember *result = nullptr;
+	if (memberID.castLib == 0) {
+		result = _cast->getCastMember(memberID.member);
+		if (result == nullptr && _sharedCast) {
+			result = _sharedCast->getCastMember(memberID.member);
+		}
+	} else {
+		warning("Movie::getCastMember: Unknown castLib %d", memberID.castLib);
 	}
 	return result;
 }
 
-CastMember *Movie::getCastMemberByName(const Common::String &name) {
-	CastMember *result = _cast->getCastMemberByName(name);
-	if (result == nullptr && _sharedCast) {
-		result = _sharedCast->getCastMemberByName(name);
+CastMember *Movie::getCastMemberByName(const Common::String &name, int castLib) {
+	CastMember *result = nullptr;
+	if (castLib == 0) {
+		result = _cast->getCastMemberByName(name);
+		if (result == nullptr && _sharedCast) {
+			result = _sharedCast->getCastMemberByName(name);
+		}
+	} else {
+		warning("Movie::getCastMemberByName: Unknown castLib %d", castLib);
 	}
 	return result;
 }
 
-CastMember *Movie::getCastMemberByScriptId(int scriptId) {
-	CastMember *result = _cast->getCastMemberByScriptId(scriptId);
-	if (result == nullptr && _sharedCast) {
-		result = _sharedCast->getCastMemberByScriptId(scriptId);
+CastMemberInfo *Movie::getCastMemberInfo(CastMemberID memberID) {
+	CastMemberInfo *result = nullptr;
+	if (memberID.castLib == 0) {
+		result = _cast->getCastMemberInfo(memberID.member);
+		if (result == nullptr && _sharedCast) {
+			result = _sharedCast->getCastMemberInfo(memberID.member);
+		}
+	} else {
+		warning("Movie::getCastMemberInfo: Unknown castLib %d", memberID.castLib);
 	}
 	return result;
 }
 
-CastMemberInfo *Movie::getCastMemberInfo(int castId) {
-	CastMemberInfo *result = _cast->getCastMemberInfo(castId);
-	if (result == nullptr && _sharedCast) {
-		result = _sharedCast->getCastMemberInfo(castId);
-	}
-	return result;
-}
-
-const Stxt *Movie::getStxt(int castId) {
-	const Stxt *result = _cast->getStxt(castId);
-	if (result == nullptr && _sharedCast) {
-		result = _sharedCast->getStxt(castId);
+const Stxt *Movie::getStxt(CastMemberID memberID) {
+	const Stxt *result = nullptr;
+	if (memberID.castLib == 0) {
+		result = _cast->getStxt(memberID.member);
+		if (result == nullptr && _sharedCast) {
+			result = _sharedCast->getStxt(memberID.member);
+		}
+	} else {
+		warning("Movie::getStxt: Unknown castLib %d", memberID.castLib);
 	}
 	return result;
 }
@@ -344,10 +355,15 @@ LingoArchive *Movie::getSharedLingoArch() {
 	return _sharedCast ? _sharedCast->_lingoArchive : nullptr;
 }
 
-ScriptContext *Movie::getScriptContext(ScriptType type, uint16 id) {
-	ScriptContext *result = _cast->_lingoArchive->getScriptContext(type, id);
-	if (result == nullptr && _sharedCast) {
-		result = _sharedCast->_lingoArchive->getScriptContext(type, id);
+ScriptContext *Movie::getScriptContext(ScriptType type, CastMemberID id) {
+	ScriptContext *result = nullptr;
+	if (id.castLib == 0) {
+		result = _cast->_lingoArchive->getScriptContext(type, id.member);
+		if (result == nullptr && _sharedCast) {
+			result = _sharedCast->_lingoArchive->getScriptContext(type, id.member);
+		}
+	} else {
+		warning("Movie::getScriptContext: Unknown castLib %d", id.castLib);
 	}
 	return result;
 }

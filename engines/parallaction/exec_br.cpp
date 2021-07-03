@@ -272,21 +272,43 @@ DECLARE_COMMAND_OPCODE(scroll) {
 
 
 DECLARE_COMMAND_OPCODE(swap) {
-	warning("Parallaction_br::cmdOp_swap not yet implemented");
+	warning("Parallaction_br::cmdOp_swap does not handle a follower yet");
+
+	/*
+		TODO:
+		- fixup follower
+		- change mouse pointer
+	*/
+
+	const char *newCharacterName = ctxt._cmd->_string.c_str();
+	AnimationPtr newCharacterAnimation = _vm->_location.findAnimation(newCharacterName);
+	AnimationPtr oldCharaterAnimation = _vm->_char._ani;
+
+	Common::strlcpy(oldCharaterAnimation->_name, _vm->_char.getName(), ZONENAME_LENGTH);
+	_vm->_char.setName(newCharacterName);
+
+	_vm->_char._ani = newCharacterAnimation;
+	_vm->_char._talk = _vm->_disk->loadTalk(newCharacterName);
+	Common::strlcpy(_vm->_char._ani->_name, "yourself", ZONENAME_LENGTH);
+
+	_vm->linkUnlinkedZoneAnimations();
+
+	_vm->_inventory = _vm->findInventory(newCharacterName);
+	_vm->_inventoryRenderer->setInventory(_vm->_inventory);
+
+	_vm->_input->setCharacterPointer(newCharacterName);
 }
 
 
 DECLARE_COMMAND_OPCODE(give) {
-	warning("Parallaction_br::cmdOp_give not yet implemented");
+	int item = ctxt._cmd->_object;
+	Inventory *targetInventory = _vm->findInventory(ctxt._cmd->_characterName.c_str());
 
-	/* NOTE: the following code is disabled until I deal with _inventory and
-	 * _charInventories not being public
-	 */
-/*  int item = ctxt._cmd->_object;
-	int recipient = ctxt._cmd->_characterId;
-	_vm->_charInventories[recipient]->addItem(item);
+	if (targetInventory) {
+		targetInventory->addItem(item);
+	}
+
 	_vm->_inventory->removeItem(item);
-*/
 }
 
 
@@ -471,6 +493,7 @@ DECLARE_INSTRUCTION_OPCODE(move) {
 DECLARE_INSTRUCTION_OPCODE(color) {
 	InstructionPtr inst = ctxt._inst;
 	_vm->_gfx->_palette.setEntry(inst->_opB.getValue(), inst->_colors[0], inst->_colors[1], inst->_colors[2]);
+	_vm->_gfx->setPalette(_vm->_gfx->_palette);
 }
 
 

@@ -22,6 +22,7 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <shellapi.h> // for CommandLineToArgvW()
 #if defined(__GNUC__) && defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR)
  // required for SHGetSpecialFolderPath in shlobj.h
 #define _WIN32_IE 0x400
@@ -53,10 +54,16 @@ BOOL VerifyVersionInfoFunc(LPOSVERSIONINFOEXA lpVersionInformation, DWORD dwType
 	return verifyVersionInfo(lpVersionInformation, dwTypeMask, dwlConditionMask);
 }
 
-HRESULT SHGetFolderPathFunc(HWND hwnd, int csidl, HANDLE hToken, DWORD dwFlags, LPSTR pszPath) {
-	typedef HRESULT (WINAPI *SHGetFolderPathFunc)(HWND hwnd, int csidl, HANDLE hToken, DWORD dwFlags, LPSTR pszPath);
+HRESULT SHGetFolderPathFunc(HWND hwnd, int csidl, HANDLE hToken, DWORD dwFlags, LPTSTR pszPath) {
+	typedef HRESULT (WINAPI *SHGetFolderPathFunc)(HWND hwnd, int csidl, HANDLE hToken, DWORD dwFlags, LPTSTR pszPath);
 
-	SHGetFolderPathFunc pSHGetFolderPath = (SHGetFolderPathFunc)(void *)GetProcAddress(GetModuleHandle(TEXT("shell32.dll")), "SHGetFolderPathA");
+	SHGetFolderPathFunc pSHGetFolderPath = (SHGetFolderPathFunc)(void *)GetProcAddress(GetModuleHandle(TEXT("shell32.dll")), 
+#ifndef UNICODE
+		"SHGetFolderPathA"
+#else
+		"SHGetFolderPathW"
+#endif
+	);
 	if (pSHGetFolderPath)
 		return pSHGetFolderPath(hwnd, csidl, hToken, dwFlags, pszPath);
 
@@ -80,7 +87,19 @@ bool confirmWindowsVersion(int majorVersion, int minorVersion) {
 	return VerifyVersionInfoFunc(&versionInfo, VER_MAJORVERSION | VER_MINORVERSION, conditionMask);
 }
 
-wchar_t *ansiToUnicode(const char *s, uint codePage) {
+bool isDriveCD(char driveLetter) {
+	TCHAR drivePath[] = TEXT("x:\\");
+	drivePath[0] = (TCHAR)driveLetter;
+
+	return (GetDriveType(drivePath) == DRIVE_CDROM);
+}
+
+wchar_t *ansiToUnicode(const char *s) {
+#ifndef UNICODE
+	uint codePage = CP_ACP;
+#else
+	uint codePage = CP_UTF8;
+#endif
 	DWORD size = MultiByteToWideChar(codePage, 0, s, -1, NULL, 0);
 
 	if (size > 0) {
@@ -92,7 +111,12 @@ wchar_t *ansiToUnicode(const char *s, uint codePage) {
 	return NULL;
 }
 
-char *unicodeToAnsi(const wchar_t *s, uint codePage) {
+char *unicodeToAnsi(const wchar_t *s) {
+#ifndef UNICODE
+	uint codePage = CP_ACP;
+#else
+	uint codePage = CP_UTF8;
+#endif
 	DWORD size = WideCharToMultiByte(codePage, 0, s, -1, NULL, 0, 0, 0);
 
 	if (size > 0) {
@@ -103,5 +127,50 @@ char *unicodeToAnsi(const wchar_t *s, uint codePage) {
 
 	return NULL;
 }
+
+TCHAR *stringToTchar(const Common::String& s) {
+#ifndef UNICODE
+	char *t = (char *)malloc(s.size() + 1);
+	strcpy(t, s.c_str());
+	return t;
+#else
+	return ansiToUnicode(s.c_str());
+#endif
+}
+
+Common::String tcharToString(const TCHAR *t) {
+#ifndef UNICODE
+	return t;
+#else
+	char *utf8 = unicodeToAnsi(t);
+	Common::String s = utf8;
+	free(utf8);
+	return s;
+#endif
+}
+
+#ifdef UNICODE
+char **getArgvUtf8(int *argc) {
+	// get command line arguments in wide-character
+	LPWSTR *wargv = CommandLineToArgvW(GetCommandLineW(), argc);
+
+	// convert each argument to utf8
+	char **argv = (char **)malloc((*argc + 1) * sizeof(char *));
+	for (int i = 0; i < *argc; ++i) {
+		argv[i] = Win32::unicodeToAnsi(wargv[i]);
+	}
+	argv[*argc] = NULL; // null terminated array
+
+	LocalFree(wargv);
+	return argv;
+}
+
+void freeArgvUtf8(int argc, char **argv) {
+	for (int i = 0; i < argc; ++i) {
+		free(argv[i]);
+	}
+	free(argv);
+}
+#endif
 
 }

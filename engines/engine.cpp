@@ -20,12 +20,10 @@
  *
  */
 
-#define FORBIDDEN_SYMBOL_EXCEPTION_getcwd
-
 #if defined(WIN32) && !defined(__SYMBIAN32__)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <direct.h>
+#include "backends/platform/sdl/win32/win32_wrapper.h"
 #endif
 
 #include "engines/engine.h"
@@ -214,6 +212,9 @@ void initCommonGFX() {
 
 		if (gameDomain->contains("stretch_mode"))
 			g_system->setStretchMode(ConfMan.get("stretch_mode").c_str());
+
+		if (gameDomain->contains("scaler") || gameDomain->contains("scale_factor"))
+			g_system->setScaler(ConfMan.get("scaler").c_str(), ConfMan.getInt("scale_factor"));
 
 		if (gameDomain->contains("shader"))
 			g_system->setShader(ConfMan.get("shader").c_str());
@@ -480,26 +481,21 @@ void Engine::checkCD() {
 
 	// If we can find a compressed audio track, then it should be ok even
 	// if it's running from CD.
-	char buffer[MAXPATHLEN];
-	int i;
-
+	char driveLetter;
 	const Common::FSNode gameDataDir(ConfMan.get("path"));
-
-	if (gameDataDir.getPath().empty()) {
+	if (!gameDataDir.getPath().empty()) {
+		driveLetter = gameDataDir.getPath()[0];
+	} else {
 		// That's it! I give up!
-		if (getcwd(buffer, MAXPATHLEN) == NULL)
+		Common::FSNode currentDir(".");
+		if (!currentDir.getPath().empty()) {
+			driveLetter = currentDir.getPath()[0];
+		} else {
 			return;
-	} else
-		Common::strlcpy(buffer, gameDataDir.getPath().c_str(), sizeof(buffer));
-
-	for (i = 0; i < MAXPATHLEN - 1; i++) {
-		if (buffer[i] == '\\')
-			break;
+		}
 	}
 
-	buffer[i + 1] = 0;
-
-	if (GetDriveType(buffer) == DRIVE_CDROM) {
+	if (Win32::isDriveCD(driveLetter)) {
 		GUI::MessageDialog dialog(
 			_("You appear to be playing this game directly\n"
 			"from the CD. This is known to cause problems,\n"
@@ -534,6 +530,11 @@ void Engine::handleAutoSave() {
 }
 
 void Engine::saveAutosaveIfEnabled() {
+	// Reset the last autosave time first.
+	// Doing it here rather than after saving the game prevents recursive calls if saving the game
+	// causes the engine to poll events (as is the case with the AGS engine for example).
+	_lastAutosaveTime = _system->getMillis();
+
 	if (_autosaveInterval != 0) {
 		bool saveFlag = canSaveAutosaveCurrently();
 
@@ -553,13 +554,9 @@ void Engine::saveAutosaveIfEnabled() {
 		if (!saveFlag) {
 			// Set the next autosave interval to be in 5 minutes, rather than whatever
 			// full autosave interval the user has selected
-			_lastAutosaveTime = _system->getMillis() + (5 * 60 * 1000) - _autosaveInterval;
-			return;
+			_lastAutosaveTime += (5 * 60 * 1000) - _autosaveInterval;
 		}
 	}
-
-	// Reset the last autosave time
-	_lastAutosaveTime = _system->getMillis();
 }
 
 void Engine::errorString(const char *buf1, char *buf2, int size) {

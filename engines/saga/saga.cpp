@@ -128,12 +128,6 @@ SagaEngine::SagaEngine(OSystem *syst, const SAGAGameDescription *gameDesc)
 	// Mac CD Wyrmkeep
 	SearchMan.addSubDirectoryMatching(gameDataDir, "patch");
 
-	// Dinotopia
-	SearchMan.addSubDirectoryMatching(gameDataDir, "smack");
-
-	// FTA2
-	SearchMan.addSubDirectoryMatching(gameDataDir, "video");
-
 	_displayClip.left = _displayClip.top = 0;
 }
 
@@ -158,13 +152,11 @@ SagaEngine::~SagaEngine() {
 	delete _events;
 	_events = NULL;
 
-	if (!isSaga2()) {
-		delete _font;
-		_font = NULL;
+	delete _font;
+	_font = NULL;
 
-		delete _sprite;
-		_sprite = NULL;
-	}
+	delete _sprite;
+	_sprite = NULL;
 
 	delete _anim;
 	_anim = NULL;
@@ -172,10 +164,8 @@ SagaEngine::~SagaEngine() {
 	delete _script;
 	_script = NULL;
 
-	if (!isSaga2()) {
-		delete _interface;
-		_interface = NULL;
-	}
+	delete _interface;
+	_interface = NULL;
 
 	delete _actor;
 	_actor = NULL;
@@ -232,12 +222,6 @@ Common::Error SagaEngine::run() {
 			_resource = new Resource_RES(this);
 			break;
 #endif
-#ifdef ENABLE_SAGA2
-		case GID_DINO:
-		case GID_FTA2:
-			_resource = new Resource_HRS(this);
-			break;
-#endif
 		default:
 			break;
 	}
@@ -249,20 +233,15 @@ Common::Error SagaEngine::run() {
 	}
 
 	// Initialize engine modules
-	// TODO: implement differences for SAGA2
 	_sndRes = new SndRes(this);
 	_events = new Events(this);
 
-	if (!isSaga2()) {
-		if (getLanguage() == Common::JA_JPN)
-			_font = new SJISFont(this);
-		else
-			_font = new DefaultFont(this);
-		_sprite = new Sprite(this);
-		_script = new SAGA1Script(this);
-	} else {
-		_script = new SAGA2Script(this);
-	}
+	if (getLanguage() == Common::JA_JPN)
+		_font = new SJISFont(this);
+	else
+		_font = new DefaultFont(this);
+	_sprite = new Sprite(this);
+	_script = new SAGA1Script(this);
 
 	_anim = new Anim(this);
 	_interface = new Interface(this); // requires script module
@@ -296,16 +275,12 @@ Common::Error SagaEngine::run() {
 	// Initialize system specific sound
 	_sound = new Sound(this, _mixer);
 
-	if (!isSaga2()) {
-		_interface->converseClear();
-		_script->setVerb(_script->getVerbType(kVerbWalkTo));
-	}
+	_interface->converseClear();
+	_script->setVerb(_script->getVerbType(kVerbWalkTo));
 
 	_music->setVolume(_musicVolume, 1);
 
-	if (!isSaga2()) {
-		_gfx->initPalette();
-	}
+	_gfx->initPalette();
 
 	if (_voiceFilesExist) {
 		if (getGameId() == GID_IHNM) {

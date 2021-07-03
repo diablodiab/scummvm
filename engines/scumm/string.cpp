@@ -741,6 +741,9 @@ void ScummEngine::CHARSET_1() {
 		fakeBidiString(_charsetBuffer + _charsetBufPos, true);
 	}
 
+	bool createTextBox = (_macScreen && _game.id == GID_INDY3);
+	bool drawTextBox = false;
+
 	while (handleNextCharsetCode(a, &c)) {
 		if (c == 0) {
 			// End of text reached, set _haveMsg accordingly
@@ -774,6 +777,13 @@ void ScummEngine::CHARSET_1() {
 
 		_charset->_left = _nextLeft;
 		_charset->_top = _nextTop;
+
+		if (createTextBox) {
+			if (!_keepText)
+				mac_createIndy3TextBox(a);
+			createTextBox = false;
+			drawTextBox = true;
+		}
 
 		if (_game.version >= 7) {
 #ifdef ENABLE_SCUMM_7_8
@@ -813,6 +823,9 @@ void ScummEngine::CHARSET_1() {
 			_nextLeft = _charset->_left;
 			_nextTop = _charset->_top;
 		}
+
+		if (drawTextBox)
+			mac_drawIndy3TextBox();
 
 		if (_game.version <= 2) {
 			_talkDelay += _defaultTalkDelay;
@@ -1023,8 +1036,8 @@ void ScummEngine::drawString(int a, const byte *msg) {
 	_charset->setCurID(_string[a].charset);
 
 	// HACK: Correct positions of text in books in Indy3 Mac.
-	// See also bug #8759.
-	if (_game.id == GID_INDY3 && _game.platform == Common::kPlatformMacintosh && a == 1) {
+	// See also bug #8759. Not needed when using the Mac font.
+	if (_game.id == GID_INDY3 && _game.platform == Common::kPlatformMacintosh && a == 1 && !_macScreen) {
 		if (_currentRoom == 75) {
 			// Grail Diary Page 1 (Library)
 			if (_charset->_startLeft < 160)

@@ -26,6 +26,7 @@
 #include "common/zlib.h"
 
 #include "director/director.h"
+#include "director/movie.h"
 #include "director/util.h"
 
 namespace Director {
@@ -196,6 +197,17 @@ char *numToCastNum(int num) {
 
 		res[2] = '1' + num;
 	}
+
+	return res;
+}
+
+Common::String CastMemberID::asString() const {
+	Common::String res = Common::String::format("member %d", member);
+
+	if (g_director->getVersion() < 400 || g_director->getCurrentMovie()->_allowOutdatedLingo)
+		res += "(" + Common::String(numToCastNum(member)) + ")";
+	else if (g_director->getVersion() >= 500)
+		res += Common::String::format(" of castLib %d", castLib);
 
 	return res;
 }
