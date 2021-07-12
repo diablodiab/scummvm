@@ -738,7 +738,7 @@ class OSystem_RETRO : public EventsBaseBackend, public PaletteManager {
          // TODO: NOTHING?
       }
 
-      virtual void getTimeAndDate(TimeDate &t) const
+      virtual void getTimeAndDate(TimeDate &t, bool skipRecord) const
       {
          time_t curTime = time(NULL);
 

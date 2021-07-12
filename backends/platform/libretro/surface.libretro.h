@@ -135,7 +135,7 @@ public:
 	 * @param height Height of the surface object.
 	 * @param format The pixel format the surface should use.
 	 */
-	void create(uint16 width, uint16 height, const PixelFormat &format);
+	void create(int16 width, int16 height, const PixelFormat &format);
 
 	/**
 	 * Release the memory used by the pixels memory of this surface. This is the
