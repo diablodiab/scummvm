@@ -435,15 +435,23 @@ private:
 	};
 
 public:
-	ContainerNode(void) {}
+	ContainerNode(void) {
+		object = 0;
+		type = 0;
+		owner = 0;
+		window = nullptr;
+		action = 0;
+		mindType = 0;
+	}
 	ContainerNode(ContainerList &cl, ObjectID id, int type);
 	~ContainerNode();
 
 	static int32 archiveSize(void) {
 		return sizeof(Archive);
 	}
-	void *restore(void *buf);
-	void *archive(void *buf);
+
+	void read(Common::InSaveFile *in);
+	void write(Common::OutSaveFile *out);
 
 	//  Hide or show this container window.
 	void hide(void);
@@ -522,8 +530,6 @@ public:
 	void setUpdate(ObjectID id);
 };
 
-extern ContainerList    globalContainerList;
-
 ContainerNode *CreateContainerNode(ObjectID id, bool open = true, int16 mindType = 0);
 ContainerNode *CreateReadyContainerNode(PlayerActorID player);
 ContainerNode *OpenMindContainer(PlayerActorID player, int16 open, int16 type);
@@ -536,8 +542,8 @@ void initContainers(void);
 void cleanupContainers(void);
 
 void initContainerNodes(void);
-void saveContainerNodes(SaveFileConstructor &saveGame);
-void loadContainerNodes(SaveFileReader &saveGame);
+void saveContainerNodes(Common::OutSaveFile *out);
+void loadContainerNodes(Common::InSaveFile *in);
 void cleanupContainerNodes(void);
 
 extern void updateContainerWindows(void);

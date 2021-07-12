@@ -704,7 +704,7 @@ MohawkSurface *LivingBooksBitmap_v1::decodeImageLB(Common::SeekableReadStreamEnd
 		uint16 lengthBits = endianStream->readUint16();
 
 		if (compressedSize != (uint32)endianStream->size() - 24)
-			error("More bytes (%d) remaining in stream than header says there should be (%d)", endianStream->size() - 24, compressedSize);
+			error("More bytes (%d) remaining in stream than header says there should be (%d)", (int)endianStream->size() - 24, compressedSize);
 
 		// These two errors are really just sanity checks and should never go off
 		if (posBits != POS_BITS)
@@ -818,8 +818,8 @@ void DOSBitmap::expandMonochromePlane(Graphics::Surface *surface, Common::Seekab
 
 	// Expand the 8 pixels in a byte into a full byte per pixel
 
-	for (uint32 i = 0; i < surface->h; i++) {
-		for (uint x = 0; x < surface->w;) {
+	for (int i = 0; i < surface->h; i++) {
+		for (int x = 0; x < surface->w;) {
 			byte temp = rawStream->readByte();
 
 			for (int j = 7; j >= 0 && x < surface->w; j--) {
@@ -845,7 +845,7 @@ void DOSBitmap::expandEGAPlanes(Graphics::Surface *surface, Common::SeekableRead
 
 	byte *dst = (byte *)surface->getPixels();
 
-	for (uint32 i = 0; i < surface->h; i++) {
+	for (int32 i = 0; i < surface->h; i++) {
 		uint x = 0;
 
 		for (int32 j = 0; j < surface->w / 4; j++) {

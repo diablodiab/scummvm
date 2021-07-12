@@ -24,11 +24,8 @@
  *   (c) 1993-1996 The Wyrmkeep Entertainment Co.
  */
 
-#define FORBIDDEN_SYMBOL_ALLOW_ALL // FIXME: Remove
-
 #include "saga2/saga2.h"
-#include "saga2/loadsave.h"
-#include "saga2/savefile.h"
+#include "saga2/saveload.h"
 #include "saga2/objects.h"
 #include "saga2/tile.h"
 #include "saga2/script.h"
@@ -48,6 +45,31 @@
 #include "saga2/imagcach.h"
 
 namespace Saga2 {
+
+const ChunkID   gameID = MKTAG('F', 'T', 'A', '2');
+
+void SaveFileHeader::read(Common::InSaveFile *in) {
+	char fileName[SaveFileHeader::kSaveNameSize];
+	gameID = in->readUint32BE();;
+	in->read(fileName, SaveFileHeader::kSaveNameSize);
+	saveName = fileName;
+}
+
+void SaveFileHeader::write(Common::OutSaveFile *out) {
+	out->writeUint32BE(gameID);
+	out->write(saveName.c_str(), saveName.size());
+
+	int remainingBytes = SaveFileHeader::kHeaderSize - saveName.size() - 4;
+
+	for (int i = 0; i < remainingBytes; ++i)
+		out->writeByte(0);
+
+	debugC(1, kDebugSaveload, "Writing game header: gameID = %s, saveName = %s", tag2str(gameID), saveName.c_str());
+}
+
+Common::String getSaveFileName(int16 saveNo) {
+	return Common::String::format("%3.3d.SAV", saveNo);
+}
 
 /* ===================================================================== *
    Functions
@@ -92,7 +114,6 @@ void initGameState(void) {
 	pauseTimer();
 
 	initGlobals();
-	initImageCache();
 	initTimer();
 	initCalender();
 	initWorlds();
@@ -129,43 +150,91 @@ void initGameState(void) {
 //----------------------------------------------------------------------
 //	Save the current game state
 
-void saveGameState(int16 saveNo, char *saveName) {
+Common::Error saveGameState(int16 saveNo, char *saveName) {
 	pauseTimer();
 
-	SaveFileConstructor     saveGame(saveNo, saveName);
+	debugC(1, kDebugSaveload, "Saving game");
 
-	saveGlobals(saveGame);
-	saveTimer(saveGame);
-	saveCalender(saveGame);
-	saveWorlds(saveGame);
-	saveActors(saveGame);
-	saveObjects(saveGame);
-	saveBands(saveGame);
-	savePlayerActors(saveGame);
-	saveCenterActor(saveGame);
-	saveActiveItemStates(saveGame);
-	saveTileCyclingStates(saveGame);
-	saveSAGADataSeg(saveGame);
-	saveSAGAThreads(saveGame);
-	saveMotionTasks(saveGame);
-	saveTaskStacks(saveGame);
-	saveTasks(saveGame);
-	saveTileTasks(saveGame);
-	saveSpeechTasks(saveGame);
-	saveActiveRegions(saveGame);
-	saveTimers(saveGame);
-	saveSensors(saveGame);
-	saveTempActorCount(saveGame);
-	saveMissions(saveGame);
-	saveFactionTallies(saveGame);
-	saveTileModeState(saveGame);
-	saveSpellState(saveGame);
-	saveAutoMap(saveGame);
-	saveUIState(saveGame);
-	savePaletteState(saveGame);
-	saveContainerNodes(saveGame);
+	Common::OutSaveFile *out = g_vm->getSaveFileManager()->openForSaving(getSaveFileName(saveNo), false);
+	if (!out)
+		return Common::kCreatingFileFailed;
+
+	SaveFileHeader header;
+	header.gameID = gameID;
+	header.saveName = saveName;
+
+	header.write(out);
+
+	saveGlobals(out);
+	saveTimer(out);
+	saveCalender(out);
+	saveWorlds(out);
+	saveActors(out);
+	saveObjects(out);
+	saveBands(out);
+	savePlayerActors(out);
+	saveCenterActor(out);
+	saveActiveItemStates(out);
+	saveTileCyclingStates(out);
+	saveSAGADataSeg(out);
+	saveSAGAThreads(out);
+	saveMotionTasks(out);
+	saveTaskStacks(out);
+	saveTasks(out);
+	saveTileTasks(out);
+	saveSpeechTasks(out);
+	saveActiveRegions(out);
+	saveTimers(out);
+	saveSensors(out);
+	saveTempActorCount(out);
+	saveMissions(out);
+	saveFactionTallies(out);
+	saveTileModeState(out);
+	saveSpellState(out);
+	saveAutoMap(out);
+	saveUIState(out);
+	savePaletteState(out);
+	saveContainerNodes(out);
+
+	out->finalize();
+
+	delete out;
 
 	resumeTimer();
+
+	return Common::kNoError;
+}
+
+bool firstChunk(Common::InSaveFile *in, ChunkID &chunk, int32 &size) {
+	if (!in->seek(SaveFileHeader::kHeaderSize, SEEK_SET))
+		error("Error seeking first save game chunk");
+
+	if (in->size() - in->pos() < 8) {
+		debugC(1, kDebugSaveload, "Reached EOF on first Chunk %s", tag2str(chunk));
+		return false;
+	}
+
+	chunk = in->readUint32BE();
+	size = in->readUint32LE();
+
+	debugC(1, kDebugSaveload, "First Chunk loaded: chunkID = %s, size = %d", tag2str(chunk), size);
+
+	return true;
+}
+
+bool nextChunk(Common::InSaveFile *in, ChunkID &chunk, int32 &size) {
+	if (in->size() - in->pos() < 8) {
+		debugC(1, kDebugSaveload, "Reached EOF at %s", tag2str(chunk));
+		return false;
+	}
+
+	chunk = in->readUint32BE();
+	size = in->readUint32LE();
+
+	debugC(1, kDebugSaveload, "Next Chunk loaded: chunkID = %s, size = %d", tag2str(chunk), size);
+
+	//  Return success
+	return true;
 }
 
 //----------------------------------------------------------------------
@@ -209,206 +278,209 @@ void loadSavedGameState(int16 saveNo) {
 
 	pauseTimer();
 
-	SaveFileReader  saveGame(saveNo);
+	Common::InSaveFile *in = g_vm->getSaveFileManager()->openForLoading(getSaveFileName(saveNo));
+
 	ChunkID         id;
 	int32           chunkSize;
 	bool            notEOF;
 
-	notEOF = saveGame.firstChunk(id, chunkSize);
+	notEOF = firstChunk(in, id, chunkSize);
 	while (notEOF) {
 		switch (id) {
-		case MakeID('G', 'L', 'O', 'B'):
-			loadGlobals(saveGame);
+		case MKTAG('G', 'L', 'O', 'B'):
+			loadGlobals(in);
 			loadFlags |= loadGlobalsFlag;
 			break;
 
-		case MakeID('T', 'I', 'M', 'E'):
-			loadTimer(saveGame);
+		case MKTAG('T', 'I', 'M', 'E'):
+			loadTimer(in);
 			loadFlags |= loadTimerFlag;
 			break;
 
-		case MakeID('C', 'A', 'L', 'E'):
-			loadCalender(saveGame);
+		case MKTAG('C', 'A', 'L', 'E'):
+			loadCalender(in);
 			loadFlags |= loadCalenderFlag;
 			break;
 
-		case MakeID('W', 'R', 'L', 'D'):
-			loadWorlds(saveGame);
+		case MKTAG('W', 'R', 'L', 'D'):
+			loadWorlds(in);
 			loadFlags |= loadWorldsFlag;
 			break;
 
-		case MakeID('A', 'C', 'T', 'R'):
-			loadActors(saveGame);
+		case MKTAG('A', 'C', 'T', 'R'):
+			loadActors(in);
 			loadFlags |= loadActorsFlag;
 			break;
 
-		case MakeID('O', 'B', 'J', 'S'):
-			loadObjects(saveGame);
+		case MKTAG('O', 'B', 'J', 'S'):
+			loadObjects(in);
 			loadFlags |= loadObjectsFlag;
 			break;
 
-		case MakeID('B', 'A', 'N', 'D'):
+		case MKTAG('B', 'A', 'N', 'D'):
 			if (loadFlags & loadActorsFlag) {
-				loadBands(saveGame);
+				loadBands(in, chunkSize);
 				loadFlags |= loadBandsFlag;
 			} else
 				error("Bands loaded prematurely");
 			break;
 
-		case MakeID('P', 'L', 'Y', 'R'):
+		case MKTAG('P', 'L', 'Y', 'R'):
 			if (loadFlags & loadBandsFlag) {
-				loadPlayerActors(saveGame);
+				loadPlayerActors(in);
 				loadFlags |= loadPlayerActorsFlag;
 			} else
 				error("PlayerActors loaded prematurely");
 			break;
 
-		case MakeID('C', 'N', 'T', 'R'):
-			loadCenterActor(saveGame);
+		case MKTAG('C', 'N', 'T', 'R'):
+			loadCenterActor(in);
 			loadFlags |= loadCenterActorFlag;
 			break;
 
-		case MakeID('T', 'A', 'G', 'S'):
-			loadActiveItemStates(saveGame);
+		case MKTAG('T', 'A', 'G', 'S'):
+			loadActiveItemStates(in);
 			loadFlags |= loadActiveItemStatesFlag;
 			break;
 
-		case MakeID('C', 'Y', 'C', 'L'):
-			loadTileCyclingStates(saveGame);
+		case MKTAG('C', 'Y', 'C', 'L'):
+			loadTileCyclingStates(in);
 			loadFlags |= loadTileCyclingStatesFlag;
 			break;
 
-		case MakeID('S', 'D', 'T', 'A'):
-			loadSAGADataSeg(saveGame);
+		case MKTAG('S', 'D', 'T', 'A'):
+			loadSAGADataSeg(in);
 			loadFlags |= loadSAGADataSegFlag;
 			break;
 
-		case MakeID('S', 'A', 'G', 'A'):
-			loadSAGAThreads(saveGame);
+		case MKTAG('S', 'A', 'G', 'A'):
+			loadSAGAThreads(in, chunkSize);
 			loadFlags |= loadSAGAThreadsFlag;
 			break;
 
-		case MakeID('M', 'O', 'T', 'N'):
+		case MKTAG('M', 'O', 'T', 'N'):
 			if (!(~loadFlags & (loadActorsFlag | loadObjectsFlag))) {
-				loadMotionTasks(saveGame);
+				loadMotionTasks(in, chunkSize);
 				loadFlags |= loadMotionTasksFlag;
 			} else
 				error("MotionTasks loaded prematurely");
 			break;
 
-		case MakeID('T', 'S', 'T', 'K'):
+		case MKTAG('T', 'S', 'T', 'K'):
 			if (loadFlags & loadActorsFlag) {
-				loadTaskStacks(saveGame);
+				loadTaskStacks(in, chunkSize);
 				loadFlags |= loadTaskStacksFlag;
 			} else
 				error("TaskStacks loaded prematurely");
 			break;
 
-		case MakeID('T', 'A', 'S', 'K'):
+		case MKTAG('T', 'A', 'S', 'K'):
 			if (loadFlags & loadTaskStacksFlag) {
-				loadTasks(saveGame);
+				loadTasks(in, chunkSize);
 				loadFlags |= loadTasksFlag;
 			} else
 				error("Tasks loaded prematurely");
 			break;
 
-		case MakeID('T', 'A', 'C', 'T'):
+		case MKTAG('T', 'A', 'C', 'T'):
 			if (loadFlags & loadWorldsFlag) {
-				loadTileTasks(saveGame);
+				loadTileTasks(in, chunkSize);
 				loadFlags |= loadTileTasksFlag;
 			} else
 				error("TileActivityTasks loaded prematurely");
 			break;
 
-		case MakeID('S', 'P', 'C', 'H'):
+		case MKTAG('S', 'P', 'C', 'H'):
 			if (!(~loadFlags & (loadActorsFlag | loadObjectsFlag))) {
-				loadSpeechTasks(saveGame);
+				loadSpeechTasks(in, chunkSize);
 				loadFlags |= loadSpeechTasksFlag;
 			} else
 				error("SpeechTasks loaded prematurely");
 			break;
 
-		case MakeID('A', 'R', 'E', 'G'):
-			loadActiveRegions(saveGame);
+		case MKTAG('A', 'R', 'E', 'G'):
+			loadActiveRegions(in);
 			loadFlags |= loadActiveRegionsFlag;
 			break;
 
-		case MakeID('T', 'I', 'M', 'R'):
+		case MKTAG('T', 'I', 'M', 'R'):
 			if (loadFlags & loadActorsFlag) {
-				loadTimers(saveGame);
+				loadTimers(in);
 				loadFlags |= loadTimersFlag;
 			} else
 				error("Timers loaded prematurely");
 			break;
 
-		case MakeID('S', 'E', 'N', 'S'):
+		case MKTAG('S', 'E', 'N', 'S'):
 			if (loadFlags & loadActorsFlag) {
-				loadSensors(saveGame);
+				loadSensors(in);
 				loadFlags |= loadSensorsFlag;
 			} else
 				error("Sensors loaded prematurely");
 			break;
 
-		case MakeID('A', 'C', 'N', 'T'):
-			loadTempActorCount(saveGame);
+		case MKTAG('A', 'C', 'N', 'T'):
+			loadTempActorCount(in, chunkSize);
 			loadFlags |= loadTempActorCountFlag;
 			break;
 
-		case MakeID('M', 'I', 'S', 'S'):
-			loadMissions(saveGame);
+		case MKTAG('M', 'I', 'S', 'S'):
+			loadMissions(in);
 			loadFlags |= loadMissionsFlag;
 			break;
 
-		case MakeID('F', 'A', 'C', 'T'):
-			loadFactionTallies(saveGame);
+		case MKTAG('F', 'A', 'C', 'T'):
+			loadFactionTallies(in);
 			loadFlags |= loadFactionTalliesFlag;
 			break;
 
-		case MakeID('T', 'M', 'S', 'T'):
+		case MKTAG('T', 'M', 'S', 'T'):
 			if (loadFlags & loadActorsFlag) {
-				loadTileModeState(saveGame);
+				loadTileModeState(in);
 				loadFlags |= loadTileModeStateFlag;
 			} else
 				error("TileMode state loaded prematurely");
 			break;
 
-		case MakeID('S', 'P', 'E', 'L'):
-			loadSpellState(saveGame);
+		case MKTAG('S', 'P', 'E', 'L'):
+			loadSpellState(in);
 			loadFlags |= loadSpellStateFlag;
 			break;
 
-		case MakeID('A', 'M', 'A', 'P'):
+		case MKTAG('A', 'M', 'A', 'P'):
 			if (loadFlags & loadWorldsFlag) {
-				loadAutoMap(saveGame);
+				loadAutoMap(in, chunkSize);
 				loadFlags |= loadAutoMapFlag;
 			} else
 				error("Auto map loaded prematurely");
 			break;
 
-		case MakeID('U', 'I', 'S', 'T'):
+		case MKTAG('U', 'I', 'S', 'T'):
 			if (loadFlags & loadPlayerActorsFlag) {
-				loadUIState(saveGame);
+				loadUIState(in);
 				loadFlags |= loadUIStateFlag;
 			} else
 				error("UI state loaded prematurely");
 			break;
 
-		case MakeID('P', 'A', 'L', 'E'):
-			loadPaletteState(saveGame);
+		case MKTAG('P', 'A', 'L', 'E'):
+			loadPaletteState(in);
 			loadFlags |= loadPaletteStateFlag;
 			break;
 
-		case MakeID('C', 'O', 'N', 'T'):
+		case MKTAG('C', 'O', 'N', 'T'):
 			if (loadFlags & loadObjectsFlag) {
-				loadContainerNodes(saveGame);
+				loadContainerNodes(in);
 				loadFlags |= loadContainerNodesFlag;
 			} else
 				error("ContainerNodes loaded prematurely");
 			break;
 		}
 
-		notEOF = saveGame.nextChunk(id, chunkSize);
+		notEOF = nextChunk(in, id, chunkSize);
 	}
+
+	delete in;
 
 	if (!(loadFlags & loadGlobalsFlag))
 		error("Globals not loaded");
@@ -449,6 +521,7 @@ void loadSavedGameState(int16 saveNo) {
 	if (!(loadFlags & loadActiveRegionsFlag))
 		error("Active Regions not loaded");
 
+
 	resumeTimer();
 }
 
@@ -483,9 +556,7 @@ void cleanupGameState(void) {
 	cleanupObjects();
 	cleanupActors();
 	cleanupWorlds();
-	cleanupAudio();
 	cleanupTimer();
-	cleanupImageCache();
 	cleanupGlobals();
 }
 

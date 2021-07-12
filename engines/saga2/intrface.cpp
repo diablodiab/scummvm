@@ -24,8 +24,6 @@
  *   (c) 1993-1996 The Wyrmkeep Entertainment Co.
  */
 
-#define FORBIDDEN_SYMBOL_ALLOW_ALL // FIXME: Remove
-
 #include "saga2/saga2.h"
 #include "saga2/blitters.h"
 #include "saga2/objects.h"
@@ -33,7 +31,6 @@
 #include "saga2/intrface.h"
 #include "saga2/grabinfo.h"
 #include "saga2/uidialog.h"
-#include "saga2/savefile.h"
 #include "saga2/motion.h"
 #include "saga2/enchant.h"
 #include "saga2/display.h"
@@ -448,6 +445,7 @@ CPlaqText::CPlaqText(gPanelList     &list,
 	buttonFont      = font;
 	textRect        = box;
 	textPosition    = textPos;
+	oldFont         = nullptr;
 }
 
 void CPlaqText::enable(bool abled) {
@@ -555,16 +553,6 @@ void CPortrait::ORset(uint16 brotherID, PortraitType type) { // brotherID = post
 	setPortrait(brotherID);
 }
 
-size_t appendToStr(char *dst, const char *src, size_t srcLen, size_t maxCpyLen) {
-	size_t      cpyLen;
-
-	cpyLen = MIN(srcLen, maxCpyLen);
-	memcpy(dst, src, cpyLen);
-	dst[cpyLen] = '\0';
-
-	return cpyLen;
-}
-
 void CPortrait::getStateString(char buf[], int8 size, uint16 brotherID) {
 	static char asleepStr[]         = ASLEEP_STATE;
 	static char paralysedStr[]      = PARALY_STATE;
@@ -581,108 +569,54 @@ void CPortrait::getStateString(char buf[], int8 size, uint16 brotherID) {
 	PlayerActor     *pa = getPlayerActorAddress(brotherID);
 	Actor           *a = pa->getActor();
 	ActorAttributes &stats = pa->getBaseStats();
-	size_t          length = 0;
 
 	buf[size - 1] = '\0';
 
 	if (a->isDead()) {
-		strncpy(buf, DEAD_STATE, size - 1);
+		Common::strlcpy(buf, DEAD_STATE, size);
 		return;
 	}
 
 	buf[0] = '\0';
 
 	if (a->enchantmentFlags & (1 << actorAsleep)) {
-		length +=   appendToStr(
-		                &buf[length],
-		                asleepStr,
-		                ARRAYSIZE(asleepStr) - 1,
-		                size - length - 1);
+		Common::strlcat(buf, asleepStr, size);
 	} else if (a->enchantmentFlags & (1 << actorParalyzed)) {
-		length +=   appendToStr(
-		                &buf[length],
-		                paralysedStr,
-		                ARRAYSIZE(paralysedStr) - 1,
-		                size - length - 1);
+		Common::strlcat(buf, paralysedStr, size);
 	} else if (a->enchantmentFlags & (1 << actorBlind)) {
-		length +=   appendToStr(
-		                &buf[length],
-		                blindStr,
-		                ARRAYSIZE(blindStr) - 1,
-		                size - length - 1);
+		Common::strlcat(buf, blindStr, size);
 	} else if (a->enchantmentFlags & (1 << actorFear)) {
-		length +=   appendToStr(
-		                &buf[length],
-		                afraidStr,
-		                ARRAYSIZE(afraidStr) - 1,
-		                size - length - 1);
+		Common::strlcat(buf, afraidStr, size);
 	} else if (pa->isAggressive()) {
-		length +=   appendToStr(
-		                &buf[length],
-		                angryStr,
-		                ARRAYSIZE(angryStr) - 1,
-		                size - length - 1);
+		Common::strlcat(buf, angryStr, size);
 	}
 
 	if (stats.vitality >= a->effectiveStats.vitality * 3) {
-		if (length != 0)
-			length +=   appendToStr(
-			                &buf[length],
-			                commaStr,
-			                ARRAYSIZE(commaStr) - 1,
-			                size - length - 1);
-		length +=   appendToStr(
-		                &buf[length],
-		                badlyWoundedStr,
-		                ARRAYSIZE(badlyWoundedStr) - 1,
-		                size - length - 1);
+		if (buf[0] != '\0')	// strlen(buf) > 0
+			Common::strlcat(buf, commaStr, size);
+
+		Common::strlcat(buf, badlyWoundedStr, size);
 	} else if (stats.vitality * 2 > a->effectiveStats.vitality * 3) {
-		if (length != 0)
-			length +=   appendToStr(
-			                &buf[length],
-			                commaStr,
-			                ARRAYSIZE(commaStr) - 1,
-			                size - length - 1);
-		length +=   appendToStr(
-		                &buf[length],
-		                hurtStr,
-		                ARRAYSIZE(hurtStr) - 1,
-		                size - length - 1);
+		if (buf[0] != '\0')	// strlen(buf) > 0
+			Common::strlcat(buf, commaStr, size);
+
+		Common::strlcat(buf, hurtStr, size);
 	}
 
 	if (a->enchantmentFlags & (1 << actorPoisoned)) {
-		if (length != 0)
-			length +=   appendToStr(
-			                &buf[length],
-			                commaStr,
-			                ARRAYSIZE(commaStr) - 1,
-			                size - length - 1);
-		length +=   appendToStr(
-		                &buf[length],
-		                poisonedStr,
-		                ARRAYSIZE(poisonedStr) - 1,
-		                size - length - 1);
+		if (buf[0] != '\0')	// strlen(buf) > 0
+			Common::strlcat(buf, commaStr, size);
+
+		Common::strlcat(buf, poisonedStr, size);
 	} else if (a->enchantmentFlags & (1 << actorDiseased)) {
-		if (length != 0)
-			length +=   appendToStr(
-			                &buf[length],
-			                commaStr,
-			                ARRAYSIZE(commaStr) - 1,
-			                size - length - 1);
-		length +=   appendToStr(
-		                &buf[length],
-		                diseasedStr,
-		                ARRAYSIZE(diseasedStr) - 1,
-		                size - length - 1);
+		if (buf[0] != '\0')	// strlen(buf) > 0
+			Common::strlcat(buf, commaStr, size);
+
+		Common::strlcat(buf, diseasedStr, size);
 	}
 
-	if (length == 0) {
-		length +=   appendToStr(
-		                &buf[length],
-		                normalStr,
-		                ARRAYSIZE(normalStr) - 1,
-		                size - length - 1);
-	}
+	if (buf[0] == '\0')	// strlen(buf) == 0
+		Common::strlcat(buf, normalStr, size);
 }
 
 /* ===================================================================== *
@@ -699,16 +633,17 @@ CStatusLine::CStatusLine(gPanelList         &list,
                          int32           /*frameTime*/,
                          int16           ident,
                          AppFunc         *cmd) :
-	CPlaqText(list, box, msg, font, textPos, pal, ident, cmd)
-
-{
-	int         i;
+	CPlaqText(list, box, msg, font, textPos, pal, ident, cmd) {
 
 	lineDisplayed = false;
 	queueHead = queueTail = 0;
 
-	for (i = 0; i < ARRAYSIZE(lineQueue); i++)
+	for (int i = 0; i < ARRAYSIZE(lineQueue); i++) {
 		lineQueue[i].text = nullptr;
+		lineQueue[i].frameTime = 0;
+	}
+	waitAlarm.basetime = waitAlarm.duration = 0;
+	minWaitAlarm.basetime = minWaitAlarm.duration = 0;
 }
 
 CStatusLine::~CStatusLine(void) {
@@ -753,7 +688,7 @@ void CStatusLine::experationCheck(void) {
 		minWaitAlarm.set(lineQueue[queueTail].frameTime / 5);
 
 		// copy upto the buffer's size in chars
-		strncpy(lineBuf, lineQueue[queueTail].text, bufSize - 1);
+		Common::strlcpy(lineBuf, lineQueue[queueTail].text, bufSize);
 		lineBuf[bufSize - 1] = '\0';
 
 		//  free the queue text buffer
@@ -2639,6 +2574,10 @@ APPFUNC(cmdManaInd) {
 struct UIStateArchive {
 	bool    indivControlsFlag;
 	uint16  indivBrother;
+
+	enum {
+		kUIStateArchiveSize = 3
+	};
 };
 
 bool isIndivMode(void) {
@@ -2652,25 +2591,27 @@ void initUIState(void) {
 	//updateAllUserControls();
 }
 
-void saveUIState(SaveFileConstructor &saveGame) {
-	UIStateArchive      archive;
+void saveUIState(Common::OutSaveFile *out) {
+	debugC(2, kDebugSaveload, "Saving UIState");
 
-	archive.indivControlsFlag = indivControlsFlag;
-	archive.indivBrother = indivBrother;
+	out->write("UIST", 4);
+	out->writeUint32LE(UIStateArchive::kUIStateArchiveSize);
 
-	saveGame.writeChunk(
-	    MakeID('U', 'I', 'S', 'T'),
-	    &archive,
-	    sizeof(archive));
+	out->writeByte(indivControlsFlag);
+	out->writeUint16LE(indivBrother);
+
+	debugC(3, kDebugSaveload, "... indivControlsFlag = %d", indivControlsFlag);
+	debugC(3, kDebugSaveload, "... indivBrother = %d", indivBrother);
 }
 
-void loadUIState(SaveFileReader &saveGame) {
-	UIStateArchive      archive;
+void loadUIState(Common::InSaveFile *in) {
+	debugC(2, kDebugSaveload, "Loading UIState");
 
-	saveGame.read(&archive, sizeof(archive));
+	indivControlsFlag = in->readByte();
+	indivBrother = in->readUint16LE();
 
-	indivControlsFlag = archive.indivControlsFlag;
-	indivBrother = archive.indivBrother;
+	debugC(3, kDebugSaveload, "... indivControlsFlag = %d", indivControlsFlag);
+	debugC(3, kDebugSaveload, "... indivBrother = %d", indivBrother);
 
 	updateAllUserControls();
 }

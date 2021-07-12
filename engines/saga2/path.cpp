@@ -654,6 +654,14 @@ struct QueueItem {
 	uint8           pad;
 	int16           cost;                   // Cost to get to this cell
 
+	QueueItem() {
+		z = 0;
+		u = v = 0;
+		platform = 0;
+		pad = 0;
+		cost = 0;
+	}
+
 	operator int() {
 		return cost;
 	}
@@ -696,6 +704,7 @@ class DirMaskGroup {
 	void computeMask(uint8 objSection);
 
 public:
+	DirMaskGroup() : crossSection(0) {}
 	DirMask &operator[](int16 index) {
 		return dMask[index];
 	}
@@ -711,7 +720,10 @@ private:
 	int16           arraySize;
 
 public:
-	MaskComputer(void) : arraySize(0) {}
+	MaskComputer(void) : arraySize(0) {
+		for (int i = 0; i < 8; i++)
+			ptrArray[i] = nullptr;
+	}
 
 	DirMaskGroup *computeMask(uint8 objSection);
 };
@@ -1345,6 +1357,7 @@ static void push(
 	newItem.platform = platform;
 	newItem.cost = cost;
 	newItem.direction = direction;
+	newItem.pad = 0;
 
 	if (queue.insert(newItem)) {
 		cellPtr->direction = direction;
@@ -1571,14 +1584,14 @@ big_break:
 
 			//  If the height difference is too great skip this tile
 			//  position
-			if (abs(quantizedCoords.z - startingCoords.z) > kMaxStepHeight)
+			if (ABS(quantizedCoords.z - startingCoords.z) > kMaxStepHeight)
 				continue;
 
 			//  Compute initial cost based upon the distance from the
 			//  starting location
 			offsetVector = quantizedCoords - startingCoords;
 			dist = offsetVector.quickHDistance();
-			zDist = abs(offsetVector.z);
+			zDist = ABS(offsetVector.z);
 			cost = dist + zDist;
 
 			//  Push this point
@@ -1625,7 +1638,7 @@ void PathRequest::finish(void) {
 
 				if (cell->direction != dirInvalid) {
 					if (cell->direction != prevDir
-					        ||  abs(cell->height - prevHeight) > kMaxStepHeight) {
+					        ||  ABS(cell->height - prevHeight) > kMaxStepHeight) {
 						if (res <= tempResult) break;
 
 						coords.u =
@@ -1854,7 +1867,7 @@ PathResult PathRequest::findPath(void) {
 				                &testPlatform);
 
 				//  Determine if elevation change is too great
-				if (abs(testPt.z - prevZ) <= kMaxStepHeight)
+				if (ABS(testPt.z - prevZ) <= kMaxStepHeight)
 					prevZ = testPt.z;
 				else
 					goto big_continue;
@@ -2105,8 +2118,8 @@ bool DestinationPathRequest::setCenter(
 	//  Determine the target vector in order to calculate distance.
 	targetDelta = (targetCoords - centerPt);
 	dist = targetDelta.quickHDistance();
-	zDist = abs(targetDelta.z);
-	platDiff = abs(centerPlatform - targetPlatform);
+	zDist = ABS(targetDelta.z);
+	platDiff = ABS(centerPlatform - targetPlatform);
 	centerCost = dist + zDist * (platDiff + 1);
 
 	//  Determine if this location is closer than any location we have
@@ -2179,8 +2192,8 @@ int16 DestinationPathRequest::evaluateMove(
 	//  order to calculate the distance.
 	targetDelta = targetCoords - testPt;
 	dist = targetDelta.quickHDistance();
-	zDist = abs(targetDelta.z);
-	platDiff = abs(testPlatform - targetPlatform);
+	zDist = ABS(targetDelta.z);
+	platDiff = ABS(testPlatform - targetPlatform);
 
 	return (dist + zDist * (platDiff + 1) - centerCost) >> 2;
 }
@@ -2199,8 +2212,10 @@ WanderPathRequest::WanderPathRequest(
 		tetherMinV = mTask->tetherMinV;
 		tetherMaxU = mTask->tetherMaxU;
 		tetherMaxV = mTask->tetherMaxV;
-	} else
+	} else {
 		tethered = false;
+		tetherMinU = tetherMinV = tetherMaxU = tetherMaxV = 0;
+	}
 }
 
 //  Initialize the static data members
@@ -2229,7 +2244,7 @@ bool WanderPathRequest::setCenter(
 	//  Determine the movement vector in order to calculate distance.
 	movementDelta = (startingCoords - centerPt);
 	dist = movementDelta.quickHDistance();
-	zDist = abs(movementDelta.z);
+	zDist = ABS(movementDelta.z);
 	centerCost = dist + zDist;
 
 	//  Determine if this location is farther than any location we have
@@ -2276,7 +2291,7 @@ int16 WanderPathRequest::evaluateMove(const TilePoint &testPt, uint8) {
 	//  order to calculate the distance.
 	movementDelta = startingCoords - testPt;
 	dist = movementDelta.quickHDistance();
-	zDist = abs(movementDelta.z) >> 1;
+	zDist = ABS(movementDelta.z) >> 1;
 
 	return (centerCost - (dist + zDist)) >> 1;
 }
@@ -2404,6 +2419,7 @@ static void spush(const TilePoint &tp, int cost, int direction) {
 	newItem.z = tp.z;
 	newItem.cost = cost;
 	newItem.direction = direction;
+	newItem.platform = 0;
 
 	squeue.insert(newItem);
 }
@@ -2540,7 +2556,7 @@ TilePoint selectNearbySite(
 		distFromCenter =
 		    quickDistance(
 		        Point32(qi.u - searchCenter, qi.v - searchCenter));
-//				max( abs( qi.u - searchCenter ), abs( qi.v - searchCenter ) );
+//				max( ABS( qi.u - searchCenter ), ABS( qi.v - searchCenter ) );
 
 		//  Calculate the "goodness" of this cell -- is it in the
 		//  middle of the band between min and max?
@@ -2781,14 +2797,14 @@ bool checkPath(
 
 			//  If the height difference is too great skip this tile
 			//  position
-			if (abs(quantizedCoords.z - startingCoords.z) > kMaxStepHeight)
+			if (ABS(quantizedCoords.z - startingCoords.z) > kMaxStepHeight)
 				continue;
 
 			//  Compute initial cost based upon the distance from the
 			//  starting location
 			offsetVector = quantizedCoords - startingCoords;
 			dist = offsetVector.quickHDistance();
-			zDist = abs(offsetVector.z);
+			zDist = ABS(offsetVector.z);
 			cost = dist + zDist;
 
 			//  Push this point
@@ -2908,7 +2924,7 @@ bool checkPath(
 				//  If the resulting height is significantly different
 				//  from the destination height, assume we're on a
 				//  different level and return false.
-				return abs(testPt.z - destCoords.z) <= kMaxStepHeight;
+				return ABS(testPt.z - destCoords.z) <= kMaxStepHeight;
 			}
 
 

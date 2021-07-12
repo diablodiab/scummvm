@@ -48,6 +48,7 @@ enum TraFileErrorType {
 };
 
 enum TraFileBlock {
+	kTraFblk_ExtStrID = 0,
 	kTraFblk_Dict = 1,
 	kTraFblk_GameID = 2,
 	kTraFblk_TextOpts = 3,
@@ -71,6 +72,7 @@ struct Translation {
 	int NormalFont = -1; // replacement for normal font, or -1 for default
 	int SpeechFont = -1; // replacement for speech font, or -1 for default
 	int RightToLeft = -1; // r2l text mode (0, 1), or -1 for default
+	StringMap StrOptions; // to store extended options with string values
 };
 
 

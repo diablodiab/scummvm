@@ -20,8 +20,6 @@
  *
  */
 
-//include <cstdio>
-//include <string.h>
 #include "ags/shared/ac/common.h"
 #include "ags/engine/ac/dynobj/cc_dynamic_array.h"
 #include "ags/engine/ac/dynobj/managed_object_pool.h"
@@ -35,8 +33,8 @@
 #include "ags/engine/script/script_runtime.h"
 #include "ags/engine/script/system_imports.h"
 #include "ags/shared/util/bbop.h"
+#include "ags/shared/util/file.h"
 #include "ags/shared/util/stream.h"
-#include "ags/shared/util/misc.h"
 #include "ags/shared/util/text_stream_writer.h"
 #include "ags/engine/ac/dynobj/script_string.h"
 #include "ags/engine/ac/dynobj/script_user_object.h"
@@ -1247,7 +1245,7 @@ void ccInstance::DumpInstruction(const ScriptOperation &op) {
 		return;
 	}
 
-	Stream *data_s = ci_fopen("script.log", kFile_Create, kFile_Write);
+	Stream *data_s = File::OpenFileCI("script.log", kFile_Create, kFile_Write);
 	TextStreamWriter writer(data_s);
 	writer.WriteFormat("Line %3d, IP:%8d (SP:%p) ", line_num, pc, registers[SREG_SP].RValue);
 
@@ -1492,6 +1490,7 @@ bool ccInstance::ResolveScriptImports(PScript scri) {
 	}
 
 	resolved_imports = new int[numimports];
+	int errors = 0, last_err_idx = 0;
 	for (int i = 0; i < scri->numimports; ++i) {
 		if (scri->imports[i] == nullptr) {
 			resolved_imports[i] = -1;
@@ -1500,11 +1499,18 @@ bool ccInstance::ResolveScriptImports(PScript scri) {
 
 		resolved_imports[i] = _GP(simp).get_index_of(scri->imports[i]);
 		if (resolved_imports[i] < 0) {
-			cc_error("unresolved import '%s'", scri->imports[i]);
-			return false;
+			Debug::Printf(kDbgMsg_Error, "unresolved import '%s' in '%s'", scri->imports[i], scri->numSections > 0 ? scri->sectionNames[0] : "<unknown>");
+			errors++;
+			last_err_idx = i;
 		}
 	}
-	return true;
+
+	if (errors > 0)
+		cc_error("in %s: %d unresolved imports (last: %s)",
+			scri->numSections > 0 ? scri->sectionNames[0] : "<unknown>",
+			errors,
+			scri->imports[last_err_idx]);
+	return errors == 0;
 }
 
 // TODO: it is possible to deduce global var's size at start with

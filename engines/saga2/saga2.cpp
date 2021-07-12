@@ -33,9 +33,14 @@
 #include "engines/util.h"
 
 #include "saga2/saga2.h"
+#include "saga2/fta.h"
 
+#include "saga2/band.h"
+#include "saga2/contain.h"
 #include "saga2/gdraw.h"
+#include "saga2/imagcach.h"
 #include "saga2/mouseimg.h"
+#include "saga2/motion.h"
 
 namespace Saga2 {
 
@@ -53,17 +58,29 @@ Saga2Engine::Saga2Engine(OSystem *syst)
 	g_vm = this;
 
 	_bandList = nullptr;
-	_imageCache = nullptr;
 	_mouseInfo = nullptr;
 	_smkDecoder = nullptr;
 	_videoX = _videoY = 0;
 	_loadedWeapons = 0;
+
+	_autoAggression = true;
+	_autoWeapon = true;
+	_showNight = true;
+	_speechText = true;
 
 	SearchMan.addSubDirectoryMatching(gameDataDir, "res");
 	SearchMan.addSubDirectoryMatching(gameDataDir, "dos/drivers"); // For Miles Sound files
 	SearchMan.addSubDirectoryMatching(gameDataDir, "drivers");
 
 	_loadedWeapons = 0;
+
+	_imageCache = new CImageCache;
+	_mTaskList = new MotionTaskList;
+	_bandList = new BandList();
+
+	_edpList = nullptr;
+	_sdpList = nullptr;
+	_containerList = nullptr;
 }
 
 Saga2Engine::~Saga2Engine() {
@@ -73,11 +90,16 @@ Saga2Engine::~Saga2Engine() {
 
 	// Dispose your resources here
 	delete _rnd;
+	delete _imageCache;
+	delete _mTaskList;
+	delete _bandList;
 }
 
 Common::Error Saga2Engine::run() {
 	// Initialize graphics using following:
 	initGraphics(640, 480);
+
+	_containerList = new ContainerList;
 
 	readConfig();
 

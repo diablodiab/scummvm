@@ -58,7 +58,7 @@ extern gToolBase    G_BASE;
 //  need to know about the scrolling tile area.
 
 extern gPixelMap    tileDrawMap;
-extern Point16      fineScroll;
+extern StaticPoint16 fineScroll;
 extern gFont        *mainFont;
 extern bool         allPlayerActorsDead;
 
@@ -522,7 +522,7 @@ void LabeledButton::drawClipped(
 
 FloatingWindow::FloatingWindow(const Rect16 &r, uint16 ident, const char saveas[], AppFunc *cmd)
 	: DecoratedWindow(r, ident, saveas, cmd) {
-	assert(db = new DragBar(*this, Rect16(0, 0, r.width, r.height)));
+	db = new DragBar(*this, Rect16(0, 0, r.width, r.height));
 
 	origPos.x = r.x;
 	origPos.y = r.y;

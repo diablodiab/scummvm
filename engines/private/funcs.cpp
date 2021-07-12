@@ -640,8 +640,16 @@ static void fAMRadioClip(ArgArray args) {
 }
 
 static void fPoliceClip(ArgArray args) {
-	assert(args.size() <= 4);
+	assert(args.size() <= 4 || args.size() == 6);
 	fAddSound(args[0].u.str, "PoliceClip");
+	// In the original, the variable is updated when the clip is played, but here we just update
+	// the variable when the clip is added to play. The effect for the player, is mostly the same.
+	if (args.size() == 6) {
+		assert(args[4].type == NAME);
+		assert(args[5].type == NUM);
+		Symbol *flag = g_private->maps.lookupVariable(args[4].u.sym->name);
+		setSymbol(flag, args[5].u.val);
+	}
 }
 
 static void fPhoneClip(ArgArray args) {
@@ -716,13 +724,16 @@ static void fSoundArea(ArgArray args) {
 }
 
 static void fSafeDigit(ArgArray args) {
-	debugC(1, kPrivateDebugScript, "WARNING: SafeDigit is not implemented");
+	assert(args[0].type == NUM);
+	assert(args[1].type == RECT);
+	debugC(1, kPrivateDebugScript, "SafeDigit(%d, ..)", args[0].u.val);
+	g_private->addSafeDigit(args[0].u.val, args[1].u.rect);
 }
 
 static void fAskSave(ArgArray args) {
 	// This is not needed, since scummvm will take care of this
 	debugC(1, kPrivateDebugScript, "WARNING: AskSave is partially implemented");
-	g_private->_nextSetting = args[0].u.str;
+	g_private->_nextSetting = *args[0].u.sym->name;
 }
 
 static void fTimer(ArgArray args) {

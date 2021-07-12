@@ -24,7 +24,7 @@
 
 #include "ultima/ultima8/misc/pent_include.h"
 #include "ultima/ultima8/games/u8_game.h"
-#include "ultima/ultima8/games/remorse_game.h"
+#include "ultima/ultima8/games/cru_game.h"
 #include "ultima/ultima8/graphics/palette_manager.h"
 #include "ultima/ultima8/kernel/kernel.h"
 #include "ultima/ultima8/gumps/main_menu_process.h"
@@ -51,7 +51,7 @@ Game *Game::createGame(const GameInfo *info) {
 		return new U8Game();
 	case GameInfo::GAME_REMORSE:
 	case GameInfo::GAME_REGRET:
-		return new RemorseGame();
+		return new CruGame();
 	default:
 		CANT_HAPPEN_MSG("createGame: invalid _game");
 	}
@@ -79,8 +79,13 @@ uint32 Game::I_playEndgame(const uint8 *args, unsigned int /*argsize*/) {
 	return 0;
 }
 
-uint32 Game::I_playCredits(const uint8 *args, unsigned int /*argsize*/) {
+uint32 Game::I_playCredits(const uint8 */*args*/, unsigned int /*argsize*/) {
 	Game::get_instance()->playCredits();
+	return 0;
+}
+
+uint32 Game::I_playDemoScreen(const uint8 */*args*/, unsigned int /*argsize*/) {
+	Game::get_instance()->playDemoScreen();
 	return 0;
 }
 

@@ -116,8 +116,8 @@ public:
 	~BitmapCastMember();
 	virtual Graphics::MacWidget *createWidget(Common::Rect &bbox, Channel *channel) override;
 
-	void createMatte();
-	Graphics::Surface *getMatte();
+	void createMatte(Common::Rect &bbox);
+	Graphics::Surface *getMatte(Common::Rect &bbox);
 
 	bool hasField(int field) override;
 	Datum getField(int field) override;
@@ -219,7 +219,7 @@ public:
 	TextCastMember(Cast *cast, uint16 castId, Common::SeekableReadStreamEndian &stream, uint16 version, uint8 flags1 = 0, bool asButton = false);
 	virtual void setColors(uint32 *fgcolor, uint32 *bgcolor) override;
 
-	void setText(const char *text);
+	void setText(const Common::U32String &text);
 	virtual Graphics::MacWidget *createWidget(Common::Rect &bbox, Channel *channel) override;
 
 	virtual bool isEditable() override;
@@ -237,6 +237,11 @@ public:
 	bool hasChunkField(int field);
 	Datum getChunkField(int field, int start, int end);
 	bool setChunkField(int field, int start, int end, const Datum &value);
+
+	int getTextHeight();
+
+	int getTextSize();
+	void setTextSize(int textSize);
 
 	SizeType _borderSize;
 	SizeType _gutterSize;
@@ -256,13 +261,14 @@ public:
 	uint16 _fgpalinfo1, _fgpalinfo2, _fgpalinfo3;
 	ButtonType _buttonType;
 	bool _editable;
+	int _lineSpacing;
 
-	Common::String _ftext;
-	Common::String _ptext;
+	Common::U32String _ftext;
+	Common::U32String _ptext;
 	void importStxt(const Stxt *stxt);
 	void importRTE(byte *text);
 
-	Common::String getText();
+	Common::U32String getText();
 
 private:
 	uint32 _bgcolor;

@@ -290,7 +290,7 @@ int run_dialog_script(DialogTopic *dtpp, int dialogID, int offse, int optionInde
 		}
 	}
 
-	if (_G(in_new_room) > 0)
+	if (_G(in_new_room) > 0 || _G(abort_engine))
 		return RUN_DIALOG_STOP_DIALOG;
 
 	if (_G(said_speech_line) > 0) {
@@ -331,7 +331,7 @@ int write_dialog_options(Bitmap *ds, bool ds_has_alpha, int dlgxp, int curyp, in
 			else text_color = ds->GetCompatibleColor(utextcol);
 		}
 
-		break_up_text_into_lines(get_translation(dtop->optionnames[(int)disporder[ww]]), Lines, areawid - (2 * padding + 2 + bullet_wid), usingfont);
+		break_up_text_into_lines(get_translation(dtop->optionnames[(int)disporder[ww]]), _GP(Lines), areawid - (2 * padding + 2 + bullet_wid), usingfont);
 		dispyp[ww] = curyp;
 		if (_GP(game).dialog_bullet > 0) {
 			draw_gui_sprite_v330(ds, _GP(game).dialog_bullet, dlgxp, curyp, ds_has_alpha);
@@ -345,8 +345,8 @@ int write_dialog_options(Bitmap *ds, bool ds_has_alpha, int dlgxp, int curyp, in
 			sprintf(tempbfr, "%d.", ww + 1);
 			wouttext_outline(ds, dlgxp + actualpicwid, curyp, usingfont, text_color, tempbfr);
 		}
-		for (size_t cc = 0; cc < Lines.Count(); cc++) {
-			wouttext_outline(ds, dlgxp + ((cc == 0) ? 0 : 9) + bullet_wid, curyp, usingfont, text_color, Lines[cc].GetCStr());
+		for (size_t cc = 0; cc < _GP(Lines).Count(); cc++) {
+			wouttext_outline(ds, dlgxp + ((cc == 0) ? 0 : 9) + bullet_wid, curyp, usingfont, text_color, _GP(Lines)[cc].GetCStr());
 			curyp += linespacing;
 		}
 		if (ww < numdisp - 1)
@@ -360,8 +360,8 @@ int write_dialog_options(Bitmap *ds, bool ds_has_alpha, int dlgxp, int curyp, in
 #define GET_OPTIONS_HEIGHT {\
 		needheight = 0;\
 		for (int i = 0; i < numdisp; ++i) {\
-			break_up_text_into_lines(get_translation(dtop->optionnames[(int)disporder[i]]), Lines, areawid-(2*padding+2+bullet_wid), usingfont);\
-			needheight += getheightoflines(usingfont, Lines.Count()) + data_to_game_coord(_GP(game).options[OPT_DIALOGGAP]);\
+			break_up_text_into_lines(get_translation(dtop->optionnames[(int)disporder[i]]), _GP(Lines), areawid-(2*padding+2+bullet_wid), usingfont);\
+			needheight += getheightoflines(usingfont, _GP(Lines).Count()) + data_to_game_coord(_GP(game).options[OPT_DIALOGGAP]);\
 		}\
 		if (parserInput) needheight += parserInput->Height + data_to_game_coord(_GP(game).options[OPT_DIALOGGAP]);\
 	}
@@ -645,7 +645,7 @@ void DialogOptions::Redraw() {
 		int biggest = 0;
 		padding = _GP(guis)[_GP(game).options[OPT_DIALOGIFACE]].Padding;
 		for (int i = 0; i < numdisp; ++i) {
-			break_up_text_into_lines(get_translation(dtop->optionnames[(int)disporder[i]]), Lines, areawid - ((2 * padding + 2) + bullet_wid), usingfont);
+			break_up_text_into_lines(get_translation(dtop->optionnames[(int)disporder[i]]), _GP(Lines), areawid - ((2 * padding + 2) + bullet_wid), usingfont);
 			if (_G(longestline) > biggest)
 				biggest = _G(longestline);
 		}
@@ -816,21 +816,31 @@ bool DialogOptions::Run() {
 		run_function_on_non_blocking_thread(&_GP(runDialogOptionRepExecFunc));
 	}
 
-	int gkey;
-	if (run_service_key_controls(gkey) && !_GP(play).IsIgnoringInput()) {
+	KeyInput ki;
+	if (run_service_key_controls(ki) && !_GP(play).IsIgnoringInput()) {
+		eAGSKeyCode gkey = ki.Key;
 		if (parserInput) {
 			wantRefresh = true;
-			// type into the parser
+			// type into the parser 
+			// TODO: find out what are these key commands, and are these documented?
 			if ((gkey == eAGSKeyCodeF3) || ((gkey == eAGSKeyCodeSpace) && (parserInput->Text.GetLength() == 0))) {
 				// write previous contents into textbox (F3 or Space when box is empty)
-				for (unsigned int i = parserInput->Text.GetLength(); i < strlen(_GP(play).lastParserEntry); i++) {
-					parserInput->OnKeyPress(_GP(play).lastParserEntry[i]);
+				size_t last_len = ustrlen(_GP(play).lastParserEntry);
+				size_t cur_len = ustrlen(parserInput->Text.GetCStr());
+				// [ikm] CHECKME: tbh I don't quite get the logic here (it was like this in original code);
+				// but what we do is copying only the last part of the previous string
+				if (cur_len < last_len) {
+					const char *entry = _GP(play).lastParserEntry;
+					// TODO: utility function for advancing N utf-8 chars
+					for (size_t i = 0; i < cur_len; ++i) ugetxc(&entry);
+					parserInput->Text.Append(entry);
 				}
+
 				//ags_domouse(DOMOUSE_DISABLE);
 				Redraw();
 				return true; // continue running loop
 			} else if ((gkey >= eAGSKeyCodeSpace) || (gkey == eAGSKeyCodeReturn) || (gkey == eAGSKeyCodeBackspace)) {
-				parserInput->OnKeyPress(gkey);
+				parserInput->OnKeyPress(ki);
 				if (!parserInput->IsActivated) {
 					//ags_domouse(DOMOUSE_DISABLE);
 					Redraw();
@@ -844,10 +854,10 @@ bool DialogOptions::Run() {
 		}
 		// Allow selection of options by keyboard shortcuts
 		else if (_GP(game).options[OPT_DIALOGNUMBERED] >= kDlgOptKeysOnly &&
-		         gkey >= '1' && gkey <= '9') {
-			gkey -= '1';
-			if (gkey < numdisp) {
-				chose = disporder[gkey];
+			gkey >= '1' && gkey <= '9') {
+			int numkey = gkey - '1';
+			if (numkey < numdisp) {
+				chose = disporder[numkey];
 				return false; // end dialog options running loop
 			}
 		}
@@ -857,8 +867,8 @@ bool DialogOptions::Run() {
 	if (new_custom_render); // do not automatically detect option under mouse
 	else if (usingCustomRendering) {
 		if ((_G(mousex) >= dirtyx) && (_G(mousey) >= dirtyy) &&
-		        (_G(mousex) < dirtyx + tempScrn->GetWidth()) &&
-		        (_G(mousey) < dirtyy + tempScrn->GetHeight())) {
+			(_G(mousex) < dirtyx + tempScrn->GetWidth()) &&
+			(_G(mousey) < dirtyy + tempScrn->GetHeight())) {
 			_GP(getDialogOptionUnderCursorFunc).params[0].SetDynamicObject(&_GP(ccDialogOptionsRendering), &_GP(ccDialogOptionsRendering));
 			run_function_on_non_blocking_thread(&_GP(getDialogOptionUnderCursorFunc));
 
@@ -870,24 +880,23 @@ bool DialogOptions::Run() {
 			_GP(ccDialogOptionsRendering).activeOptionID = -1;
 		}
 	} else if (_G(mousex) >= dialog_abs_x && _G(mousex) < (dialog_abs_x + areawid) &&
-	           _G(mousey) >= dlgyp && _G(mousey) < curyp) {
+		_G(mousey) >= dlgyp && _G(mousey) < curyp) {
 		mouseison = numdisp - 1;
 		for (int i = 0; i < numdisp; ++i) {
 			if (_G(mousey) < dispyp[i]) {
-				mouseison = i - 1;
-				break;
+				mouseison = i - 1; break;
 			}
 		}
 		if ((mouseison < 0) | (mouseison >= numdisp)) mouseison = -1;
 	}
 
 	if (parserInput != nullptr) {
-		int relativeMousey = _G(mousey);
+		int relative_mousey = _G(mousey);
 		if (usingCustomRendering)
-			relativeMousey -= dirtyy;
+			relative_mousey -= dirtyy;
 
-		if ((relativeMousey > parserInput->Y) &&
-		        (relativeMousey < parserInput->Y + parserInput->Height))
+		if ((relative_mousey > parserInput->Y) &&
+			(relative_mousey < parserInput->Y + parserInput->Height))
 			mouseison = DLG_OPTION_PARSER;
 
 		if (parserInput->IsActivated)
@@ -897,7 +906,7 @@ bool DialogOptions::Run() {
 	int mouseButtonPressed = MouseNone;
 	int mouseWheelTurn = 0;
 	if (run_service_mb_controls(mouseButtonPressed, mouseWheelTurn) && mouseButtonPressed >= 0 &&
-	        !_GP(play).IsIgnoringInput()) {
+		!_GP(play).IsIgnoringInput()) {
 		if (mouseison < 0 && !new_custom_render) {
 			if (usingCustomRendering) {
 				_GP(runDialogOptionMouseClickHandlerFunc).params[0].SetDynamicObject(&_GP(ccDialogOptionsRendering), &_GP(ccDialogOptionsRendering));
@@ -970,8 +979,7 @@ bool DialogOptions::Run() {
 
 	update_polled_stuff_if_runtime();
 
-	if (!runGameLoopsInBackground && (_GP(play).fast_forward == 0)) {
-		// note if runGameLoopsInBackground then it's called inside UpdateGameOnce
+	if (!runGameLoopsInBackground && (_GP(play).fast_forward == 0)) { // note if runGameLoopsInBackground then it's called inside UpdateGameOnce
 		WaitForNextFrame();
 	}
 

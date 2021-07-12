@@ -24,8 +24,6 @@
  *   (c) 1993-1996 The Wyrmkeep Entertainment Co.
  */
 
-#define FORBIDDEN_SYMBOL_ALLOW_ALL // FIXME: Remove
-
 #include "saga2/saga2.h"
 #include "saga2/tilemode.h"
 #include "saga2/tile.h"
@@ -43,7 +41,6 @@
 #include "saga2/dispnode.h"
 #include "saga2/uidialog.h"
 #include "saga2/contain.h"
-#include "saga2/savefile.h"
 
 namespace Saga2 {
 
@@ -610,48 +607,50 @@ void initTileModeState(void) {
 	combatPaused = false;
 }
 
-//-----------------------------------------------------------------------
-//	Save the tile mode state to a save file
+void saveTileModeState(Common::OutSaveFile *out) {
+	debugC(2, kDebugSaveload, "Saving TileModeState");
 
-void saveTileModeState(SaveFileConstructor &saveGame) {
-	int32       size = 0;
+	int32 size = 0;
 
 	assert(uiKeysEnabled);
 
 	//  Compute the number of bytes needed
-	size +=     sizeof(aggressiveActFlag)
-	            +   sizeof(inCombat)
-	            +   sizeof(combatPaused);
+	size += sizeof(aggressiveActFlag)
+	        +   sizeof(inCombat)
+	        +   sizeof(combatPaused);
 	if (aggressiveActFlag)
 		size += sizeof(timeOfLastAggressiveAct);
 
-	//  Create the chunk and write the data
-	saveGame.newChunk(MakeID('T', 'M', 'S', 'T'), size);
-	saveGame.write(&aggressiveActFlag, sizeof(aggressiveActFlag));
-	saveGame.write(&inCombat, sizeof(inCombat));
-	saveGame.write(&combatPaused, sizeof(combatPaused));
-	if (aggressiveActFlag) {
-		saveGame.write(
-		    &timeOfLastAggressiveAct,
-		    sizeof(timeOfLastAggressiveAct));
-	}
+	out->write("TMST", 4);
+	out->writeUint32LE(size);
+
+	out->writeByte(aggressiveActFlag);
+	out->writeByte(inCombat);
+	out->writeByte(combatPaused);
+
+	debugC(3, kDebugSaveload, "... aggressiveActFlag = %d", aggressiveActFlag);
+	debugC(3, kDebugSaveload, "... inCombat = %d", inCombat);
+	debugC(3, kDebugSaveload, "... combatPaused = %d", combatPaused);
+
+	if (aggressiveActFlag)
+		timeOfLastAggressiveAct.write(out);
 }
 
-//-----------------------------------------------------------------------
-//	Load the tile mode state from a save file
-
-void loadTileModeState(SaveFileReader &saveGame) {
+void loadTileModeState(Common::InSaveFile *in) {
 	assert(uiKeysEnabled);
 
 	//  Simply read in the data
-	saveGame.read(&aggressiveActFlag, sizeof(aggressiveActFlag));
-	saveGame.read(&inCombat, sizeof(inCombat));
-	saveGame.read(&combatPaused, sizeof(combatPaused));
-	if (aggressiveActFlag) {
-		saveGame.read(
-		    &timeOfLastAggressiveAct,
-		    sizeof(timeOfLastAggressiveAct));
-	}
+	aggressiveActFlag = in->readByte();
+	inCombat = in->readByte();
+	combatPaused = in->readByte();
+
+	debugC(3, kDebugSaveload, "... aggressiveActFlag = %d", aggressiveActFlag);
+	debugC(3, kDebugSaveload, "... inCombat = %d", inCombat);
+	debugC(3, kDebugSaveload, "... combatPaused = %d", combatPaused);
+
+	if (aggressiveActFlag)
+		timeOfLastAggressiveAct.read(in);
+
 	tileLockFlag = false;
 }
 

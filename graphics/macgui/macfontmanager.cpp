@@ -34,46 +34,52 @@ namespace Graphics {
 
 // Source: Apple IIGS Technical Note #41, "Font Family Numbers"
 // http://apple2.boldt.ca/?page=til/tn.iigs.041
-static const char *const defaultFontNames[] = {
-	"Chicago",	// system font
-	"Geneva",	// application font
-	"New York",
-	NULL, // FIXME: "Geneva",
+static struct FontProto {
+	int id;
+	Common::Language lang;
+	Common::CodePage encoding;
+	int fallbackId;
+	const char *name;
+} defaultFonts[] = {
+	// Latin
+	{ 0,		Common::UNK_LANG,	Common::kMacCentralEurope,	-1,		"Chicago" }, // system font
+	{ 1,		Common::UNK_LANG,	Common::kMacCentralEurope,	-1,		"Geneva" }, // application font
+	{ 2,		Common::UNK_LANG,	Common::kMacCentralEurope,	-1,		"New York" },
+	{ 3,		Common::UNK_LANG,	Common::kMacCentralEurope,	-1,		"Geneva" },
+	{ 4,		Common::UNK_LANG,	Common::kMacCentralEurope,	-1,		"Monaco" },
+	{ 5,		Common::UNK_LANG,	Common::kMacCentralEurope,	-1,		"Venice" },
+	{ 6,		Common::UNK_LANG,	Common::kMacCentralEurope,	-1,		"London" },
+	{ 7,		Common::UNK_LANG,	Common::kMacCentralEurope,	-1,		"Athens" },
+	{ 8,		Common::UNK_LANG,	Common::kMacCentralEurope,	-1,		"San Francisco" },
+	{ 9,		Common::UNK_LANG,	Common::kMacCentralEurope,	-1,		"Toronto" },
+	{ 11,		Common::UNK_LANG,	Common::kMacCentralEurope,	-1,		"Cairo" },
+	{ 12,		Common::UNK_LANG,	Common::kMacCentralEurope,	-1,		"Los Angeles" },
+	{ 13,		Common::UNK_LANG,	Common::kMacCentralEurope,	-1,		"Zapf Dingbats" },
+	{ 14,		Common::UNK_LANG,	Common::kMacCentralEurope,	-1,		"Bookman" },
+	{ 15,		Common::UNK_LANG,	Common::kMacCentralEurope,	-1,		"Helvetica Narrow" },
+	{ 16,		Common::UNK_LANG,	Common::kMacCentralEurope,	-1,		"Palatino" },
+	{ 18,		Common::UNK_LANG,	Common::kMacCentralEurope,	-1,		"Zapf Chancery" },
+	{ 20,		Common::UNK_LANG,	Common::kMacCentralEurope,	-1,		"Times" }, // 20
+	{ 21,		Common::UNK_LANG,	Common::kMacCentralEurope,	-1,		"Helvetica" },
+	{ 22,		Common::UNK_LANG,	Common::kMacCentralEurope,	-1,		"Courier" },
+	{ 23,		Common::UNK_LANG,	Common::kMacCentralEurope,	-1,		"Symbol" },
+	{ 24,		Common::UNK_LANG,	Common::kMacCentralEurope,	-1,		"Taliesin" }, // mobile?
+	{ 33,		Common::UNK_LANG,	Common::kMacCentralEurope,	-1,		"Avant Garde" },
+	{ 34,		Common::UNK_LANG,	Common::kMacCentralEurope,	-1,		"New Century Schoolbook" },
 
-	"Monaco",
-	"Venice",
-	"London",
-	"Athens",
+	// Japanese (names are Shift JIS encoded)
+	{ 16384,	Common::JA_JPN,		Common::kUtf8,				-1,		"Osaka" },
+	{ 16396,	Common::JA_JPN,		Common::kUtf8,				16384,	"\x96\x7B\x96\xBE\x92\xA9\x81\x7C\x82\x6C" }, // Book Mincho - M
+	{ 16433,	Common::JA_JPN,		Common::kUtf8,				16436,	"\x93\x99\x95\x9D\x83\x53\x83\x56\x83\x62\x83\x4E" }, // Mono Gothic
+	{ 16435,	Common::JA_JPN,		Common::kUtf8,				16436,	"\x93\x99\x95\x9D\x96\xBE\x92\xA9" }, // Mono Ming
+	{ 16436,	Common::JA_JPN,		Common::kUtf8,				-1,		"Osaka\x81\x7C\x93\x99\x95\x9D" }, // Osaka Mono
+	{ 16436,	Common::JA_JPN,		Common::kUtf8,				-1,		"OsakaMono" }, // redundant entry is to register English name
+	{ 16640,	Common::JA_JPN,		Common::kUtf8,				16384,	"\x92\x86\x83\x53\x83\x56\x83\x62\x83\x4E\x91\xCC" }, // Medium Gothic
+	{ 16641,	Common::JA_JPN,		Common::kUtf8,				16384,	"\x8D\xD7\x96\xBE\x92\xA9\x91\xCC" }, // Ming
+	{ 16700,	Common::JA_JPN,		Common::kUtf8,				16384,	"\x95\xBD\x90\xAC\x96\xBE\x92\xA9" }, // Heisi Mincho
+	{ 16701,	Common::JA_JPN,		Common::kUtf8,				16384,	"\x95\xBD\x90\xAC\x8A\x70\x83\x53\x83\x56\x83\x62\x83\x4E" }, // Heisei Kaku Gothic
 
-	"San Francisco",
-	"Toronto",
-	NULL,
-	"Cairo",
-	"Los Angeles", // 12
-
-	"Zapf Dingbats",
-	"Bookman",
-	"Helvetica Narrow",
-	"Palatino",
-	NULL,
-	"Zapf Chancery",
-	NULL,
-
-	"Times", // 20
-	"Helvetica",
-	"Courier",
-	"Symbol",
-	"Taliesin", // mobile?
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL, // 30
-	NULL,
-	NULL,
-	"Avant Garde",
-	"New Century Schoolbook"
+	{ -1,		Common::UNK_LANG,	Common::kCodePageInvalid,	-1,		NULL }
 };
 
 static const char *const fontStyleSuffixes[] = {
@@ -110,22 +116,31 @@ Common::String cleanFontName(const Common::String fontname) {
 }
 
 MacFontManager::MacFontManager(uint32 mode) : _mode(mode) {
-	for (uint i = 0; i < ARRAYSIZE(defaultFontNames); i++)
-		if (defaultFontNames[i]) {
-			_fontNames.push_back(defaultFontNames[i]);
-			_fontIds.setVal(defaultFontNames[i], i);
-		} else {
-			_fontNames.push_back(Common::String());
+	for (FontProto *font = defaultFonts; font->name; font++) {
+		if (!_fontInfo.contains(font->id)) {
+			FontInfo *info = new FontInfo;
+			info->lang = font->lang;
+			info->encoding = font->encoding;
+			info->fallbackId = font->fallbackId;
+			info->name = font->name;
+			_fontInfo[font->id] = info;
 		}
+		if (!_fontIds.contains(font->name)) {
+			_fontIds[font->name] = font->id;
+		}
+	}
 
 	if (_mode & MacGUIConstants::kWMModeForceBuiltinFonts) {
 		_builtInFonts = true;
 	} else {
 		loadFonts();
 	}
+	_japaneseFontsLoaded = false;
 }
 
 MacFontManager::~MacFontManager() {
+	for (Common::HashMap<int, FontInfo *>::iterator it = _fontInfo.begin(); it != _fontInfo.end(); it++)
+		delete it->_value;
 	for (Common::HashMap<int, const Graphics::Font *>::iterator it = _uniFonts.begin(); it != _uniFonts.end(); it++)
 		delete it->_value;
 	for (Common::HashMap<int, Common::SeekableReadStream *>::iterator it = _ttfData.begin(); it != _ttfData.end(); it++)
@@ -214,6 +229,49 @@ void MacFontManager::loadFonts() {
 	_builtInFonts = false;
 
 	delete dat;
+}
+
+void MacFontManager::loadJapaneseFonts() {
+	if (_japaneseFontsLoaded)
+		return;
+
+#ifdef USE_FREETYPE2
+	Common::Archive *dat;
+
+	dat = Common::makeZipArchive("japanesemacfonts.dat");
+
+	if (!dat) {
+		warning("Could not find japanesemacfonts.dat");
+		return;
+	}
+
+	Common::ArchiveMemberList list;
+	dat->listMembers(list);
+
+	for (Common::ArchiveMemberList::iterator it = list.begin(); it != list.end(); ++it) {
+		Common::SeekableReadStream *stream = dat->createReadStreamForMember((*it)->getName());
+		Common::String fontName = (*it)->getName();
+
+		// Trim the .ttf extension
+		for (int i = fontName.size() - 1; i >= 0; --i) {
+			if (fontName[i] == '.') {
+				while ((uint)i < fontName.size()) {
+					fontName.deleteLastChar();
+				}
+				break;
+			}
+		}
+
+		_ttfData[_fontIds.getValOrDefault(fontName, kMacFontNonStandard)] = stream;
+	}
+
+	delete dat;
+#else
+	warning("Japanese fonts require FreeType");
+#endif
+
+	// Set this to true even if we don't have FreeType so we don't spam warnings.
+	_japaneseFontsLoaded = true;
 }
 
 void MacFontManager::loadFonts(Common::SeekableReadStream *stream) {
@@ -317,7 +375,17 @@ const Font *MacFontManager::getFont(MacFont macFont) {
 	Common::String name;
 	const Font *font = 0;
 
+	int fallbackId = getFontFallbackId(macFont.getId());
+	if (fallbackId > -1) {
+		macFont.setId(fallbackId);
+	}
+
 	if (!_builtInFonts) {
+		Common::Language lang = getFontLanguage(macFont.getId());
+		if (lang == Common::JA_JPN && !_japaneseFontsLoaded) {
+			loadJapaneseFonts();
+		}
+
 		if (macFont.getName().empty()) {
 			name = getFontName(macFont.getId(), macFont.getSize(), macFont.getSlant());
 			macFont.setName(name);
@@ -404,7 +472,7 @@ int MacFontManager::parseSlantFromName(const Common::String &name) {
 	return slantVal;
 }
 
-int MacFontManager::registerFontName(Common::String name) {
+int MacFontManager::registerFontName(Common::String name, int preferredId) {
 	// Don't register an empty font name, just return Geneva's ID.
 	if (name.empty())
 		return 1;
@@ -412,35 +480,44 @@ int MacFontManager::registerFontName(Common::String name) {
 	if (_fontIds.contains(name))
 		return _fontIds[name];
 
-	_fontNames.push_back(name);
-	_fontIds[name] = _fontNames.size() - 1;
-	return _fontNames.size() - 1;
+	int id;
+	if (preferredId > -1 && !_fontInfo.contains(id)) {
+		id = preferredId;
+	} else {
+		// Preferred ID is already registered, find an unused one.
+		id = 0;
+		while (_fontInfo.contains(id))
+			id++;
+	}
+
+	FontInfo *info = new FontInfo;
+	info->name = name;
+	if (preferredId >= 16000) {
+		info->lang = Common::JA_JPN;
+		info->encoding = Common::kWindows932; // default to Shift JIS
+	} else {
+		info->encoding = Common::kMacCentralEurope;
+	}
+	_fontInfo[id] = info;
+	_fontIds[name] = id;
+	return id;
 }
+
 void MacFont::setName(const char *name) {
 	_name = name;
 }
 
 const Common::String MacFontManager::getFontName(uint16 id, int size, int slant, bool tryGen) {
-	Common::String n;
-
-	if (id == 3) // This is Geneva
-		id = 1;
-
-	int extraSlant = 0;
-
-	if (id < ARRAYSIZE(defaultFontNames)) {
-		n = _fontNames[id];
-	} else if (id < _fontNames.size()) {
-		n = cleanFontName(_fontNames[id]);
-		extraSlant = parseFontSlant(_fontNames[id]);
-		// let's try parse slant from name
-		if (!extraSlant)
-			extraSlant = parseSlantFromName(_fontNames[id]);
-	}
+	Common::String rawName = getFontName(id);
+	Common::String n = cleanFontName(rawName);
+	int extraSlant = parseFontSlant(rawName);
+	// let's try parse slant from name
+	if (!extraSlant)
+		extraSlant = parseSlantFromName(rawName);
 
 	if (n.empty()) {
 		warning("MacFontManager: Requested font ID %d not found. Falling back to Geneva", id);
-		n = _fontNames[1]; // Fallback to Geneva
+		n = "Geneva";
 	}
 
 	return Common::String::format("%s-%d-%d", n.c_str(), slant | extraSlant, size);
@@ -457,6 +534,38 @@ int MacFontManager::getFontIdByName(Common::String name) {
 	return 1;
 }
 
+Common::Language MacFontManager::getFontLanguage(uint16 id) {
+	if (!_fontInfo.contains(id)) {
+		warning("MacFontManager::getFontLanguage: No _fontInfo entry for font %d", id);
+		return Common::UNK_LANG;
+	}
+	return _fontInfo[id]->lang;
+}
+
+Common::CodePage MacFontManager::getFontEncoding(uint16 id) {
+	if (!_fontInfo.contains(id)) {
+		warning("MacFontManager::getFontEncoding: No _fontInfo entry for font %d", id);
+		return Common::kCodePageInvalid;
+	}
+	return _fontInfo[id]->encoding;
+}
+
+int MacFontManager::getFontFallbackId(uint16 id) {
+	if (!_fontInfo.contains(id)) {
+		warning("MacFontManager::getFontFallbackId: No _fontInfo entry for font %d", id);
+		return -1;
+	}
+	return _fontInfo[id]->fallbackId;
+}
+
+Common::String MacFontManager::getFontName(uint16 id) {
+	if (!_fontInfo.contains(id)) {
+		warning("MacFontManager::getFontFallbackId: No _fontInfo entry for font %d", id);
+		return "";
+	}
+	return _fontInfo[id]->name;
+}
+
 void MacFontManager::generateFontSubstitute(MacFont &macFont) {
 	Common::String name;
 
@@ -470,7 +579,6 @@ void MacFontManager::generateFontSubstitute(MacFont &macFont) {
 			return;
 		}
 	}
-
 
 #ifdef USE_FREETYPE2
 	// Checking if it's a TTF font. Restrict it only to regular fonts now

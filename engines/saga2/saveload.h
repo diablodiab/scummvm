@@ -29,11 +29,31 @@
 
 namespace Saga2 {
 
+/* ===================================================================== *
+   SaveFileHeader class
+ * ===================================================================== */
+
+//	This structure represents the first 128 bytes written to a save game
+//	file.  It stores the game ID and the long name of the saved game state.
+
+struct SaveFileHeader {
+	enum {
+		kSaveNameSize = 40,
+		kHeaderSize = 128
+	};
+
+	ChunkID gameID;                     //  ID of game (FTA2 of DINO).
+	Common::String saveName;            //  The long name of the saved
+
+	void read(Common::InSaveFile *in);
+	void write(Common::OutSaveFile *out);
+};
+
 //  Load initial game state
 void initGameState(void);
 
 //  Save the current game state
-void saveGameState(int16 saveNo, char *saveName);
+Common::Error saveGameState(int16 saveNo, char *saveName);
 
 //  Load a previously saved game state
 void loadSavedGameState(int16 saveNo);
@@ -44,6 +64,7 @@ void cleanupGameState(void);
 void checkRestartGame(const char *exeName);
 void loadRestartGame(void);
 void getSaveFileName(int16 saveNo, char *fileName);
+Common::String getSaveFileName(int16 saveNo);
 
 } // end of namespace Saga2
 

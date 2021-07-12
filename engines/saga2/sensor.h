@@ -79,10 +79,8 @@ void assertEvent(const GameEvent &ev);
 
 //  Initialize the sensors
 void initSensors(void);
-//  Save all active sensors in a save file
-void saveSensors(SaveFileConstructor &saveGame);
-//  Load sensors from a save file
-void loadSensors(SaveFileReader &saveGame);
+void saveSensors(Common::OutSaveFile *out);
+void loadSensors(Common::InSaveFile *in);
 //  Cleanup the active sensors
 void cleanupSensors(void);
 
@@ -117,15 +115,18 @@ public:
 public:
 	//  Constructor -- initial construction
 	SensorList(GameObject *o) : obj(o) {
+		debugC(1, kDebugSensors, "Adding SensorList %p to %p (%s)",
+		       (void *)this, (void *)o, o->objName());
 		newSensorList(this);
 	}
 
 	~SensorList() {
+		debugC(1, kDebugSensors, "Deleting SensorList %p of %p (%s)",
+		       (void *)this, (void *)obj, obj->objName());
 		deleteSensorList(this);
 	}
 
-	//  Constructor -- reconstruct from archive buffer
-	SensorList(void **buf);
+	SensorList(Common::InSaveFile *in);
 
 	//  Return the number of bytes needed to archive this object in
 	//  a buffer
@@ -133,8 +134,7 @@ public:
 		return sizeof(ObjectID);
 	}
 
-	//  Archive this object in a buffer
-	void *archive(void *buf);
+	void write(Common::OutSaveFile *out);
 
 	GameObject *getObject(void) {
 		return obj;
@@ -156,14 +156,17 @@ public:
 public:
 	//  Constructor -- initial construction
 	Sensor(GameObject *o, SensorID sensorID, int16 rng) : obj(o), id(sensorID), range(rng) {
+		debugC(1, kDebugSensors, "Adding Sensor %p to %p (%s)",
+		       (void *)this, (void *)o, o->objName());
 		newSensor(this);
 	}
 
-	//  Constructor -- reconstruct from an archive buffer
-	Sensor(void **buf, int16 ctr);
+	Sensor(Common::InSaveFile *in, int16 ctr);
 
 	//  Virtural destructor
 	virtual ~Sensor(void) {
+		debugC(1, kDebugSensors, "Deleting Sensor %p to %p (%s)",
+		       (void *)this, (void *)obj, obj->objName());
 		deleteSensor(this);
 	}
 
@@ -171,8 +174,7 @@ public:
 	//  a buffer
 	virtual int32 archiveSize(void);
 
-	//  Archive this object in a buffer
-	virtual void *archive(void *buf);
+	virtual void write(Common::OutSaveFile *out);
 
 	//  Return an integer representing the type of this sensor
 	virtual int16 getType(void) = 0;
@@ -205,8 +207,9 @@ public:
 		Sensor(o, sensorID, rng) {
 	}
 
-	//  Constructor -- reconstruct from an archive buffer
-	ProtaganistSensor(void **buf, int16 ctr) : Sensor(buf, ctr) {}
+	ProtaganistSensor(Common::InSaveFile *in, int16 ctr) : Sensor(in, ctr) {
+		debugC(3, kDebugSaveload, "Loading ProtagonistSensor");
+	}
 
 	//  Return an integer representing the type of this sensor
 	int16 getType(void);
@@ -229,8 +232,7 @@ public:
 		Sensor(o, sensorID, rng) {
 	}
 
-	//  Constructor -- reconstruct from an archive buffer
-	ObjectSensor(void **buf, int16 ctr) : Sensor(buf, ctr) {}
+	ObjectSensor(Common::InSaveFile *in, int16 ctr) : Sensor(in, ctr) {}
 
 	//  Determine if the object can sense what it's looking for
 	bool check(SenseInfo &info, uint32 senseFlags);
@@ -261,15 +263,13 @@ public:
 		soughtObjID(objToSense) {
 	}
 
-	//  Constructor -- reconstruct from an archive buffer
-	SpecificObjectSensor(void **buf, int16 ctr);
+	SpecificObjectSensor(Common::InSaveFile *in, int16 ctr);
 
 	//  Return the number of bytes needed to archive this object in
 	//  a buffer
 	int32 archiveSize(void);
 
-	//  Archive this object in a buffer
-	void *archive(void *buf);
+	void write(Common::OutSaveFile *out);
 
 	//  Return an integer representing the type of this sensor
 	int16 getType(void);
@@ -300,15 +300,13 @@ public:
 		objectProperty(propToSense) {
 	}
 
-	//  Constructor -- reconstruct from an archive buffer
-	ObjectPropertySensor(void **buf, int16 ctr);
+	ObjectPropertySensor(Common::InSaveFile *in, int16 ctr);
 
 	//  Return the number of bytes needed to archive this object in
 	//  a buffer
 	int32 archiveSize(void);
 
-	//  Archive this object in a buffer
-	void *archive(void *buf);
+	void write(Common::OutSaveFile *out);
 
 	//  Return an integer representing the type of this sensor
 	int16 getType(void);
@@ -329,8 +327,7 @@ public:
 		ObjectSensor(o, sensorID, rng) {
 	}
 
-	//  Constructor -- reconstruct from an archive buffer
-	ActorSensor(void **buf, int16 ctr) : ObjectSensor(buf, ctr) {}
+	ActorSensor(Common::InSaveFile *in, int16 ctr) : ObjectSensor(in, ctr) {}
 
 private:
 	//  Determine if an object meets the search criteria
@@ -358,15 +355,13 @@ public:
 		soughtActor(actorToSense) {
 	}
 
-	//  Constructor -- reconstruct from an archive buffer
-	SpecificActorSensor(void **buf, int16 ctr);
+	SpecificActorSensor(Common::InSaveFile *in, int16 ctr);
 
 	//  Return the number of bytes needed to archive this object in
 	//  a buffer
 	int32 archiveSize(void);
 
-	//  Archive this object in a buffer
-	void *archive(void *buf);
+	void write(Common::OutSaveFile *out);
 
 	//  Return an integer representing the type of this sensor
 	int16 getType(void);
@@ -397,15 +392,13 @@ public:
 		actorProperty(propToSense) {
 	}
 
-	//  Constructor -- reconstruct from an archive buffer
-	ActorPropertySensor(void **buf, int16 ctr);
+	ActorPropertySensor(Common::InSaveFile *in, int16 ctr);
 
 	//  Return the number of bytes needed to archive this object in
 	//  a buffer
 	int32 archiveSize(void);
 
-	//  Archive this object in a buffer
-	void *archive(void *buf);
+	void write(Common::OutSaveFile *out);
 
 	//  Return an integer representing the type of this sensor
 	int16 getType(void);
@@ -430,15 +423,13 @@ public:
 	    int16           rng,
 	    int16           type);
 
-	//  Constructor -- reconstruct from an archive buffer
-	EventSensor(void **buf, int16 ctr);
+	EventSensor(Common::InSaveFile *in, int16 ctr);
 
 	//  Return the number of bytes needed to archive this object in
 	//  a buffer
 	int32 archiveSize(void);
 
-	//  Archive this object in a buffer
-	void *archive(void *buf);
+	void write(Common::OutSaveFile *out);
 
 	//  Return an integer representing the type of this sensor
 	int16 getType(void);

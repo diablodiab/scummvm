@@ -368,6 +368,7 @@ void update_letterbox_mode() {
 
 	_GP(play).SetMainViewport(CenterInRect(game_frame, new_main_view));
 	_GP(play).SetUIViewport(new_main_view);
+	on_mainviewport_changed();
 }
 
 // Automatically reset primary room viewport and camera to match the new room size
@@ -396,7 +397,25 @@ static void update_all_viewcams_with_newroom() {
 	}
 }
 
-// forchar = _G(playerchar) on NewRoom, or NULL if restore saved game
+// Looks up for the room script available as a separate asset.
+// This is optional, so no error is raised if one is not found.
+// If found however, it will replace room script if one had been loaded
+// from the room file itself.
+HError LoadRoomScript(RoomStruct *room, int newnum) {
+	String filename = String::FromFormat("room%d.o", newnum);
+	std::unique_ptr<Stream> in(_GP(AssetMgr)->OpenAsset(filename));
+	if (in) {
+		PScript script(ccScript::CreateFromStream(in.get()));
+		if (!script)
+			return new Error(String::FromFormat(
+				"Failed to load a script module: %s", filename.GetCStr()),
+				_G(ccErrorString));
+		room->CompiledScript = script;
+	}
+	return HError::None();
+}
+
+// forchar = playerchar on NewRoom, or NULL if restore saved game
 void load_new_room(int newnum, CharacterInfo *forchar) {
 
 	debug_script_log("Loading room %d", newnum);
@@ -433,6 +452,11 @@ void load_new_room(int newnum, CharacterInfo *forchar) {
 	        (_GP(thisroom).GameID != _GP(game).uniqueid)) {
 		quitprintf("!Unable to load '%s'. This room file is assigned to a different _GP(game).", room_filename.GetCStr());
 	}
+
+	HError err = LoadRoomScript(&_GP(thisroom), newnum);
+	if (!err)
+		quitprintf("!Unable to load '%s'. Error: %s", room_filename.GetCStr(),
+			err->FullMessage().GetCStr());
 
 	convert_room_coordinates_to_data_res(&_GP(thisroom));
 

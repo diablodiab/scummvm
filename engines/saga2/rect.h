@@ -55,6 +55,7 @@ public:
 	}
 
 	void load(Common::SeekableReadStream *stream);
+	void write(Common::OutSaveFile *out);
 
 	// Point16 operators
 	friend Point16 operator+ (Point16 a, Point16 b) {
@@ -137,6 +138,41 @@ typedef Point16         Extent16;               // contains width and height
 
 struct StaticPoint32 {
 	int32 x, y;
+
+	friend StaticPoint32 operator+ (StaticPoint32 a, StaticPoint32 b) {
+		StaticPoint32 p;
+		p.x = a.x + b.x;
+		p.y = a.y + b.y;
+		return p;
+	}
+
+	friend StaticPoint32 operator- (StaticPoint32 a, StaticPoint32 b) {
+		StaticPoint32 p;
+		p.x = a.x - b.x;
+		p.y = a.y - b.y;
+		return p;
+	}
+
+	friend StaticPoint32 operator*(StaticPoint32 a, int b) {
+		StaticPoint32 p;
+		p.x = a.x * b;
+		p.y = a.y * b;
+
+		return p;
+	}
+
+	friend StaticPoint32 operator/(StaticPoint32 a, int b) {
+		StaticPoint32 p;
+		p.x = a.x / b;
+		p.y = a.y / b;
+
+		return p;
+	}
+
+	void operator+= (StaticPoint32 a) {
+		x += a.x;
+		y += a.y;
+	}
 };
 
 class Point32 {
@@ -277,6 +313,9 @@ public:
 		width = r.width;
 		height = r.height;
 	}
+
+	void read(Common::InSaveFile *in);
+	void write(Common::OutSaveFile *out);
 
 	//  Rect16 operators
 

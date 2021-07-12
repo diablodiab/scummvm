@@ -29,9 +29,6 @@
 
 namespace Saga2 {
 
-class SaveFileConstructor;
-class SaveFileReader;
-
 /* ===================================================================== *
    CalenderTime class
  * ===================================================================== */
@@ -61,6 +58,9 @@ public:
 	            hour,
 	            frameInHour;
 
+	void read(Common::InSaveFile *in);
+	void write(Common::OutSaveFile *out);
+
 	void update(void);
 	int lightLevel(int maxLevel);
 
@@ -80,6 +80,9 @@ public:
 	void set(uint16 dur);
 	bool check(void);
 	uint16 elapsed(void);
+
+	void write(Common::OutSaveFile *out);
+	void read(Common::InSaveFile *in);
 };
 
 /* ===================================================================== *
@@ -94,8 +97,8 @@ uint32 operator - (const CalenderTime &time1, const CalenderTime &time2);
 
 void initCalender(void);
 
-void saveCalender(SaveFileConstructor &saveGame);
-void loadCalender(SaveFileReader &saveGame);
+void saveCalender(Common::OutSaveFile *out);
+void loadCalender(Common::InSaveFile *in);
 
 bool isDayTime(void);
 

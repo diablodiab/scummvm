@@ -31,8 +31,6 @@
 
 namespace Saga2 {
 
-class SaveFileConstructor;
-class SaveFileReader;
 class hResContext;
 class hResource;
 
@@ -123,11 +121,8 @@ extern GameMode     IntroMode,
 //  Initialize the timer
 void initTimer(void);
 
-//  Save the timer to a save file
-void saveTimer(SaveFileConstructor &saveGame);
-
-//  Load the timer from a save file
-void loadTimer(SaveFileReader &saveGame);
+void saveTimer(Common::OutSaveFile *out);
+void loadTimer(Common::InSaveFile *in);
 
 //  Cleanup the timer -- nothing to do
 inline void cleanupTimer(void) {}
@@ -139,13 +134,16 @@ void resumeTimer(void);                  // resume game clock
 //  work correctly even if the game counter wraps around.
 
 class Alarm {
-private:
+public:
 	uint32 basetime;                            // timer alarm was set
 	uint32 duration;                            // duration of alarm
-public:
+
 	void set(uint32 duration);
 	bool check(void);
 	uint32 elapsed(void);                    // time elapsed since alarm set
+
+	void write(Common::OutSaveFile *out);
+	void read(Common::InSaveFile *in);
 };
 
 /* ===================================================================== *
@@ -163,6 +161,7 @@ void  *LoadFile(char *filename);             // load file into buffer
 //  Resource loading
 
 void *LoadResource(hResContext *con, uint32 id, const char desc[]);
+void dumpResource(hResContext *con, uint32 id);
 Common::SeekableReadStream *loadResourceToStream(hResContext *con, uint32 id, const char desc[]);
 
 //  Directory control
@@ -190,8 +189,8 @@ void cleanupPathFinder(void);
  * ===================================================================== */
 
 void initGlobals(void);
-void saveGlobals(SaveFileConstructor &saveGame);
-void loadGlobals(SaveFileReader &saveGame);
+void saveGlobals(Common::OutSaveFile *out);
+void loadGlobals(Common::InSaveFile *in);
 inline void cleanupGlobals(void) {}      // do nothing
 
 /* ===================================================================== *

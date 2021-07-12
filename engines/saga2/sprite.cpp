@@ -56,7 +56,6 @@ extern void drawTileMask(
  * ===================================================================== */
 
 extern gPixelMap    tileDrawMap;
-extern Point16      fineScroll;             // current scroll pos
 
 //  Color map ranges
 extern uint8        *ColorMapRanges;
@@ -600,6 +599,10 @@ ActorPose::ActorPose() {
 
 
 ActorPose::ActorPose(Common::SeekableReadStream *stream) {
+	load(stream);
+}
+
+void ActorPose::load(Common::SeekableReadStream *stream) {
 	flags = stream->readUint16LE();
 
 	actorFrameIndex = stream->readByte();
@@ -610,6 +613,19 @@ ActorPose::ActorPose(Common::SeekableReadStream *stream) {
 	leftObjectOffset.load(stream);
 	rightObjectOffset.load(stream);
 }
+
+void ActorPose::write(Common::OutSaveFile *out) {
+	out->writeUint16LE(flags);
+
+	out->writeByte(actorFrameIndex);
+	out->writeByte(actorFrameBank);
+	out->writeByte(leftObjectIndex);
+	out->writeByte(rightObjectIndex);
+
+	leftObjectOffset.write(out);
+	rightObjectOffset.write(out);
+}
+
 
 ColorScheme::ColorScheme(Common::SeekableReadStream *stream) {
 	for (int i = 0; i < 11; ++i)
@@ -627,6 +643,13 @@ ColorSchemeList::ColorSchemeList(int count, Common::SeekableReadStream *stream) 
 	_schemes = (ColorScheme **)malloc(_count * sizeof(ColorScheme *));
 	for (int i = 0; i < _count; ++i)
 		_schemes[i] = new ColorScheme(stream);
+}
+
+ColorSchemeList::~ColorSchemeList() {
+	for (int i = 0; i < _count; ++i)
+		delete _schemes[i];
+
+	free(_schemes);
 }
 
 ActorAppearance *LoadActorAppearance(uint32 id, int16 banksNeeded) {
@@ -710,7 +733,7 @@ ActorAppearance *LoadActorAppearance(uint32 id, int16 banksNeeded) {
 		uint32 poseBytes = poseStream->size() - as->poseOffset;
 		const int poseSize = 14;
 
-		debugC(1, kDebugLoading, "Pose List: bytes: %d numAnimations: %d  poseOffset: %d calculated offset: %d numPoses: %d",
+		debugC(1, kDebugLoading, "Pose List: bytes: %ld numAnimations: %d  poseOffset: %d calculated offset: %d numPoses: %d",
 			poseStream->size(), as->numAnimations, as->poseOffset, 8 + as->numAnimations * 32, poseBytes / poseSize);
 
 		if (poseBytes % poseSize != 0)
@@ -718,12 +741,12 @@ ActorAppearance *LoadActorAppearance(uint32 id, int16 banksNeeded) {
 
 		as->numPoses = poseBytes / poseSize;
 
-		as->animations = (ActorAnimation **)malloc(as->numAnimations * sizeof(ActorAnimation));
+		as->animations = (ActorAnimation **)malloc(as->numAnimations * sizeof(ActorAnimation *));
 
 		for (uint i = 0; i < as->numAnimations; i++)
 			as->animations[i] = new ActorAnimation(poseStream);
 
-		as->poses = (ActorPose **)malloc(as->numPoses * sizeof(ActorPose));
+		as->poses = (ActorPose **)malloc(as->numPoses * sizeof(ActorPose *));
 
 		for (uint i = 0; i < as->numPoses; i++)
 			as->poses[i] = new ActorPose(poseStream);

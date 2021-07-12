@@ -106,7 +106,9 @@ class frameSmoother: public frameCounter {
 
 	void calculateAverages(void) {
 		// clear averages
-		memset(avg1Sec, 0, 20);
+		for (int i = 0; i < 5; i++)
+			avg1Sec[i] = 0;
+
 		avg5Sec = 0;
 
 		// get totals
@@ -126,13 +128,15 @@ class frameSmoother: public frameCounter {
 
 	void calculateVariance(void) {
 		// clear variances
-		memset(dif1Sec, 0, 20);
+		for (int i = 0; i < 5; i++)
+			dif1Sec[i] = 0;
+
 		dif5Sec = 0;
 
 		// get variance totals
 		for (uint i = 0; i < historySize; i++) {
-			dif1Sec[i / int(desiredFPS)] += abs(ksHistory(i) - avg1Sec[i / int(desiredFPS)]);
-			dif5Sec += abs(ksHistory(i) - avg5Sec);
+			dif1Sec[i / int(desiredFPS)] += ABS(ksHistory(i) - avg1Sec[i / int(desiredFPS)]);
+			dif5Sec += ABS(ksHistory(i) - avg5Sec);
 		}
 
 		// get average variances
@@ -151,7 +155,9 @@ public:
 
 
 	virtual ~frameSmoother() {
-		if (frameHistory) delete[] frameHistory;
+		if (frameHistory)
+			delete[] frameHistory;
+
 		frameHistory = nullptr;
 	}
 
@@ -221,7 +227,15 @@ frameSmoother::frameSmoother(int32 fps, uint32 perSec, uint32 now)
 	desiredFPS = fps;
 	historySize = fps * 5;
 	frameHistory = new float[historySize];
-	memset(frameHistory, 0, historySize * sizeof(int32));
+
+	for (uint32 i = 0; i < historySize; i++)
+		frameHistory[i] = 0;
+
+	for (int i = 0; i < 5; i++)
+		dif1Sec[i] = avg1Sec[i] = 0;
+
+	dif5Sec = 0;
+	avg5Sec = 0;
 }
 
 } // end of namespace Saga2

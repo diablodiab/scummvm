@@ -24,9 +24,8 @@
  *   (c) 1993-1996 The Wyrmkeep Entertainment Co.
  */
 
-#define FORBIDDEN_SYMBOL_ALLOW_ALL // FIXME: Remove
-
 #include "common/debug.h"
+#include "common/savefile.h"
 #include "graphics/palette.h"
 
 #include "saga2/saga2.h"
@@ -35,7 +34,6 @@
 #include "saga2/palette.h"
 #include "saga2/display.h"
 #include "saga2/hresmgr.h"
-#include "saga2/savefile.h"
 
 namespace Saga2 {
 
@@ -58,6 +56,10 @@ struct PaletteStateArchive {
 	                    destPalette;
 	int32               startTime,
 	                    totalTime;
+
+	enum {
+		kPaletteStateArchiveSize = 2312
+	};
 };
 
 /* ===================================================================== *
@@ -83,8 +85,6 @@ static gPalette         oldPalette,         //  Palette at start of fade
 static int32            startTime,          //  Time index of start of fade
        totalTime;          //  Total fade duration
 
-
-static PaletteStateArchive  archive;        //  Used for loading and saving
 //  palette state
 
 /* ===================================================================== *
@@ -103,6 +103,21 @@ void assertCurrentPalette(void) {
 	}
 }
 
+void gPalette::read(Common::InSaveFile *in) {
+	for (int i = 0; i < 256; ++i) {
+		entry[i].r = in->readByte();
+		entry[i].g = in->readByte();
+		entry[i].b = in->readByte();
+	}
+}
+
+void gPalette::write(Common::OutSaveFile *out) {
+	for (int i = 0; i < 256; ++i) {
+		out->writeByte(entry[i].r);
+		out->writeByte(entry[i].g);
+		out->writeByte(entry[i].b);
+	}
+}
 
 //----------------------------------------------------------------------
 //	Initialize global palette resources
@@ -322,37 +337,35 @@ void quickRestorePalette(void) {
 }
 
 
-//----------------------------------------------------------------------
-//	Save the current state of the current palette and fade up/down in
-//	a save file.
+void savePaletteState(Common::OutSaveFile *out) {
+	debugC(2, kDebugSaveload, "Saving Palette States");
 
-void savePaletteState(SaveFileConstructor &saveGame) {
-	memcpy(&archive.currentPalette, &currentPalette, sizeof(gPalette));
-	memcpy(&archive.oldPalette, &oldPalette, sizeof(gPalette));
-	memcpy(&archive.destPalette, &destPalette, sizeof(gPalette));
-	archive.startTime = startTime;
-	archive.totalTime = totalTime;
+	out->write("PALE", 4);
+	out->writeUint32LE(PaletteStateArchive::kPaletteStateArchiveSize);
 
-	saveGame.writeChunk(
-	    MakeID('P', 'A', 'L', 'E'),
-	    &archive,
-	    sizeof(archive));
+	currentPalette.write(out);
+	oldPalette.write(out);
+	destPalette.write(out);
+	out->writeSint32LE(startTime);
+	out->writeSint32LE(totalTime);
+
+	debugC(3, kDebugSaveload, "... startTime = %d", startTime);
+	debugC(3, kDebugSaveload, "... totalTime = %d", totalTime);
 }
 
-//----------------------------------------------------------------------
-//	Load and set the current state of the current palette and fade
-//	up/down from a save file.
+void loadPaletteState(Common::InSaveFile *in) {
+	debugC(2, kDebugSaveload, "Loading Palette States");
 
-void loadPaletteState(SaveFileReader &saveGame) {
-	gPalette                tempPalette;
+	gPalette tempPalette;
 
-	saveGame.read(&archive, sizeof(archive));
+	tempPalette.read(in);
+	oldPalette.read(in);
+	destPalette.read(in);
+	startTime = in->readSint32LE();
+	totalTime = in->readSint32LE();
 
-	memcpy(&tempPalette, &archive.currentPalette, sizeof(gPalette));
-	memcpy(&oldPalette, &archive.oldPalette, sizeof(gPalette));
-	memcpy(&destPalette, &archive.destPalette, sizeof(gPalette));
-	startTime = archive.startTime;
-	totalTime = archive.totalTime;
+	debugC(3, kDebugSaveload, "... startTime = %d", startTime);
+	debugC(3, kDebugSaveload, "... totalTime = %d", totalTime);
 
 	setCurrentPalette(&tempPalette);
 }

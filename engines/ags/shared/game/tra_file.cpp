@@ -73,7 +73,7 @@ HError OpenTraFile(Stream *in) {
 	return HError::None();
 }
 
-HError ReadTraBlock(Translation &tra, Stream *in, TraFileBlock block, soff_t block_len) {
+HError ReadTraBlock(Translation &tra, Stream *in, TraFileBlock block, const String &ext_id, soff_t block_len) {
 	switch (block) {
 	case kTraFblk_Dict:
 	{
@@ -87,49 +87,83 @@ HError ReadTraBlock(Translation &tra, Stream *in, TraFileBlock block, soff_t blo
 				break;
 			tra.Dict.insert(std::make_pair(String(original), String(translation)));
 		}
+		return HError::None();
 	}
-	break;
 	case kTraFblk_GameID:
 	{
 		char gamename[256];
 		tra.GameUid = in->ReadInt32();
 		read_string_decrypt(in, gamename, sizeof(gamename));
 		tra.GameName = gamename;
+		return HError::None();
 	}
-	break;
 	case kTraFblk_TextOpts:
 		tra.NormalFont = in->ReadInt32();
 		tra.SpeechFont = in->ReadInt32();
 		tra.RightToLeft = in->ReadInt32();
+		return HError::None();
+	case kTraFblk_ExtStrID:
+		// continue reading extensions with string ID
 		break;
 	default:
 		return new TraFileError(kTraFileErr_UnknownBlockType,
 			String::FromFormat("Type: %d, known range: %d - %d.", block, kTraFblk_Dict, kTraFblk_TextOpts));
 	}
-	return HError::None();
+
+	if (ext_id.CompareNoCase("ext_sopts") == 0) {
+		StrUtil::ReadStringMap(tra.StrOptions, in);
+		return HError::None();
+	}
+
+	return new TraFileError(kTraFileErr_UnknownBlockType,
+		String::FromFormat("Type: %s", ext_id.GetCStr()));
 }
 
-static Translation *reader_tra;
-HError TestTraGameIDReader(Stream *in, int block_id, const String &ext_id,
-		soff_t block_len, bool &read_next) {
-	if (block_id == kTraFblk_GameID) {
-		read_next = false;
-		return ReadTraBlock(*reader_tra, in, (TraFileBlock)block_id, block_len);
+// TRABlockReader reads whole TRA data, block by block
+class TRABlockReader : public DataExtReader {
+public:
+	TRABlockReader(Translation &tra, Stream *in)
+		: DataExtReader(in, kDataExt_NumID32 | kDataExt_File32)
+		, _tra(tra) {
 	}
-	in->Seek(block_len); // skip block
-	return HError::None();
-}
+
+	// Reads only the Game ID block and stops
+	HError ReadGameID() {
+		HError err = FindOne(kTraFblk_GameID);
+		if (!err)
+			return err;
+		return ReadTraBlock(_tra, _in, kTraFblk_GameID, "", _block_len);
+	}
+
+private:
+	String GetOldBlockName(int block_id) const override {
+		return GetTraBlockName((TraFileBlock)block_id);
+	}
+
+	soff_t GetOverLeeway(int block_id) const override {
+		// TRA files made by pre-3.0 editors have a block length miscount by 1 byte
+		if (block_id == kTraFblk_GameID) return 1;
+		return 0;
+	}
+
+	HError ReadBlock(int block_id, const String &ext_id,
+		soff_t block_len, bool &read_next) override {
+		return ReadTraBlock(_tra, _in, (TraFileBlock)block_id, ext_id, block_len);
+	}
+
+	Translation &_tra;
+};
+
 
 HError TestTraGameID(int game_uid, const String &game_name, Stream *in) {
 	HError err = OpenTraFile(in);
 	if (!err)
 		return err;
 
-	// This reader would only process kTraFblk_GameID and exit as soon as one is found
 	Translation tra;
-	reader_tra = &tra;
+	TRABlockReader reader(tra, in);
+	err = reader.ReadGameID();
 
-	err = ReadExtData(TestTraGameIDReader, kDataExt_NumID32 | kDataExt_File32, in);
 	if (!err)
 		return err;
 	// Test the identifiers, if they are not present then skip the test
@@ -140,20 +174,13 @@ HError TestTraGameID(int game_uid, const String &game_name, Stream *in) {
 	return HError::None();
 }
 
-// This reader will process all blocks inside ReadTraBlock() function,
-// and read compatible data into the given Translation object
-HError ReadTraDataReader(Stream *in, int block_id, const String &ext_id,
-		soff_t block_len, bool &read_next) {
-	return ReadTraBlock(*reader_tra, in, (TraFileBlock)block_id, block_len);
-}
-
 HError ReadTraData(Translation &tra, Stream *in) {
-	reader_tra = &tra;
 	HError err = OpenTraFile(in);
 	if (!err)
 		return err;
 
-	return ReadExtData(ReadTraDataReader, kDataExt_NumID32 | kDataExt_File32, in);
+	TRABlockReader reader(tra, in);
+	return reader.Read();
 }
 
 // TODO: perhaps merge with encrypt/decrypt utilities
@@ -204,6 +231,10 @@ void WriteTextOpts(const Translation &tra, Stream *out) {
 static const Translation *writer_tra;
 static void(*writer_writer)(const Translation &tra, Stream *out);
 
+void WriteStrOptions(const Translation &tra, Stream *out) {
+	StrUtil::WriteStringMap(tra.StrOptions, out);
+}
+
 static void WriteTraBlockWriter(Stream *out) {
 	writer_writer(*writer_tra, out);
 }
@@ -217,6 +248,15 @@ inline void WriteTraBlock(const Translation &tra, TraFileBlock block,
 		kDataExt_NumID32 | kDataExt_File32, out);
 }
 
+inline void WriteTraBlock(const Translation &tra, const String &ext_id,
+		void(*writer)(const Translation &tra, Stream *out), Stream *out) {
+	writer_tra = &tra;
+	writer_writer = writer;
+
+	WriteExtBlock(ext_id, WriteTraBlockWriter,
+		kDataExt_NumID32 | kDataExt_File32, out);
+}
+
 void WriteTraData(const Translation &tra, Stream *out) {
 	// Write header
 	out->Write(TRASignature, strlen(TRASignature) + 1);
@@ -225,6 +265,7 @@ void WriteTraData(const Translation &tra, Stream *out) {
 	WriteTraBlock(tra, kTraFblk_GameID, WriteGameID, out);
 	WriteTraBlock(tra, kTraFblk_Dict, WriteDict, out);
 	WriteTraBlock(tra, kTraFblk_TextOpts, WriteTextOpts, out);
+	WriteTraBlock(tra, "ext_sopts", WriteStrOptions, out);
 
 	// Write ending
 	out->WriteInt32(kTraFile_EOF);

@@ -183,6 +183,7 @@ gTextBox::gTextBox(
 	cursorPos               = anchorPos = scrollPixels = 0;
 	undoBuffer              = new char[maxLen + 1]();
 	textFont                = font;
+	oldFont                 = nullptr;
 	fontHeight              = height;
 	fontOffset              = fontHeight + 2;
 
@@ -205,6 +206,10 @@ gTextBox::gTextBox(
 	isActiveCtl             = false;
 	selected                = 0;
 	parent                  = &list;
+
+	blinkStart = 0;
+	blinkX = 0;
+	blinkState = 0;
 
 	// set the filedStrings pointer
 	fieldStrings = stringBufs;
@@ -265,7 +270,7 @@ gTextBox::~gTextBox() {
 */
 bool gTextBox::insertText(char *newText, int length) {
 	int16       selStart = MIN(cursorPos, anchorPos),
-	            selWidth = abs(cursorPos - anchorPos),
+	            selWidth = ABS(cursorPos - anchorPos),
 	            selEnd   = selStart + selWidth;
 
 	if (length == -1) length = strlen(newText);
@@ -429,7 +434,7 @@ void gTextBox::scroll(int8 req) {
 
 	indexReq        = clamp(0, indexReq, numEditLines);
 	visIndex = (indexReq - (visBase - linesPerPage));
-	if (abs(oldIndex - indexReq) < 2) {
+	if (ABS(oldIndex - indexReq) < 2) {
 		if (visIndex < 0) {
 			visBase--;
 			visIndex++;
@@ -640,7 +645,7 @@ void gTextBox::pointerRelease(gPanelMessage &msg) {
 bool gTextBox::keyStroke(gPanelMessage &msg) {
 	gPort           &port = window.windowPort;
 	int16           selStart = MIN(cursorPos, anchorPos),
-	                selWidth = abs(cursorPos - anchorPos);
+	                selWidth = ABS(cursorPos - anchorPos);
 	uint8           key = msg.key;
 
 	//  Process the various keystrokes...
@@ -839,7 +844,7 @@ char *gTextBox::getLine(int8 stringIndex) {
 //-----------------------------------------------------------------------
 
 char *gTextBox::selectedText(int &length) {
-	length = abs(cursorPos - anchorPos);
+	length = ABS(cursorPos - anchorPos);
 	return fieldStrings[index] + MIN(cursorPos, anchorPos);
 }
 

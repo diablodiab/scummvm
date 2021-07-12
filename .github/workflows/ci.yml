@@ -31,7 +31,7 @@ jobs:
             configFlags: --enable-faad --enable-mpeg2 --enable-discord --disable-fribidi --disable-opengl
             vcpkgPackages: 'curl discord-rpc faad2 fluidsynth freetype libflac libjpeg-turbo libmad libmpeg2 libogg libpng libtheora libvorbis sdl2 sdl2-net zlib giflib'
     env:
-      CONFIGURATION: Release
+      CONFIGURATION: Analysis
       PLATFORM: ${{ matrix.platform }}
     steps:
       - name: Checkout
@@ -65,19 +65,20 @@ jobs:
           ls
       - name: set SCUMMVM_LIBS env variable
         run: |
-          echo "SCUMMVM_LIBS=${{ steps.runvcpkg.outputs.RUNVCPKG_VCPKG_ROOT_OUT }}\\installed\\${{ matrix.triplet }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "SCUMMVM_LIBS=${{ steps.runvcpkg.outputs.RUNVCPKG_VCPKG_ROOT_OUT }}\\installed\\${{ matrix.triplet }}\\debug" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Copy-Item "${{ steps.runvcpkg.outputs.RUNVCPKG_VCPKG_ROOT_OUT }}\\installed\\${{ matrix.triplet }}\\include" -Destination "${{ steps.runvcpkg.outputs.RUNVCPKG_VCPKG_ROOT_OUT }}\\installed\\${{ matrix.triplet }}\\debug" -Recurse
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.0.2
       - name: Build scummvm
         run: |
           cd build-scummvm
           ls
-          msbuild scummvm.sln /m /p:BuildInParallel=true /p:Configuration=Release /p:PreferredToolArchitecture=x64 /p:Platform=${{ matrix.platform }}
+          msbuild scummvm.sln /m /p:BuildInParallel=true /p:Configuration=${{ env.CONFIGURATION }} /p:PreferredToolArchitecture=x64 /p:Platform=${{ matrix.platform }}
 #      - name: Upload scummvm
 #        uses: actions/upload-artifact@v2
 #        with:
 #          name: scummvm-${{ matrix.arch }}
-#          path: build-scummvm/Release${{ matrix.arch }}/*.exe
+#          path: build-scummvm/${{ env.CONFIGURATION }}${{ matrix.arch }}/*.exe
 #      - name: Upload scummvm libs
 #        uses: actions/upload-artifact@v2
 #        with:
@@ -87,7 +88,7 @@ jobs:
 #        uses: actions/upload-artifact@v2
 #        with:
 #          name: symbols-${{ matrix.arch }}
-#          path: build-scummvm/Release${{ matrix.arch }}/*.pdb
+#          path: build-scummvm/${{ env.CONFIGURATION }}${{ matrix.arch }}/*.pdb
 #      - name: Upload scummvm libs symbols
 #        uses: actions/upload-artifact@v2
 #        with:
@@ -95,7 +96,7 @@ jobs:
 #          path: ${{ steps.runvcpkg.outputs.RUNVCPKG_VCPKG_ROOT_OUT }}\\installed\\${{ matrix.triplet }}\\bin\\*.pdb
   xcode:
     name: Xcode
-    runs-on: macOS-latest
+    runs-on: macos-latest
     strategy:
       fail-fast: false
       matrix:
@@ -147,7 +148,7 @@ jobs:
             sdlConfig: sdl2-config
             configFlags: --enable-c++11
             aptPackages: 'libsdl2-dev libsdl2-net-dev liba52-dev libjpeg-turbo8-dev libmpeg2-4-dev libogg-dev libvorbis-dev libflac-dev libmad0-dev libpng-dev libtheora-dev libfaad-dev libfluidsynth-dev libfreetype6-dev zlib1g-dev libfribidi-dev libglew-dev libcurl4-openssl-dev libgtk-3-dev libspeechd-dev libsndio-dev libunity-dev'
-          - platform: ubuntu-16.04
+          - platform: ubuntu-18.04
             sdlConfig: sdl-config
             configFlags: --disable-c++11
             aptPackages: 'libsdl1.2-dev libsdl-net1.2-dev liba52-dev libjpeg-turbo8-dev libmpeg2-4-dev libogg-dev libvorbis-dev libflac-dev libmad0-dev libpng-dev libtheora-dev libfaad-dev libfluidsynth-dev libfreetype6-dev zlib1g-dev libfribidi-dev libglew-dev libcurl4-openssl-dev libgtk-3-dev libspeechd-dev libsndio-dev libunity-dev'

@@ -23,6 +23,7 @@
 #include "common/substream.h"
 
 #include "director/director.h"
+#include "director/cast.h"
 #include "director/stxt.h"
 
 namespace Director {
@@ -58,43 +59,51 @@ Stxt::Stxt(Cast *cast, Common::SeekableReadStreamEndian &textStream) : _cast(cas
 		text += ch;
 	}
 	debugC(3, kDebugText, "Stxt init: offset: %d strLen: %d dataLen: %d textlen: %u", offset, strLen, dataLen, text.size());
-	if (strLen < 200)
-		debugC(3, kDebugText, "text: '%s'", Common::toPrintable(text).c_str());
-
-	_ptext = text;
 
 	uint16 formattingCount = textStream.readUint16();
 	uint32 prevPos = 0;
 
+	debugC(3, kDebugText, "Stxt init: formattingCount: %u", formattingCount);
+
+	Common::U32String logText;
+
 	while (formattingCount) {
-		debugC(3, kDebugText, "Stxt init: formattingCount: %u", formattingCount);
-		_style.read(textStream);
+		uint16 currentFont = _style.fontId;
+		_style.read(textStream, _cast);
 
 		assert(prevPos <= _style.formatStartOffset);  // If this is triggered, we have to implement sorting
 
+		Common::String textPart;
 		while (prevPos != _style.formatStartOffset) {
 			char f = text.firstChar();
-			_ftext += text.firstChar();
+			textPart += f;
 			text.deleteChar(0);
 
 			if (f == '\001')	// Insert two \001s as a replacement
 				_ftext += '\001';
 
 			prevPos++;
-
-			debugCN(4, kDebugText, "%c", f);
 		}
+		Common::CodePage encoding = detectEncoding(cast->_platform, currentFont);
+		Common::U32String u32TextPart(textPart, encoding);
+		_ptext += u32TextPart;
+		_ftext += u32TextPart;
+		logText += u32TextPart;
 
-		debugCN(4, kDebugText, "*");
-
-		_ftext += Common::String::format("\001\016%04x%02x%04x%04x%04x%04x", _style.fontId, _style.textSlant, _style.fontSize, _style.r, _style.g, _style.b);
+		Common::String format = Common::String::format("\001\016%04x%02x%04x%04x%04x%04x", _style.fontId, _style.textSlant, _style.fontSize, _style.r, _style.g, _style.b);
+		_ftext += format;
+		logText += Common::toPrintable(format);
 
 		formattingCount--;
 	}
 
-	_ftext += text;
+	Common::CodePage encoding = detectEncoding(cast->_platform, _style.fontId);
+	Common::U32String u32Text(text, encoding);
+	_ptext += u32Text;
+	_ftext += u32Text;
+	logText += u32Text;
 
-	debugC(4, kDebugText, "#### text:\n%s\n####", Common::toPrintable(_ftext).c_str());
+	debugC(4, kDebugText, "#### text:\n%s\n####", logText.encode().c_str());
 }
 
 FontStyle::FontStyle() {
@@ -110,12 +119,12 @@ FontStyle::FontStyle() {
 	r = g = b = 0;
 }
 
-void FontStyle::read(Common::ReadStreamEndian &stream) {
+void FontStyle::read(Common::ReadStreamEndian &stream, Cast *cast) {
 	formatStartOffset = stream.readUint32();
-	height = stream.readUint16();
+	uint16 originalHeight = height = stream.readUint16();
 	ascent = stream.readUint16();
 
-	fontId = stream.readUint16();
+	uint16 originalFontId = fontId = stream.readUint16();
 	textSlant = stream.readByte();
 	stream.readByte(); // padding
 	fontSize = stream.readUint16();
@@ -124,8 +133,16 @@ void FontStyle::read(Common::ReadStreamEndian &stream) {
 	g = stream.readUint16();
 	b = stream.readUint16();
 
-	debugC(3, kDebugLoading, "FontStyle::read(): formatStartOffset: %d, height: %d ascent: %d, fontId: %d, textSlant: %d, fontSize: %d, r: %x g: %x b: %x",
-			formatStartOffset, height, ascent, fontId, textSlant, fontSize, r, g, b);
+	if (cast->_fontMap.contains(originalFontId)) {
+		FontMapEntry *info = cast->_fontMap[originalFontId];
+		fontId = info->toFont;
+		if (info->sizeMap.contains(originalHeight)) {
+			height = info->sizeMap[height];
+		}
+	}
+
+	debugC(3, kDebugLoading, "FontStyle::read(): formatStartOffset: %d, height: %d -> %d ascent: %d, fontId: %d -> %d, textSlant: %d, fontSize: %d, r: %x g: %x b: %x",
+			formatStartOffset, originalHeight, height, ascent, originalFontId, fontId, textSlant, fontSize, r, g, b);
 }
 
 } // End of namespace Director

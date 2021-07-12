@@ -36,9 +36,6 @@ class Location;
 class SkillProto;
 class GameObject;
 
-class SaveFileConstructor;
-class SaveFileReader;
-
 // ------------------------------------------------------------------
 // This is an include file for the spellcasting interface. This file
 // is meant to publish the main API functions for spell casting.
@@ -103,8 +100,8 @@ bool implementSpell(GameObject *enactor, GameObject *target, SkillProto *spell);
 
 // spell saving & loading
 void initSpellState(void);
-void saveSpellState(SaveFileConstructor &saveGame);
-void loadSpellState(SaveFileReader &saveGame);
+void saveSpellState(Common::OutSaveFile *out);
+void loadSpellState(Common::InSaveFile *in);
 void cleanupSpellState(void);
 
 } // end of namespace Saga2

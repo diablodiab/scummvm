@@ -26,6 +26,10 @@ import multiprocessing as mp
 
 from common_names import *
 
+#workaround for "threading bug in strptime"
+#see - https://stackoverflow.com/questions/32245560/module-object-has-no-attribute-strptime-with-several-threads-python/46401422
+import _strptime
+
 prj_template = "PRJ_MMPFILES\n%s"
 prj_path = "paralell_build"
 
@@ -86,7 +90,7 @@ def build_mmp(try_fix = False):
 
    for fileName in fileNames:
       q.put(fileName)
-   print q.qsize()
+   print "Queve size: %s" %q.qsize()
    print "Thread count: %s" %mp.cpu_count()
    threads = [ threading.Thread(target=thread_func, args=(q, )) for i in range(mp.cpu_count()) ]
    for thread in threads:

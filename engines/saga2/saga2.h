@@ -40,16 +40,20 @@ class SmackerDecoder;
 
 namespace Saga2 {
 
+class ContainerList;
 class Timer;
 class TimerList;
 class BandList;
 class ActorAppearance;
 class PathRequest;
 class MotionTask;
+class MotionTaskList;
 class GrabInfo;
 class CImageCache;
 class SensorList;
 class Sensor;
+class EffectDisplayPrototypeList;
+class SpellDisplayPrototypeList;
 
 enum {
 	kDebugResources = 1 << 0,
@@ -63,7 +67,9 @@ enum {
 	kDebugTimers    = 1 << 8,
 	kDebugPath      = 1 << 9,
 	kDebugTasks     = 1 << 10,
-	kDebugSound		= 1 << 11
+	kDebugSound     = 1 << 11,
+	kDebugSaveload  = 1 << 12,
+	kDebugSensors   = 1 << 13
 };
 
 #define TICKSPERSECOND (728L/10L)
@@ -109,8 +115,12 @@ public:
 	Common::List<MotionTask *>::iterator _nextMT;
 	Common::List<int> _platformLRU;
 	BandList *_bandList;
+	MotionTaskList *_mTaskList;
 	CImageCache *_imageCache;
 	GrabInfo *_mouseInfo;
+	EffectDisplayPrototypeList *_edpList;
+	SpellDisplayPrototypeList *_sdpList;
+	ContainerList *_containerList;
 
 	gDisplayPort _mainPort;
 

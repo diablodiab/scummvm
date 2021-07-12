@@ -23,8 +23,9 @@
 #include "common/config-manager.h"
 #include "image/bmp.h"
 
-#include "ultima/ultima8/gumps/remorse_credits_gump.h"
+#include "ultima/ultima8/gumps/cru_credits_gump.h"
 
+#include "ultima/ultima8/ultima8.h"
 #include "ultima/ultima8/kernel/mouse.h"
 #include "ultima/ultima8/graphics/render_surface.h"
 #include "ultima/ultima8/graphics/palette_manager.h"
@@ -37,14 +38,14 @@
 namespace Ultima {
 namespace Ultima8 {
 
-DEFINE_RUNTIME_CLASSTYPE_CODE(RemorseCreditsGump)
+DEFINE_RUNTIME_CLASSTYPE_CODE(CruCreditsGump)
 
-RemorseCreditsGump::RemorseCreditsGump()
+CruCreditsGump::CruCreditsGump()
 	: ModalGump(), _timer(0), _background(nullptr), _nextScreenStart(0),
 		_screenNo(-1) {
 }
 
-RemorseCreditsGump::RemorseCreditsGump(Common::SeekableReadStream *txtrs,
+CruCreditsGump::CruCreditsGump(Common::SeekableReadStream *txtrs,
 									   Common::SeekableReadStream *bmprs,
 									   uint32 flags, int32 layer)
 		: ModalGump(0, 0, 640, 480, 0, flags, layer),
@@ -101,7 +102,7 @@ RemorseCreditsGump::RemorseCreditsGump(Common::SeekableReadStream *txtrs,
 	}
 }
 
-RemorseCreditsGump::~RemorseCreditsGump() {
+CruCreditsGump::~CruCreditsGump() {
 	delete _background;
 
 	for (Common::Array<RenderedText *>::iterator iter = _currentLines.begin(); iter != _currentLines.end(); iter++) {
@@ -109,7 +110,7 @@ RemorseCreditsGump::~RemorseCreditsGump() {
 	}
 }
 
-void RemorseCreditsGump::InitGump(Gump *newparent, bool take_focus) {
+void CruCreditsGump::InitGump(Gump *newparent, bool take_focus) {
 	ModalGump::InitGump(newparent, take_focus);
 
 	Mouse::get_instance()->pushMouseCursor();
@@ -117,11 +118,14 @@ void RemorseCreditsGump::InitGump(Gump *newparent, bool take_focus) {
 
 	MusicProcess *musicproc = MusicProcess::get_instance();
 	if (musicproc) {
-		musicproc->playMusic(19);
+		if (GAME_IS_REMORSE)
+			musicproc->playMusic(19);
+		else
+			musicproc->playMusic(17);
 	}
 }
 
-void RemorseCreditsGump::Close(bool no_del) {
+void CruCreditsGump::Close(bool no_del) {
 	Mouse::get_instance()->popMouseCursor();
 
 	ModalGump::Close(no_del);
@@ -131,7 +135,7 @@ void RemorseCreditsGump::Close(bool no_del) {
 	//if (musicproc) musicproc->restoreMusic();
 }
 
-void RemorseCreditsGump::run() {
+void CruCreditsGump::run() {
 	ModalGump::run();
 
 	_timer++;
@@ -175,7 +179,7 @@ void RemorseCreditsGump::run() {
 	}
 }
 
-void RemorseCreditsGump::PaintThis(RenderSurface *surf, int32 lerp_factor, bool scaled) {
+void CruCreditsGump::PaintThis(RenderSurface *surf, int32 lerp_factor, bool scaled) {
 	surf->Blit(_background->getRawSurface(), 0, 0, 640, 480, 0, 0);
 
 	unsigned int nlines = _currentLines.size();
@@ -196,7 +200,7 @@ void RemorseCreditsGump::PaintThis(RenderSurface *surf, int32 lerp_factor, bool 
 	}
 }
 
-bool RemorseCreditsGump::OnKeyDown(int key, int mod) {
+bool CruCreditsGump::OnKeyDown(int key, int mod) {
 	if (key == Common::KEYCODE_ESCAPE)
 		Close();
 

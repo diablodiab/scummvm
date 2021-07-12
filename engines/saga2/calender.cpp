@@ -24,13 +24,10 @@
  *   (c) 1993-1996 The Wyrmkeep Entertainment Co.
  */
 
-#define FORBIDDEN_SYMBOL_ALLOW_ALL // FIXME: Remove
-
 #include "saga2/saga2.h"
 #include "saga2/calender.h"
 #include "saga2/intrface.h"
 #include "saga2/localize.h"
-#include "saga2/savefile.h"
 
 namespace Saga2 {
 
@@ -51,6 +48,42 @@ const uint16 GAME_START_HOUR = 5;
 /* ===================================================================== *
    FrameAlarm member functions
  * ===================================================================== */
+
+void CalenderTime::read(Common::InSaveFile *in) {
+	years = in->readUint16LE();
+	weeks = in->readUint16LE();
+	days = in->readUint16LE();
+	dayInYear = in->readUint16LE();
+	dayInWeek = in->readUint16LE();
+	hour = in->readUint16LE();
+	frameInHour = in->readUint16LE();
+
+	debugC(3, kDebugSaveload, "... years = %d", years);
+	debugC(3, kDebugSaveload, "... weeks = %d", weeks);
+	debugC(3, kDebugSaveload, "... days = %d", days);
+	debugC(3, kDebugSaveload, "... dayInYear = %d", dayInYear);
+	debugC(3, kDebugSaveload, "... dayInWeek = %d", dayInWeek);
+	debugC(3, kDebugSaveload, "... hour = %d", hour);
+	debugC(3, kDebugSaveload, "... frameInHour = %d", frameInHour);
+}
+
+void CalenderTime::write(Common::OutSaveFile *out) {
+	out->writeUint16LE(years);
+	out->writeUint16LE(weeks);
+	out->writeUint16LE(days);
+	out->writeUint16LE(dayInYear);
+	out->writeUint16LE(dayInWeek);
+	out->writeUint16LE(hour);
+	out->writeUint16LE(frameInHour);
+
+	debugC(3, kDebugSaveload, "... years = %d", years);
+	debugC(3, kDebugSaveload, "... weeks = %d", weeks);
+	debugC(3, kDebugSaveload, "... days = %d", days);
+	debugC(3, kDebugSaveload, "... dayInYear = %d", dayInYear);
+	debugC(3, kDebugSaveload, "... dayInWeek = %d", dayInWeek);
+	debugC(3, kDebugSaveload, "... hour = %d", hour);
+	debugC(3, kDebugSaveload, "... frameInHour = %d", frameInHour);
+}
 
 void CalenderTime::update(void) {
 	const char *text = NULL;
@@ -109,13 +142,13 @@ int CalenderTime::lightLevel(int maxLevel) {
 	//  grows to 'framesAtNoon' at noon, then shrinks
 	//  back to 0 at midnight again.
 	solarAngle =    framesAtNoon
-	                -   abs(frameInDay() - framesAtNoon);
+	                -   ABS(frameInDay() - framesAtNoon);
 
 	//  Just for fun, we'll make the days longer in the summer,
 	//  and shorter the winter. The calculation produces a number
 	//  which equals daysPerYear/4 in summer, and -daysperYear/4
 	//  in winter.
-	season = daysPerYear / 4 - abs(dayInYear - daysPerYear / 2);
+	season = daysPerYear / 4 - ABS(dayInYear - daysPerYear / 2);
 
 	//  Convert season to an extra hour of daylight in summer,
 	//  and an extra hour of night in winter. (That's an extra
@@ -136,6 +169,16 @@ int CalenderTime::lightLevel(int maxLevel) {
 /* ===================================================================== *
    FrameAlarm member functions
  * ===================================================================== */
+
+void FrameAlarm::write(Common::OutSaveFile *out) {
+	out->writeUint16LE(baseFrame);
+	out->writeUint16LE(duration);
+}
+
+void FrameAlarm::read(Common::InSaveFile *in) {
+	baseFrame = in->readUint16LE();
+	duration = in->readUint16LE();
+}
 
 void FrameAlarm::set(uint16 dur) {
 	baseFrame = calender.frameInDay();
@@ -221,27 +264,27 @@ void initCalender(void) {
 	calender.frameInHour    = 0;
 }
 
-//-----------------------------------------------------------------------
-//	Write the calender data to a save file
+void saveCalender(Common::OutSaveFile *out) {
+	debugC(2, kDebugSaveload, "Saving calender");
 
-void saveCalender(SaveFileConstructor &saveGame) {
-	if (saveGame.newChunk(
-	            MKTAG('C', 'A', 'L', 'E'),
-	            sizeof(calenderPaused) + sizeof(calender))) {
-		saveGame.write(&calenderPaused, sizeof(calenderPaused));
-		saveGame.write(&calender, sizeof(calender));
-	}
+	out->write("CALE", 4);
+	out->writeUint32LE(sizeof(calenderPaused) + sizeof(calender));
+
+	out->writeByte(calenderPaused);
+
+	debugC(3, kDebugSaveload, "... calenderPaused = %d", calenderPaused);
+
+	calender.write(out);
 }
 
-//-----------------------------------------------------------------------
-//	Read the calender data from a save file.  Assume the save file is at
-//	the correct chunk.
+void loadCalender(Common::InSaveFile *in) {
+	debugC(2, kDebugSaveload, "Loading calender");
 
-void loadCalender(SaveFileReader &saveGame) {
-	assert(saveGame.getChunkSize() ==  sizeof(calenderPaused) + sizeof(calender));
+	calenderPaused = in->readByte();
 
-	saveGame.read(&calenderPaused, sizeof(calenderPaused));
-	saveGame.read(&calender, sizeof(calender));
+	debugC(3, kDebugSaveload, "... calenderPaused = %d", calenderPaused);
+
+	calender.read(in);
 }
 
 CalenderTime    calender;

@@ -763,31 +763,53 @@ uint16 Actor::setActivityU8(int activity) {
 }
 
 uint16 Actor::setActivityCru(int activity) {
-	if (isDead())
+	if (isDead() || World::get_instance()->getControlledNPCNum() == _objId
+		|| hasActorFlags(ACT_WEAPONREADY) || activity == 0)
+		return 0;
+
+	if ((World::get_instance()->getGameDifficulty() == 4) && (getRandom() % 2 == 0)) {
+		if (activity == 5)
+			activity = 0xa;
+		if (activity == 9)
+			activity = 0xb;
+	}
+
+	if (_currentActivityNo == activity || (isInCombat() && activity != 0xc))
 		return 0;
 
 	_lastActivityNo = _currentActivityNo;
 	_currentActivityNo = activity;
 
+	if (isInCombat())
+		clearInCombat();
+
+	if (!hasFlags(FLG_FASTAREA))
+		return 0;
+
+	Kernel *kernel = Kernel::get_instance();
+
+	static const uint16 PROCSTYPES_TO_KILL[] = { 0x204, 0x258, 0xf0, 0x255, 0x257, 0x259, 0x25f, 0x25e };
+	for (int i = 0; i < ARRAYSIZE(PROCSTYPES_TO_KILL); i++) {
+		kernel->killProcesses(_objId, PROCSTYPES_TO_KILL[i], true);
+	}
+
 	switch (activity) {
 	case 1: // stand
 		return doAnim(Animation::stand, dir_current);
-	case 3: // pace
-		return Kernel::get_instance()->addProcess(new PaceProcess(this));
 	case 2: // loiter
-		Kernel::get_instance()->addProcess(new LoiterProcess(this));
-		return Kernel::get_instance()->addProcess(new DelayProcess(1));
+		return kernel->addProcess(new LoiterProcess(this));
+	case 3: // pace
+		return kernel->addProcess(new PaceProcess(this));
 	case 4:
 	case 6:
 	    // Does nothing in game..
 	    break;
 	case 7:
 		if (_lastActivityNo != 7)
-			return Kernel::get_instance()->addProcess(new SurrenderProcess(this));
+			return kernel->addProcess(new SurrenderProcess(this));
 	    break;
 	case 8:
-		return Kernel::get_instance()->addProcess(new GuardProcess(this));
-	    break;
+		return kernel->addProcess(new GuardProcess(this));
 	case 5:
 	case 9:
 	case 0xa:
@@ -799,7 +821,7 @@ uint16 Actor::setActivityCru(int activity) {
 	case 0xd:
 		// Only in No Regret
 		setActorFlag(ACT_INCOMBAT);
-		return Kernel::get_instance()->addProcess(new RollingThunderProcess(this));
+		return kernel->addProcess(new RollingThunderProcess(this));
 	case 0x70:
 		return setActivity(getDefaultActivity(0));
 	case 0x71:
@@ -936,7 +958,7 @@ void Actor::receiveHitCru(uint16 other, Direction dir, int damage, uint16 damage
 		*/
 	}
 
-	if (isDead())
+	if (isDead() && (getShape() != 0x5d6 || GAME_IS_REMORSE))
 		return;
 
 	_lastTickWasHit = Kernel::get_instance()->getTickNum();
@@ -1378,6 +1400,7 @@ ProcId Actor::dieU8(uint16 damageType) {
 ProcId Actor::dieCru(uint16 damageType, uint16 damagePts, Direction srcDir) {
 	bool is_robot = isRobotCru();
 	bool created_koresh = false;
+	const uint32 startshape = getShape();
 
 	World *world = World::get_instance();
 
@@ -1394,7 +1417,13 @@ ProcId Actor::dieCru(uint16 damageType, uint16 damagePts, Direction srcDir) {
 	destroyContents();
 	giveTreasure();
 
-	if (damageType == 3 || damageType == 4 || damageType == 10 || damageType == 12) {
+	if (getShape() == 0x5d6 && GAME_IS_REGRET) {
+		// you only die twice.. (frozen person breaking into pieces)
+		if (!isBusy()) {
+			setShape(0x5ef);
+			setToStartOfAnim(Animation::fallBackwardsCru);
+		}
+	} else if (damageType == 3 || damageType == 4 || damageType == 10 || damageType == 12) {
 		if (!is_robot /* && violence enabled */) {
 			const FireType *ft = GameData::get_instance()->getFireType(damageType);
 			assert(ft);
@@ -1459,6 +1488,23 @@ ProcId Actor::dieCru(uint16 damageType, uint16 damagePts, Direction srcDir) {
 			setShape(0x59c);
 			setToStartOfAnim(Animation::fallBackwardsCru);
 		}
+	} else if ((damageType == 0x10) || (damageType == 0x12)) {
+		if (!is_robot) {
+			setShape(0x5d6);
+			setToStartOfAnim(Animation::fallBackwardsCru);
+		}
+	} else if (damageType == 0x11) {
+		if (!is_robot) {
+			setShape(0x62d);
+			setToStartOfAnim(Animation::fallBackwardsCru);
+		}
+	} else if (damageType == 0x14) {
+		if (!is_robot) {
+			if (true /*isViolenceEnabled()*/) {
+				setShape(0x278);
+				setToStartOfAnim(Animation::fallBackwardsCru);
+			}
+		}
 	} else if (damageType == 7 && _objId == 1) {
 		lastanim = doAnimAfter(Animation::electrocuted, dir_current, lastanim);
 	}
@@ -1466,6 +1512,27 @@ ProcId Actor::dieCru(uint16 damageType, uint16 damagePts, Direction srcDir) {
 	if (!created_koresh) {
 		bool fall_backwards = true;
 		bool fall_random_dir = false;
+
+		if (GAME_IS_REGRET) {
+			uint32 shape = getShape();
+			if (startshape == shape) {
+				if (shape == 0x5ff || shape == 0x5d7) {
+					setShape(0x606);
+					setToStartOfAnim(Animation::fallBackwardsCru);
+				} else if (shape == 0x625 || shape == 0x626) {
+					setShape(0x62e);
+					setToStartOfAnim(Animation::fallBackwardsCru);
+				} else if (shape == 0x5f0 || shape == 0x2c3) {
+					setShape(0x5d5);
+					setToStartOfAnim(Animation::fallBackwardsCru);
+				} else if (shape == 0x62f || shape == 0x630) {
+					setShape(0x631);
+					setToStartOfAnim(Animation::fallBackwardsCru);
+				}
+			}
+		}
+
+
 		Direction dirtest[9];
 		/* 0x383 == 899 (robot), 1423 = plasma death, 1430 = fire death skeleton */
 		if (getShape() != 899 && getShape() != 0x58f && getShape() != 0x596) {

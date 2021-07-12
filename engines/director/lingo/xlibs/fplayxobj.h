@@ -20,42 +20,25 @@
  *
  */
 
-#ifndef ULTIMA8_GUMPS_REMORSEMENUGUMP_H
-#define ULTIMA8_GUMPS_REMORSEMENUGUMP_H
+#ifndef DIRECTOR_LINGO_XLIBS_FPLAYXOBJ_H
+#define DIRECTOR_LINGO_XLIBS_FPLAYXOBJ_H
 
-#include "ultima/ultima8/gumps/modal_gump.h"
-#include "ultima/ultima8/misc/classtype.h"
+namespace Director {
 
-namespace Ultima {
-namespace Ultima8 {
+namespace FPlayXObj {
 
-/**
- * The game menu for Crusader: No Remorse.  Different enough to the U8 menu that it's implemented separately.
- */
-class RemorseMenuGump : public ModalGump {
-public:
-	ENABLE_RUNTIME_CLASSTYPE()
+void initialize(int type);
 
-	RemorseMenuGump();
-	~RemorseMenuGump() override;
+void b_fplay(int nargs);
+void b_sndinfo(int nargs);
+void b_sndlist(int nargs);
+void b_volume(int nargs);
+void b_filename(int nargs);
+void b_inputlevel(int nargs);
+void b_fsound(int nargs);
 
-	// Init the gump, call after construction
-	void InitGump(Gump *newparent, bool take_focus = true) override;
-	void Close(bool no_del = false) override;
+} // End of namespace FPlayXObj
 
-	// Paint the Gump
-	void PaintThis(RenderSurface *, int32 lerp_factor, bool scaled) override;
-
-	bool OnKeyDown(int key, int mod) override;
-	bool OnTextInput(int unicode) override;
-	void ChildNotify(Gump *child, uint32 message) override;
-
-protected:
-
-	virtual void selectEntry(int entry);
-};
-
-} // End of namespace Ultima8
-} // End of namespace Ultima
+} // End of namespace Director
 
 #endif

@@ -24,8 +24,6 @@
  *   (c) 1993-1996 The Wyrmkeep Entertainment Co.
  */
 
-#define FORBIDDEN_SYMBOL_ALLOW_ALL // FIXME: Remove
-
 #include "saga2/saga2.h"
 #include "saga2/intrface.h"
 #include "saga2/contain.h"
@@ -33,7 +31,6 @@
 #include "saga2/motion.h"
 #include "saga2/transit.h"
 #include "saga2/localize.h"
-#include "saga2/savefile.h"
 
 namespace Saga2 {
 
@@ -311,7 +308,7 @@ void PlayerActor::skillAdvance(uint8 stat,
                                uint8 points,
                                uint8 useMult) {
 	// roll percentile dice
-	if (rand() % 100 < advanceChance) {
+	if (g_vm->_rnd->getRandomNumber(99) < advanceChance) {
 		uint8 increase;
 		int16   oldValue = baseStats.skill(stat) / ActorAttributes::skillFracPointsPerLevel;
 
@@ -354,7 +351,7 @@ void PlayerActor::skillAdvance(uint8 stat,
 
 void PlayerActor::vitalityAdvance(uint8 points) {
 	while (points-- > 0) {
-		if (rand() % ActorAttributes::vitalityLimit > baseStats.vitality) {
+		if ((int16)g_vm->_rnd->getRandomNumber(ActorAttributes::vitalityLimit - 1) > baseStats.vitality) {
 			if (++vitalityMemory >= vitalityLevelBump) {
 				vitalityMemory -= vitalityLevelBump;
 				baseStats.vitality++;
@@ -570,7 +567,7 @@ void setCenterActor(PlayerActorID newCenter) {
 	viewCenterObject = playerList[centerActor].getActorID();
 
 	indivReadyNode->changeOwner(newCenter);
-	globalContainerList.setPlayerNum(newCenter);
+	g_vm->_containerList->setPlayerNum(newCenter);
 	setEnchantmentDisplay();
 
 	if (a->curTask != NULL) {
@@ -938,95 +935,88 @@ void initPlayerActors(void) {
 	readyContainerSetup();
 }
 
-//-----------------------------------------------------------------------
-//	Save the player list data to a save file
+void savePlayerActors(Common::OutSaveFile *out) {
+	debugC(2, kDebugSaveload, "Saving PlayerActors");
 
-void savePlayerActors(SaveFileConstructor &saveGame) {
-	int16                   i;
-	PlayerActorArchive      archiveBuffer[playerActors];
+	const int archiveSize = playerActors * 38;
 
-	for (i = 0; i < playerActors; i++) {
-		PlayerActor         *p = &playerList[i];
-		PlayerActorArchive  *a = &archiveBuffer[i];
+	out->write("PLYR", 4);
+	out->writeUint32LE(archiveSize);
+
+	for (int i = 0; i < playerActors; i++) {
+		debugC(3, kDebugSaveload, "Saving PlayerActor %d", i);
+
+		PlayerActor *p = &playerList[i];
 
 		//  Store the portrait type
-		a->portraitType = p->portraitType;
+		out->writeSint16LE(p->portraitType);
 
 		//  Store the flags
-		a->flags = p->flags;
+		out->writeUint16LE(p->flags);
 
 		//  Store the base stats
-		memcpy(&a->baseStats, &p->baseStats, sizeof(a->baseStats));
+		p->baseStats.write(out);
 
 		//  Store accumulation arrays
-		memcpy(
-		    &a->manaMemory,
-		    &p->manaMemory,
-		    sizeof(a->manaMemory));
-		memcpy(
-		    &a->attribRecPools,
-		    &p->attribRecPools,
-		    sizeof(a->attribRecPools));
-		memcpy(
-		    &a->attribMemPools,
-		    &p->attribMemPools,
-		    sizeof(a->attribMemPools));
+		for (int j = 0; j < numManas; ++j)
+			out->writeSint16LE(p->manaMemory[j]);
+
+		for (int j = 0; j < numSkills; ++j)
+			out->writeByte(p->attribRecPools[j]);
+
+		for (int j = 0; j < numSkills; ++j)
+			out->writeByte(p->attribMemPools[j]);
 
 		//  Store the vitality memory
-		a->vitalityMemory = p->vitalityMemory;
+		out->writeByte(p->vitalityMemory);
 
 		//  Store the attack notification flag
-		a->notifiedOfAttack = p->notifiedOfAttack;
-	}
+		out->writeByte(p->notifiedOfAttack);
 
-	//  Write the player actor chunk
-	saveGame.writeChunk(
-	    MakeID('P', 'L', 'Y', 'R'),
-	    archiveBuffer,
-	    sizeof(archiveBuffer));
+		debugC(4, kDebugSaveload, "... playerList[%d].portraitType = %d", i, p->portraitType);
+		debugC(4, kDebugSaveload, "... playerList[%d].flags = %d", i, p->flags);
+		debugC(4, kDebugSaveload, "... playerList[%d].vitalityMemory = %d", i, p->vitalityMemory);
+		debugC(4, kDebugSaveload, "... playerList[%d].notifiedOfAttack = %d", i, p->notifiedOfAttack);
+	}
 }
 
-//-----------------------------------------------------------------------
-//	Load the player list data from a save file
+void loadPlayerActors(Common::InSaveFile *in) {
+	debugC(2, kDebugSaveload, "Loading PlayerActors");
 
-void loadPlayerActors(SaveFileReader &saveGame) {
-	int16                   i;
-	PlayerActorArchive      archiveBuffer[playerActors];
+	for (int i = 0; i < playerActors; i++) {
+		debugC(3, kDebugSaveload, "Loading PlayerActor %d", i);
 
-	saveGame.read(archiveBuffer, sizeof(archiveBuffer));
-
-	for (i = 0; i < playerActors; i++) {
-		PlayerActor         *p = &playerList[i];
-		PlayerActorArchive  *a = &archiveBuffer[i];
+		PlayerActor *p = &playerList[i];
 
 		//  Restore the portrait type
-		p->portraitType = a->portraitType;
+		p->portraitType = in->readSint16LE();
 
 		//  Restore the flags
-		p->flags = a->flags;
+		p->flags = in->readUint16LE();
 
 		//  Restore the base stats
-		memcpy(&p->baseStats, &a->baseStats, sizeof(p->baseStats));
+		p->baseStats.read(in);
 
 		//  Restore the accumulation arrays
-		memcpy(
-		    &p->manaMemory,
-		    &a->manaMemory,
-		    sizeof(p->manaMemory));
-		memcpy(
-		    &p->attribRecPools,
-		    &a->attribRecPools,
-		    sizeof(p->attribRecPools));
-		memcpy(
-		    &p->attribMemPools,
-		    &a->attribMemPools,
-		    sizeof(p->attribMemPools));
+		for (int j = 0; j < numManas; ++j)
+			p->manaMemory[j] = in->readSint16LE();
+
+		for (int j = 0; j < numSkills; ++j)
+			p->attribRecPools[j] = in->readByte();
+
+		for (int j = 0; j < numSkills; ++j)
+			p->attribMemPools[j] = in->readByte();
 
 		//  Restore the vitality memory
-		p->vitalityMemory = a->vitalityMemory;
+		p->vitalityMemory = in->readByte();
 
 		//  Restore the attack notification flag
-		p->notifiedOfAttack = a->notifiedOfAttack;
+		p->notifiedOfAttack = in->readByte();
+
+		debugC(4, kDebugSaveload, "... playerList[%d].portraitType = %d", i, p->portraitType);
+		debugC(4, kDebugSaveload, "... playerList[%d].flags = %d", i, p->flags);
+		debugC(4, kDebugSaveload, "... playerList[%d].vitalityMemory = %d", i, p->vitalityMemory);
+		debugC(4, kDebugSaveload, "... playerList[%d].notifiedOfAttack = %d", i, p->notifiedOfAttack);
 	}
 
 	readyContainerSetup();
@@ -1061,30 +1051,30 @@ void initCenterActor(void) {
 	updateBrotherRadioButtons(FTA_JULIAN);
 }
 
-//-----------------------------------------------------------------------
-//	Save the center actor ID and the view object ID to a save file
+void saveCenterActor(Common::OutSaveFile *out) {
+	debugC(2, kDebugSaveload, "Saving CenterActor");
 
-void saveCenterActor(SaveFileConstructor &saveGame) {
-	CenterActorArchive  a;
+	const int32 centerActorArchiveSize = 4;
 
+	out->write("CNTR", 4);
+	out->writeUint32LE(centerActorArchiveSize);
 	//  Store the center actor and view object
-	a.centerActor       = centerActor;
-	a.viewCenterObject  = viewCenterObject;
+	out->writeSint16LE(centerActor);
+	out->writeUint16LE(viewCenterObject);
 
-	saveGame.writeChunk(MakeID('C', 'N', 'T', 'R'), &a, sizeof(a));
+	debugC(3, kDebugSaveload, "... centerActor = %d", centerActor);
+	debugC(3, kDebugSaveload, "... viewCenterObject = %d", viewCenterObject);
 }
 
-//-----------------------------------------------------------------------
-//	Load the center actor ID and the view object ID from the save file
-
-void loadCenterActor(SaveFileReader &saveGame) {
-	CenterActorArchive  a;
-
-	saveGame.read(&a, sizeof(a));
+void loadCenterActor(Common::InSaveFile *in) {
+	debugC(2, kDebugSaveload, "Loading CenterActor");
 
 	//  Restore the center actor and view object
-	centerActor         = a.centerActor;
-	viewCenterObject    = a.viewCenterObject;
+	centerActor = in->readSint16LE();
+	viewCenterObject = in->readUint16LE();
+
+	debugC(3, kDebugSaveload, "... centerActor = %d", centerActor);
+	debugC(3, kDebugSaveload, "... viewCenterObject = %d", viewCenterObject);
 }
 
 //-----------------------------------------------------------------------

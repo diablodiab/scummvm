@@ -146,6 +146,7 @@ private:
 public:
 	Archive *_movieArchive;
 	uint16 _version;
+	Common::Platform _platform;
 	Common::Rect _movieRect;
 	uint16 _currentClickOnSpriteId;
 	uint16 _currentEditableTextChannel;
@@ -173,6 +174,8 @@ public:
 
 	int _checkBoxType;
 
+	uint16 _currentHiliteChannelId;
+
 private:
 	Window *_window;
 	DirectorEngine *_vm;
@@ -188,7 +191,6 @@ private:
 	Common::String _script;
 	Common::String _directory;
 
-	uint16 _currentHiliteChannelId;
 	uint16 _currentHandlingChannelId;
 	Channel *_currentDraggedChannel;
 	Common::Point _draggingSpritePos;

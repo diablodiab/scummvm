@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ScummVM 2.3.0git\n"
 "Report-Msgid-Bugs-To: scummvm-devel@lists.scummvm.org\n"
-"POT-Creation-Date: 2021-07-02 14:20+0000\n"
+"POT-Creation-Date: 2021-07-11 08:17+0000\n"
 "PO-Revision-Date: 2021-05-15 04:25+0000\n"
 "Last-Translator: wonst719 <wonst719@gmail.com>\n"
 "Language-Team: Korean <https://translations.scummvm.org/projects/scummvm/"
@@ -91,7 +91,7 @@ msgstr "선택"
 msgid "Select directory where to download game data"
 msgstr "게임 데이터를 다운로드할 디렉토리를 선택"
 
-#: gui/downloaddialog.cpp:50 gui/editgamedialog.cpp:583 gui/launcher.cpp:208
+#: gui/downloaddialog.cpp:50 gui/editgamedialog.cpp:583 gui/launcher.cpp:206
 msgid "Select directory with game data"
 msgstr "게임 데이터가 있는 디렉토리를 선택"
 
@@ -124,7 +124,7 @@ msgstr "인터넷 연결에 제한이 있는 것 같습니다. 다운로드를 �
 
 #: gui/downloaddialog.cpp:119 gui/downloaddialog.cpp:153
 #: gui/filebrowser-dialog.cpp:133 gui/fluidsynth-dialog.cpp:218
-#: gui/launcher.cpp:395 gui/launcher.cpp:417 gui/launcher.cpp:460
+#: gui/launcher.cpp:393 gui/launcher.cpp:415 gui/launcher.cpp:458
 #: gui/options.cpp:2876 gui/options.cpp:2914
 #: backends/events/default/default-events.cpp:185 engines/buried/buried.cpp:533
 #: engines/grim/grim.cpp:350 engines/kyra/gui/saveload_eob.cpp:596
@@ -136,7 +136,7 @@ msgstr "예"
 
 #: gui/downloaddialog.cpp:119 gui/downloaddialog.cpp:154
 #: gui/filebrowser-dialog.cpp:133 gui/fluidsynth-dialog.cpp:218
-#: gui/launcher.cpp:395 gui/launcher.cpp:417 gui/launcher.cpp:460
+#: gui/launcher.cpp:393 gui/launcher.cpp:415 gui/launcher.cpp:458
 #: gui/options.cpp:2876 gui/options.cpp:2914 engines/buried/buried.cpp:533
 #: engines/grim/grim.cpp:350 engines/kyra/gui/saveload_eob.cpp:596
 #: engines/kyra/gui/saveload_eob.cpp:629
@@ -145,7 +145,7 @@ msgstr "예"
 msgid "No"
 msgstr "아니오"
 
-#: gui/downloaddialog.cpp:137 gui/launcher.cpp:566
+#: gui/downloaddialog.cpp:137 gui/launcher.cpp:564
 msgid "ScummVM couldn't open the specified directory!"
 msgstr "ScummVM이 지정된 디렉토리를 열 수 없습니다!"
 
@@ -158,7 +158,7 @@ msgstr ""
 "의 파일이 이미 존재합니다."
 
 #: gui/downloaddialog.cpp:147 gui/editgamedialog.cpp:385
-#: gui/fluidsynth-dialog.cpp:154 gui/launcher.cpp:516 gui/launcher.cpp:520
+#: gui/fluidsynth-dialog.cpp:154 gui/launcher.cpp:514 gui/launcher.cpp:518
 #: gui/massadd.cpp:89 gui/options.cpp:2095 gui/saveload-dialog.cpp:1169
 #: engines/engine.cpp:504 engines/engine.cpp:516
 #: backends/platform/wii/options.cpp:47 engines/agos/animation.cpp:559
@@ -715,7 +715,7 @@ msgstr "녹화..."
 msgid "~A~dd Game..."
 msgstr "게임 추가(~A~)..."
 
-#: gui/launcher.cpp:157 gui/launcher.cpp:167
+#: gui/launcher.cpp:157 gui/launcher.cpp:166
 msgid "Add games to the list"
 msgstr "게임을 목록에 추가합니다"
 
@@ -723,58 +723,58 @@ msgstr "게임을 목록에 추가합니다"
 msgid "Mass Add..."
 msgstr "대량 추가..."
 
-#: gui/launcher.cpp:162
+#: gui/launcher.cpp:161
 msgid "~E~dit Game..."
 msgstr "게임 편집(~E~)..."
 
-#: gui/launcher.cpp:162 gui/launcher.cpp:172
+#: gui/launcher.cpp:161 gui/launcher.cpp:170
 msgid "Change game options"
 msgstr "게임 옵션을 변경합니다"
 
-#: gui/launcher.cpp:164
+#: gui/launcher.cpp:163
 msgid "~R~emove Game"
 msgstr "게임 제거(~R~)"
 
-#: gui/launcher.cpp:164 gui/launcher.cpp:174
+#: gui/launcher.cpp:163 gui/launcher.cpp:172
 msgid "Remove game from the list. The game data files stay intact"
 msgstr "목록에서 게임을 제거합니다. 게임 데이터 파일은 남겨둡니다"
 
-#: gui/launcher.cpp:167
+#: gui/launcher.cpp:166
 msgctxt "lowres"
 msgid "~A~dd Game..."
 msgstr "게임 추가(~A~)..."
 
-#: gui/launcher.cpp:168
+#: gui/launcher.cpp:167
 msgctxt "lowres"
 msgid "Mass Add..."
 msgstr "대량 추가..."
 
-#: gui/launcher.cpp:172
+#: gui/launcher.cpp:170
 msgctxt "lowres"
 msgid "~E~dit Game..."
 msgstr "게임 편집(~E~)..."
 
-#: gui/launcher.cpp:174
+#: gui/launcher.cpp:172
 msgctxt "lowres"
 msgid "~R~emove Game"
 msgstr "게임 제거(~R~)"
 
-#: gui/launcher.cpp:182
+#: gui/launcher.cpp:180
 msgid "Search in game list"
 msgstr "게임 리스트에서 검색"
 
-#: gui/launcher.cpp:186 gui/launcher.cpp:785
+#: gui/launcher.cpp:184 gui/launcher.cpp:783
 msgid "Search:"
 msgstr "검색:"
 
-#: gui/launcher.cpp:211 engines/dialogs.cpp:98 engines/engine.cpp:795
+#: gui/launcher.cpp:209 engines/dialogs.cpp:98 engines/engine.cpp:795
 #: engines/buried/saveload.cpp:515 engines/pegasus/pegasus.cpp:384
 #: engines/trecision/saveload.cpp:253 engines/tsage/scenes.cpp:631
 #: engines/wage/saveload.cpp:742 engines/xeen/saves.cpp:256
 msgid "Load game:"
 msgstr "게임 불러오기:"
 
-#: gui/launcher.cpp:211 engines/dialogs.cpp:98 engines/engine.cpp:795
+#: gui/launcher.cpp:209 engines/dialogs.cpp:98 engines/engine.cpp:795
 #: engines/buried/saveload.cpp:515 engines/parallaction/metaengine.cpp:118
 #: engines/parallaction/saveload.cpp:194 engines/pegasus/pegasus.cpp:384
 #: engines/scumm/dialogs.cpp:178 engines/trecision/saveload.cpp:253
@@ -783,11 +783,11 @@ msgstr "게임 불러오기:"
 msgid "Load"
 msgstr "불러오기"
 
-#: gui/launcher.cpp:383
+#: gui/launcher.cpp:381
 msgid "This directory cannot be used yet, it is being downloaded into!"
 msgstr "이 디렉토리는 아직 사용할 수 없습니다. 여기로 다운로드 중입니다!"
 
-#: gui/launcher.cpp:394
+#: gui/launcher.cpp:392
 msgid ""
 "Do you really want to run the mass game detector? This could potentially add "
 "a huge number of games."
@@ -795,31 +795,31 @@ msgstr ""
 "대량 추가 탐지기를 실행하겠습니까? 매우 많은 수의 게임이 추가될 수도 있습니"
 "다."
 
-#: gui/launcher.cpp:417
+#: gui/launcher.cpp:415
 msgid "Do you really want to remove this game configuration?"
 msgstr "이 게임의 설정을 제거하겠습니까?"
 
-#: gui/launcher.cpp:459
+#: gui/launcher.cpp:457
 msgid "Do you want to load saved game?"
 msgstr "세이브 파일을 불러오겠습니까?"
 
-#: gui/launcher.cpp:516
+#: gui/launcher.cpp:514
 msgid "This game does not support loading games from the launcher."
 msgstr "이 게임은 런처에서 불러오기를 지원하지 않습니다."
 
-#: gui/launcher.cpp:520
+#: gui/launcher.cpp:518
 msgid "ScummVM could not find any engine capable of running the selected game!"
 msgstr "ScummVM은 선택한 게임을 실행할 수 있는 엔진을 찾지 못했습니다!"
 
-#: gui/launcher.cpp:585
+#: gui/launcher.cpp:583
 msgid "ScummVM could not find any game in the specified directory!"
 msgstr "ScummVM은 선택한 디렉토리에서 아무 게임도 찾지 못했습니다!"
 
-#: gui/launcher.cpp:600
+#: gui/launcher.cpp:598
 msgid "Unknown variant"
 msgstr "알려지지 않은 변종"
 
-#: gui/launcher.cpp:606
+#: gui/launcher.cpp:604
 msgid "Pick the game:"
 msgstr "게임을 선택하세요:"
 
@@ -1801,13 +1801,13 @@ msgstr "재생"
 msgid "Edit"
 msgstr "수정"
 
-#: gui/recorderdialog.cpp:84 gui/recorderdialog.cpp:240
-#: gui/recorderdialog.cpp:250
+#: gui/recorderdialog.cpp:84 gui/recorderdialog.cpp:241
+#: gui/recorderdialog.cpp:251
 msgid "Author: "
 msgstr "작성자: "
 
-#: gui/recorderdialog.cpp:85 gui/recorderdialog.cpp:241
-#: gui/recorderdialog.cpp:251
+#: gui/recorderdialog.cpp:85 gui/recorderdialog.cpp:242
+#: gui/recorderdialog.cpp:252
 msgid "Notes: "
 msgstr "메모: "
 
@@ -2528,7 +2528,7 @@ msgstr ""
 msgid "Starting MIDI dump"
 msgstr "MIDI 덤프를 시작합니다"
 
-#: audio/mods/paula.cpp:303
+#: audio/mods/paula.cpp:304
 msgid "Amiga Audio emulator"
 msgstr "Amiga Audio 에뮬레이터"
 
@@ -3707,7 +3707,7 @@ msgstr "텍스트에 대해서 NTSC 효과를 에뮬레이트하지 않습니다
 #: engines/neverhood/detection.cpp:124 engines/sci/detection.cpp:236
 #: engines/sherlock/detection.cpp:59 engines/toltecs/detection.cpp:213
 #: engines/trecision/detection.cpp:208 engines/ultima/detection.cpp:55
-#: engines/ultima/ultima8/meta_engine.cpp:163
+#: engines/ultima/ultima8/meta_engine.cpp:169
 #: engines/zvision/detection_tables.h:50
 msgid "Use original save/load screens"
 msgstr "원본 저장/불러오기 화면 사용"
@@ -3717,7 +3717,7 @@ msgstr "원본 저장/불러오기 화면 사용"
 #: engines/neverhood/detection.cpp:125 engines/sci/detection.cpp:237
 #: engines/sherlock/detection.cpp:60 engines/toltecs/detection.cpp:214
 #: engines/trecision/detection.cpp:209 engines/ultima/detection.cpp:56
-#: engines/ultima/ultima8/meta_engine.cpp:164
+#: engines/ultima/ultima8/meta_engine.cpp:170
 #: engines/zvision/detection_tables.h:51
 msgid "Use the original save/load screens instead of the ScummVM ones"
 msgstr "ScummVM의 화면 대신 원본 저장/불러오기 화면을 사용합니다"
@@ -4865,13 +4865,13 @@ msgstr "주시자의 눈 지원이 컴파일 되지 않음"
 
 #: engines/kyra/engine/eobcommon.cpp:368 engines/kyra/engine/lol.cpp:473
 #: engines/ultima/ultima4/meta_engine.cpp:225
-#: engines/ultima/ultima8/meta_engine.cpp:198
+#: engines/ultima/ultima8/meta_engine.cpp:204
 msgid "Interact via Left Click"
 msgstr "왼쪽 클릭으로 상호 작용"
 
 #: engines/kyra/engine/eobcommon.cpp:369 engines/kyra/engine/lol.cpp:474
 #: engines/ultima/ultima4/meta_engine.cpp:231
-#: engines/ultima/ultima8/meta_engine.cpp:204
+#: engines/ultima/ultima8/meta_engine.cpp:210
 msgid "Interact via Right Click"
 msgstr "오른쪽 클릭으로 상호 작용"
 
@@ -5753,7 +5753,7 @@ msgstr "윈도우즈 평가판 버전은 아직 지원되지 않습니다"
 msgid "I Have No Mouth support not compiled in"
 msgstr "I Have No Mouth 지원이 컴파일되지 않음"
 
-#: engines/saga/saga.cpp:231
+#: engines/saga/saga.cpp:229
 msgid "Error loading game resources."
 msgstr "게임 리소스 불러오기 오류."
 
@@ -5901,7 +5901,7 @@ msgstr "(자동 저장)"
 msgid "Please use an external viewer to open the game's help file: %s"
 msgstr "외부 뷰어를 사용해 게임 도움말 파일을 열어 주세요: %s"
 
-#: engines/sci/engine/kmisc.cpp:871
+#: engines/sci/engine/kmisc.cpp:872
 msgid ""
 "The Poker logic is hardcoded in an external DLL, and is not implemented yet. "
 "There exists some dummy logic for now, where opponent actions are chosen "
@@ -6932,11 +6932,11 @@ msgstr ""
 "선형 필터링이 활성화되면 전체 화면에서 백그라운드 그래픽이 더 부드럽게 표시됩"
 "니다. 다만 디테일이 조금 낮아집니다."
 
-#: engines/stark/detection.cpp:379 engines/ultima/ultima8/meta_engine.cpp:175
+#: engines/stark/detection.cpp:379 engines/ultima/ultima8/meta_engine.cpp:181
 msgid "Enable font anti-aliasing"
 msgstr "폰트 안티 앨리어싱 활성화"
 
-#: engines/stark/detection.cpp:380 engines/ultima/ultima8/meta_engine.cpp:176
+#: engines/stark/detection.cpp:380 engines/ultima/ultima8/meta_engine.cpp:182
 msgid "When font anti-aliasing is enabled, the text is smoother."
 msgstr "폰트 안티 앨리어싱을 활성화하면 텍스트가 부드럽게 표시됩니다."
 
@@ -7220,11 +7220,11 @@ msgstr "USA 버전 사용"
 msgid "Enable the USA specific version flags"
 msgstr "USA 버전 플래그를 활성화합니다"
 
-#: engines/twine/metaengine.cpp:151
+#: engines/twine/metaengine.cpp:151 engines/ultima/ultima8/meta_engine.cpp:147
 msgid "Enable high resolution"
 msgstr "고해상도 사용"
 
-#: engines/twine/metaengine.cpp:152
+#: engines/twine/metaengine.cpp:152 engines/ultima/ultima8/meta_engine.cpp:148
 msgid "Enable a higher resolution for the game"
 msgstr "게임의 고해상도 지원을 활성화합니다"
 
@@ -7425,44 +7425,44 @@ msgstr "치트 활성화"
 msgid "Allow cheats by commands and a menu when player is clicked."
 msgstr ""
 
-#: engines/ultima/ultima8/meta_engine.cpp:151
+#: engines/ultima/ultima8/meta_engine.cpp:157
 msgid "Play foot step sounds"
 msgstr ""
 
-#: engines/ultima/ultima8/meta_engine.cpp:152
+#: engines/ultima/ultima8/meta_engine.cpp:158
 msgid "Plays sound when the player moves."
 msgstr ""
 
-#: engines/ultima/ultima8/meta_engine.cpp:157
+#: engines/ultima/ultima8/meta_engine.cpp:163
 msgid "Enable jump to mouse position"
 msgstr ""
 
-#: engines/ultima/ultima8/meta_engine.cpp:158
+#: engines/ultima/ultima8/meta_engine.cpp:164
 msgid ""
 "Jumping while not moving targets the mouse cursor rather than direction only."
 msgstr ""
 
-#: engines/ultima/ultima8/meta_engine.cpp:169
+#: engines/ultima/ultima8/meta_engine.cpp:175
 msgid "Enable font replacement"
 msgstr "대체 폰트 사용"
 
-#: engines/ultima/ultima8/meta_engine.cpp:170
+#: engines/ultima/ultima8/meta_engine.cpp:176
 msgid "Replaces game fonts with rendered fonts"
 msgstr ""
 
-#: engines/ultima/ultima8/meta_engine.cpp:191
+#: engines/ultima/ultima8/meta_engine.cpp:197
 msgid "Ultima VIII"
 msgstr ""
 
-#: engines/ultima/ultima8/meta_engine.cpp:191
+#: engines/ultima/ultima8/meta_engine.cpp:197
 msgid "Crusader"
 msgstr ""
 
-#: engines/ultima/ultima8/meta_engine.cpp:238
+#: engines/ultima/ultima8/meta_engine.cpp:244
 msgid "Ultima VIII Cheats"
 msgstr ""
 
-#: engines/ultima/ultima8/meta_engine.cpp:255
+#: engines/ultima/ultima8/meta_engine.cpp:261
 msgid "Ultima VIII Debug"
 msgstr ""
 

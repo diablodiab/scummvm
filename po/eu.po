@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ScummVM 1.5.0git\n"
 "Report-Msgid-Bugs-To: scummvm-devel@lists.scummvm.org\n"
-"POT-Creation-Date: 2021-07-02 14:20+0000\n"
+"POT-Creation-Date: 2021-07-11 08:17+0000\n"
 "PO-Revision-Date: 2021-01-02 18:37+0000\n"
 "Last-Translator: Eugene Sandulenko <sev@scummvm.org>\n"
 "Language-Team: Basque <https://translations.scummvm.org/projects/scummvm/"
@@ -91,7 +91,7 @@ msgstr "Aukeratu"
 msgid "Select directory where to download game data"
 msgstr "Jokoaren jaitsiera direktorioa aukeratu"
 
-#: gui/downloaddialog.cpp:50 gui/editgamedialog.cpp:583 gui/launcher.cpp:208
+#: gui/downloaddialog.cpp:50 gui/editgamedialog.cpp:583 gui/launcher.cpp:206
 msgid "Select directory with game data"
 msgstr "Jokoaren direktorioa aukeratu"
 
@@ -128,7 +128,7 @@ msgstr ""
 
 #: gui/downloaddialog.cpp:119 gui/downloaddialog.cpp:153
 #: gui/filebrowser-dialog.cpp:133 gui/fluidsynth-dialog.cpp:218
-#: gui/launcher.cpp:395 gui/launcher.cpp:417 gui/launcher.cpp:460
+#: gui/launcher.cpp:393 gui/launcher.cpp:415 gui/launcher.cpp:458
 #: gui/options.cpp:2876 gui/options.cpp:2914
 #: backends/events/default/default-events.cpp:185 engines/buried/buried.cpp:533
 #: engines/grim/grim.cpp:350 engines/kyra/gui/saveload_eob.cpp:596
@@ -140,7 +140,7 @@ msgstr "Bai"
 
 #: gui/downloaddialog.cpp:119 gui/downloaddialog.cpp:154
 #: gui/filebrowser-dialog.cpp:133 gui/fluidsynth-dialog.cpp:218
-#: gui/launcher.cpp:395 gui/launcher.cpp:417 gui/launcher.cpp:460
+#: gui/launcher.cpp:393 gui/launcher.cpp:415 gui/launcher.cpp:458
 #: gui/options.cpp:2876 gui/options.cpp:2914 engines/buried/buried.cpp:533
 #: engines/grim/grim.cpp:350 engines/kyra/gui/saveload_eob.cpp:596
 #: engines/kyra/gui/saveload_eob.cpp:629
@@ -149,7 +149,7 @@ msgstr "Bai"
 msgid "No"
 msgstr "Ez"
 
-#: gui/downloaddialog.cpp:137 gui/launcher.cpp:566
+#: gui/downloaddialog.cpp:137 gui/launcher.cpp:564
 msgid "ScummVM couldn't open the specified directory!"
 msgstr "ScummVM-k ezin izan du zehazturiko direktorioa ireki!"
 
@@ -162,7 +162,7 @@ msgstr ""
 "fitxategia dauka."
 
 #: gui/downloaddialog.cpp:147 gui/editgamedialog.cpp:385
-#: gui/fluidsynth-dialog.cpp:154 gui/launcher.cpp:516 gui/launcher.cpp:520
+#: gui/fluidsynth-dialog.cpp:154 gui/launcher.cpp:514 gui/launcher.cpp:518
 #: gui/massadd.cpp:89 gui/options.cpp:2095 gui/saveload-dialog.cpp:1169
 #: engines/engine.cpp:504 engines/engine.cpp:516
 #: backends/platform/wii/options.cpp:47 engines/agos/animation.cpp:559
@@ -727,7 +727,7 @@ msgstr "Grabatu..."
 msgid "~A~dd Game..."
 msgstr "~G~ehitu..."
 
-#: gui/launcher.cpp:157 gui/launcher.cpp:167
+#: gui/launcher.cpp:157 gui/launcher.cpp:166
 msgid "Add games to the list"
 msgstr "Jokoak zerrendara gehitu"
 
@@ -735,58 +735,58 @@ msgstr "Jokoak zerrendara gehitu"
 msgid "Mass Add..."
 msgstr "Gehitu hainbat..."
 
-#: gui/launcher.cpp:162
+#: gui/launcher.cpp:161
 msgid "~E~dit Game..."
 msgstr "~E~ditatu..."
 
-#: gui/launcher.cpp:162 gui/launcher.cpp:172
+#: gui/launcher.cpp:161 gui/launcher.cpp:170
 msgid "Change game options"
 msgstr "Aldatu jokoaren aukerak"
 
-#: gui/launcher.cpp:164
+#: gui/launcher.cpp:163
 msgid "~R~emove Game"
 msgstr "~K~endu jokoa"
 
-#: gui/launcher.cpp:164 gui/launcher.cpp:174
+#: gui/launcher.cpp:163 gui/launcher.cpp:172
 msgid "Remove game from the list. The game data files stay intact"
 msgstr "Jokoa zerrendatik kendu. Jokoaren fitxategiak ez dira ezabatzen"
 
-#: gui/launcher.cpp:167
+#: gui/launcher.cpp:166
 msgctxt "lowres"
 msgid "~A~dd Game..."
 msgstr "~G~ehitu..."
 
-#: gui/launcher.cpp:168
+#: gui/launcher.cpp:167
 msgctxt "lowres"
 msgid "Mass Add..."
 msgstr "Hainbat gehitu..."
 
-#: gui/launcher.cpp:172
+#: gui/launcher.cpp:170
 msgctxt "lowres"
 msgid "~E~dit Game..."
 msgstr "~E~ditatu..."
 
-#: gui/launcher.cpp:174
+#: gui/launcher.cpp:172
 msgctxt "lowres"
 msgid "~R~emove Game"
 msgstr "~K~endu"
 
-#: gui/launcher.cpp:182
+#: gui/launcher.cpp:180
 msgid "Search in game list"
 msgstr "Bilatu joko-zerrendan"
 
-#: gui/launcher.cpp:186 gui/launcher.cpp:785
+#: gui/launcher.cpp:184 gui/launcher.cpp:783
 msgid "Search:"
 msgstr "Bilatu:"
 
-#: gui/launcher.cpp:211 engines/dialogs.cpp:98 engines/engine.cpp:795
+#: gui/launcher.cpp:209 engines/dialogs.cpp:98 engines/engine.cpp:795
 #: engines/buried/saveload.cpp:515 engines/pegasus/pegasus.cpp:384
 #: engines/trecision/saveload.cpp:253 engines/tsage/scenes.cpp:631
 #: engines/wage/saveload.cpp:742 engines/xeen/saves.cpp:256
 msgid "Load game:"
 msgstr "Jokoa kargatu:"
 
-#: gui/launcher.cpp:211 engines/dialogs.cpp:98 engines/engine.cpp:795
+#: gui/launcher.cpp:209 engines/dialogs.cpp:98 engines/engine.cpp:795
 #: engines/buried/saveload.cpp:515 engines/parallaction/metaengine.cpp:118
 #: engines/parallaction/saveload.cpp:194 engines/pegasus/pegasus.cpp:384
 #: engines/scumm/dialogs.cpp:178 engines/trecision/saveload.cpp:253
@@ -795,13 +795,13 @@ msgstr "Jokoa kargatu:"
 msgid "Load"
 msgstr "Kargatu"
 
-#: gui/launcher.cpp:383
+#: gui/launcher.cpp:381
 msgid "This directory cannot be used yet, it is being downloaded into!"
 msgstr ""
 "Direktorio hau ezin da oraindik erabili, fitxategiak jaisten ari dira "
 "oraindik!"
 
-#: gui/launcher.cpp:394
+#: gui/launcher.cpp:392
 msgid ""
 "Do you really want to run the mass game detector? This could potentially add "
 "a huge number of games."
@@ -809,33 +809,33 @@ msgstr ""
 "Joko detektatzaile masiboa exekutatu nahi al duzu? Honek joko kantitate "
 "handia gehitu dezake."
 
-#: gui/launcher.cpp:417
+#: gui/launcher.cpp:415
 msgid "Do you really want to remove this game configuration?"
 msgstr "Benetan ezabatu nahi duzu joko-konfigurazio hau?"
 
-#: gui/launcher.cpp:459
+#: gui/launcher.cpp:457
 msgid "Do you want to load saved game?"
 msgstr "Gordetako jokoa kargatu?"
 
-#: gui/launcher.cpp:516
+#: gui/launcher.cpp:514
 msgid "This game does not support loading games from the launcher."
 msgstr "Joko honek ez du uzten partidak abiarazletik kargatzen."
 
-#: gui/launcher.cpp:520
+#: gui/launcher.cpp:518
 msgid "ScummVM could not find any engine capable of running the selected game!"
 msgstr ""
 "ScummVM-k ezin izan du aukeraturiko jokoa exekutatzeko gai den motorerik "
 "aurkitu!"
 
-#: gui/launcher.cpp:585
+#: gui/launcher.cpp:583
 msgid "ScummVM could not find any game in the specified directory!"
 msgstr "ScummVM-k ezin izan du jokorik aurkitu zehazturiko direktorioan!"
 
-#: gui/launcher.cpp:600
+#: gui/launcher.cpp:598
 msgid "Unknown variant"
 msgstr "Aldaera ezezaguna"
 
-#: gui/launcher.cpp:606
+#: gui/launcher.cpp:604
 msgid "Pick the game:"
 msgstr "Jokoa aukeratu:"
 
@@ -1851,13 +1851,13 @@ msgstr "Erreproduzitu"
 msgid "Edit"
 msgstr "Editatu"
 
-#: gui/recorderdialog.cpp:84 gui/recorderdialog.cpp:240
-#: gui/recorderdialog.cpp:250
+#: gui/recorderdialog.cpp:84 gui/recorderdialog.cpp:241
+#: gui/recorderdialog.cpp:251
 msgid "Author: "
 msgstr "Egilea: "
 
-#: gui/recorderdialog.cpp:85 gui/recorderdialog.cpp:241
-#: gui/recorderdialog.cpp:251
+#: gui/recorderdialog.cpp:85 gui/recorderdialog.cpp:242
+#: gui/recorderdialog.cpp:252
 msgid "Notes: "
 msgstr "Oharrak: "
 
@@ -2600,7 +2600,7 @@ msgstr ""
 msgid "Starting MIDI dump"
 msgstr ""
 
-#: audio/mods/paula.cpp:303
+#: audio/mods/paula.cpp:304
 #, fuzzy
 msgid "Amiga Audio emulator"
 msgstr "Amiga Audio emuladorea"
@@ -3840,7 +3840,7 @@ msgstr ""
 #: engines/neverhood/detection.cpp:124 engines/sci/detection.cpp:236
 #: engines/sherlock/detection.cpp:59 engines/toltecs/detection.cpp:213
 #: engines/trecision/detection.cpp:208 engines/ultima/detection.cpp:55
-#: engines/ultima/ultima8/meta_engine.cpp:163
+#: engines/ultima/ultima8/meta_engine.cpp:169
 #: engines/zvision/detection_tables.h:50
 msgid "Use original save/load screens"
 msgstr "Erabili jatorrizko gorde/kargatu pantailak"
@@ -3850,7 +3850,7 @@ msgstr "Erabili jatorrizko gorde/kargatu pantailak"
 #: engines/neverhood/detection.cpp:125 engines/sci/detection.cpp:237
 #: engines/sherlock/detection.cpp:60 engines/toltecs/detection.cpp:214
 #: engines/trecision/detection.cpp:209 engines/ultima/detection.cpp:56
-#: engines/ultima/ultima8/meta_engine.cpp:164
+#: engines/ultima/ultima8/meta_engine.cpp:170
 #: engines/zvision/detection_tables.h:51
 #, fuzzy
 msgid "Use the original save/load screens instead of the ScummVM ones"
@@ -4995,14 +4995,14 @@ msgstr "Ezaugarri erantsiak:"
 
 #: engines/kyra/engine/eobcommon.cpp:368 engines/kyra/engine/lol.cpp:473
 #: engines/ultima/ultima4/meta_engine.cpp:225
-#: engines/ultima/ultima8/meta_engine.cpp:198
+#: engines/ultima/ultima8/meta_engine.cpp:204
 #, fuzzy
 msgid "Interact via Left Click"
 msgstr "Ezker-klika"
 
 #: engines/kyra/engine/eobcommon.cpp:369 engines/kyra/engine/lol.cpp:474
 #: engines/ultima/ultima4/meta_engine.cpp:231
-#: engines/ultima/ultima8/meta_engine.cpp:204
+#: engines/ultima/ultima8/meta_engine.cpp:210
 #, fuzzy
 msgid "Interact via Right Click"
 msgstr "Eskuin-klika"
@@ -5916,7 +5916,7 @@ msgstr "Jokoaren ID ez-onartua"
 msgid "I Have No Mouth support not compiled in"
 msgstr "Ezaugarri erantsiak:"
 
-#: engines/saga/saga.cpp:231
+#: engines/saga/saga.cpp:229
 #, fuzzy
 msgid "Error loading game resources."
 msgstr "Jokoa exekutatzean errorea:"
@@ -6073,7 +6073,7 @@ msgstr "Autogordetzea:"
 msgid "Please use an external viewer to open the game's help file: %s"
 msgstr ""
 
-#: engines/sci/engine/kmisc.cpp:871
+#: engines/sci/engine/kmisc.cpp:872
 msgid ""
 "The Poker logic is hardcoded in an external DLL, and is not implemented yet. "
 "There exists some dummy logic for now, where opponent actions are chosen "
@@ -7059,12 +7059,12 @@ msgid ""
 "full screen mode, at the cost of some details."
 msgstr ""
 
-#: engines/stark/detection.cpp:379 engines/ultima/ultima8/meta_engine.cpp:175
+#: engines/stark/detection.cpp:379 engines/ultima/ultima8/meta_engine.cpp:181
 #, fuzzy
 msgid "Enable font anti-aliasing"
 msgstr "Gaitu kurtsore flotatzaileak"
 
-#: engines/stark/detection.cpp:380 engines/ultima/ultima8/meta_engine.cpp:176
+#: engines/stark/detection.cpp:380 engines/ultima/ultima8/meta_engine.cpp:182
 msgid "When font anti-aliasing is enabled, the text is smoother."
 msgstr ""
 
@@ -7376,13 +7376,13 @@ msgstr ""
 msgid "Enable the USA specific version flags"
 msgstr ""
 
-#: engines/twine/metaengine.cpp:151
+#: engines/twine/metaengine.cpp:151 engines/ultima/ultima8/meta_engine.cpp:147
 #, fuzzy
 #| msgid "Enable high resolution graphics"
 msgid "Enable high resolution"
 msgstr "Gaitu erresoluzio altuko grafikoak"
 
-#: engines/twine/metaengine.cpp:152
+#: engines/twine/metaengine.cpp:152 engines/ultima/ultima8/meta_engine.cpp:148
 #, fuzzy
 msgid "Enable a higher resolution for the game"
 msgstr "Jokoaren izen osoa"
@@ -7603,46 +7603,46 @@ msgstr "Gaitu helio modua"
 msgid "Allow cheats by commands and a menu when player is clicked."
 msgstr ""
 
-#: engines/ultima/ultima8/meta_engine.cpp:151
+#: engines/ultima/ultima8/meta_engine.cpp:157
 msgid "Play foot step sounds"
 msgstr ""
 
-#: engines/ultima/ultima8/meta_engine.cpp:152
+#: engines/ultima/ultima8/meta_engine.cpp:158
 msgid "Plays sound when the player moves."
 msgstr ""
 
-#: engines/ultima/ultima8/meta_engine.cpp:157
+#: engines/ultima/ultima8/meta_engine.cpp:163
 #, fuzzy
 msgid "Enable jump to mouse position"
 msgstr "Jokoaren izen osoa"
 
-#: engines/ultima/ultima8/meta_engine.cpp:158
+#: engines/ultima/ultima8/meta_engine.cpp:164
 msgid ""
 "Jumping while not moving targets the mouse cursor rather than direction only."
 msgstr ""
 
-#: engines/ultima/ultima8/meta_engine.cpp:169
+#: engines/ultima/ultima8/meta_engine.cpp:175
 #, fuzzy
 msgid "Enable font replacement"
 msgstr "Gaitu kurtsore flotatzaileak"
 
-#: engines/ultima/ultima8/meta_engine.cpp:170
+#: engines/ultima/ultima8/meta_engine.cpp:176
 msgid "Replaces game fonts with rendered fonts"
 msgstr ""
 
-#: engines/ultima/ultima8/meta_engine.cpp:191
+#: engines/ultima/ultima8/meta_engine.cpp:197
 msgid "Ultima VIII"
 msgstr ""
 
-#: engines/ultima/ultima8/meta_engine.cpp:191
+#: engines/ultima/ultima8/meta_engine.cpp:197
 msgid "Crusader"
 msgstr ""
 
-#: engines/ultima/ultima8/meta_engine.cpp:238
+#: engines/ultima/ultima8/meta_engine.cpp:244
 msgid "Ultima VIII Cheats"
 msgstr ""
 
-#: engines/ultima/ultima8/meta_engine.cpp:255
+#: engines/ultima/ultima8/meta_engine.cpp:261
 msgid "Ultima VIII Debug"
 msgstr ""
 

@@ -8,6 +8,7 @@ MODULE_OBJS = \
 	cursor.o \
 	director.o \
 	events.o \
+	fonts.o \
 	frame.o \
 	graphics.o \
 	images.o \
@@ -37,6 +38,8 @@ MODULE_OBJS = \
 	lingo/lingo-the.o \
 	lingo/xlibs/fileio.o \
 	lingo/xlibs/flushxobj.o \
+	lingo/xlibs/fplayxobj.o \
+	lingo/xlibs/labeldrvxobj.o \
 	lingo/xlibs/palxobj.o \
 	lingo/xlibs/winxobj.o
 

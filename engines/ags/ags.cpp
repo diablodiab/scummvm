@@ -71,8 +71,7 @@ AGSEngine *g_vm;
 
 AGSEngine::AGSEngine(OSystem *syst, const AGSGameDescription *gameDesc) : Engine(syst),
 	_gameDescription(gameDesc), _randomSource("AGS"), _events(nullptr), _music(nullptr),
-	_rawScreen(nullptr), _screen(nullptr), _gfxDriver(nullptr),
-	_globals(nullptr), _forceTextAA(false) {
+	_gfxDriver(nullptr), _globals(nullptr), _forceTextAA(false) {
 	g_vm = this;
 
 	_events = new EventsManager();
@@ -85,7 +84,7 @@ AGSEngine::AGSEngine(OSystem *syst, const AGSGameDescription *gameDesc) : Engine
 }
 
 AGSEngine::~AGSEngine() {
-	if (_G(proper_exit) == 0) {
+	if (_globals && _G(proper_exit) == 0) {
 		_G(platform)->DisplayAlert("Error: the program has exited without requesting it.\n"
 		                           "Program pointer: %+03d  (write this number down), ACI version %s\n"
 		                           "If you see a list of numbers above, please write them down and contact\n"
@@ -93,8 +92,6 @@ AGSEngine::~AGSEngine() {
 		                           _G(our_eip), _G(EngineVersion).LongString.GetCStr());
 	}
 
-	delete _screen;
-	delete _rawScreen;
 	delete _events;
 	delete _music;
 	delete _globals;
@@ -117,6 +114,20 @@ Common::Error AGSEngine::run() {
 		// Scan the given folder and subfolders for unknown games
 		AGS3::GameScanner scanner;
 		scanner.scan(ConfMan.get("path"));
+		return Common::kNoError;
+	}
+
+	if (isUnsupportedPre25()) {
+		GUIError("The selected game is a completely unsupported pre-2.5 version");
+		return Common::kNoError;
+	}
+
+	if (is64BitGame()) {
+		// If the game file was opened and the engine started, but the
+		// size is -1, then it must be a game like Strangeland where
+		// the data file is > 2Gb
+		GUIError("The selected game has a data file greater than 2Gb, " \
+			"which isn't supported by your version of ScummVM yet");
 		return Common::kNoError;
 	}
 
@@ -206,12 +217,19 @@ void AGSEngine::setGraphicsMode(size_t w, size_t h, int colorDepth) {
 	Graphics::PixelFormat format;
 	if (!getPixelFormat(colorDepth, format))
 		error("Unsupported color depth %d", colorDepth);
-	//Graphics::PixelFormat(4, 8, 8, 8, 8, 24, 16, 8, 0);
 
 	initGraphics(w, h, &format);
+}
 
-	_rawScreen = new Graphics::Screen();
-	_screen = new ::AGS3::BITMAP(_rawScreen);
+bool AGSEngine::isUnsupportedPre25() const {
+	return _gameDescription->desc.extra &&
+		!strcmp(_gameDescription->desc.extra, "Pre 2.5");
+}
+
+bool AGSEngine::is64BitGame() const {
+	Common::File f;
+	return f.open(_gameDescription->desc.filesDescriptions[0].fileName)
+		&& f.size() == -1;
 }
 
 bool AGSEngine::canLoadGameStateCurrently() {

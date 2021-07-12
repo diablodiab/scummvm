@@ -12,7 +12,6 @@ MODULE_OBJS := \
 	button.o \
 	calender.o \
 	contain.o \
-	detection.o \
 	display.o \
 	dispnode.o \
 	document.o \
@@ -31,7 +30,6 @@ MODULE_OBJS := \
 	interp.o \
 	intrface.o \
 	loadmsg.o \
-	loadsave.o \
 	magic.o \
 	main.o \
 	mainmap.o \
@@ -56,7 +54,7 @@ MODULE_OBJS := \
 	rect.o \
 	saga2.o \
 	sagafunc.o \
-	savefile.o \
+	saveload.o \
 	sensor.o \
 	shorten.o \
 	speech.o \

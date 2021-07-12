@@ -70,11 +70,13 @@ struct ActiveMissionData {
 class ActiveMission {
 
 	friend void initMissions(void);
-	friend void saveMissions(SaveFileConstructor &saveGame);
-	friend void loadMissions(SaveFileReader &saveGame);
 	friend void cleanupMissions(void);
 
 public:
+
+	enum {
+		kActiveMissionSize = 236
+	};
 
 	ActiveMissionData _data;
 
@@ -82,6 +84,9 @@ public:
 	static ActiveMission *newMission(ObjectID genID, uint16 script);
 	static int  findMission(ObjectID genID);
 	static ActiveMission *missionAddress(int index);
+
+	void read(Common::InSaveFile *in);
+	void write(Common::OutSaveFile *out);
 
 	void cleanup(void);
 
@@ -113,11 +118,8 @@ public:
 //  Initialize the active mission list
 void initMissions(void);
 
-//  Save the active missions
-void saveMissions(SaveFileConstructor &saveGame);
-
-//  Restore the active missions
-void loadMissions(SaveFileReader &saveGame);
+void saveMissions(Common::OutSaveFile *out);
+void loadMissions(Common::InSaveFile *in);
 
 //  Cleanup the active mission list
 inline void cleanupMissions(void) { /* do nothing */ }

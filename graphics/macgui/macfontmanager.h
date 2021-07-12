@@ -23,6 +23,8 @@
 #ifndef GRAPHICS_MACGUI_MACFONTMANAGER_H
 #define GRAPHICS_MACGUI_MACFONTMANAGER_H
 
+#include "common/language.h"
+
 #include "graphics/fontman.h"
 
 namespace Common {
@@ -66,10 +68,19 @@ enum {
 
 class Font;
 
+struct FontInfo {
+	Common::Language lang;
+	Common::CodePage encoding;
+	int fallbackId;
+	Common::String name;
+
+	FontInfo() : lang(Common::UNK_LANG), encoding(Common::kCodePageInvalid), fallbackId(-1) {}
+};
+
 class MacFont {
 public:
 	MacFont(int id = kMacFontChicago, int size = 12, int slant = kMacFontRegular, FontManager::FontUsage fallback = Graphics::FontManager::kBigGUIFont) {
-		_id = id == 3 ? 1 : id;	// Substitude duplicate "Geneva"
+		_id = id;
 		_size = size ? size : 12;
 		_slant = slant;
 		_fallback = fallback;
@@ -79,6 +90,7 @@ public:
 	}
 
 	int getId() const { return _id; };
+	void setId(int id) { _id = id; }
 	int getSize() const { return _size; }
 	int getSlant() const { return _slant; }
 	Common::String getName() { return _name; }
@@ -131,6 +143,11 @@ public:
 	const Common::String getFontName(MacFont &font);
 	int getFontIdByName(Common::String name);
 
+	Common::Language getFontLanguage(uint16 id);
+	Common::CodePage getFontEncoding(uint16 id);
+	int getFontFallbackId(uint16 id);
+	Common::String getFontName(uint16 id);
+
 	void loadFonts(Common::SeekableReadStream *stream);
 	void loadFonts(const Common::String &fileName);
 	void loadFonts(Common::MacResManager *fontFile);
@@ -140,7 +157,7 @@ public:
 	 * @param name name of the font
 	 * @return the font's ID
 	 */
-	int registerFontName(Common::String name);
+	int registerFontName(Common::String name, int preferredId = -1);
 
 	void forceBuiltinFonts() { _builtInFonts = true; }
 	int parseSlantFromName(const Common::String &name);
@@ -148,6 +165,7 @@ public:
 private:
 	void loadFontsBDF();
 	void loadFonts();
+	void loadJapaneseFonts();
 
 	void generateFontSubstitute(MacFont &macFont);
 	void generateFONTFont(MacFont &toFont, MacFont &fromFont);
@@ -158,11 +176,12 @@ private:
 
 private:
 	bool _builtInFonts;
+	bool _japaneseFontsLoaded;
 	uint32 _mode;
 	Common::HashMap<Common::String, MacFont *> _fontRegistry;
 
-	Common::Array<Common::String> _fontNames;
-	Common::HashMap<Common::String, uint16> _fontIds;
+	Common::HashMap<int, FontInfo *> _fontInfo;
+	Common::HashMap<Common::String, int> _fontIds;
 
 	int parseFontSlant(Common::String slant);
 

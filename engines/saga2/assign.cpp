@@ -50,16 +50,9 @@ ActorAssignment::ActorAssignment(Actor *a, uint16 until) :
 	a->flags |= hasAssignment;
 }
 
-//----------------------------------------------------------------------
-//	Constructor -- reconstruct from archive buffer
-
-ActorAssignment::ActorAssignment(Actor *ac, void **buf) {
-	uint16  *a = (uint16 *)*buf;
-
-	startFrame = *a++;
-	endFrame = *a++;
-
-	*buf = a;
+ActorAssignment::ActorAssignment(Actor *ac, Common::SeekableReadStream *stream) {
+	startFrame = stream->readUint16LE();
+	endFrame = stream->readUint16LE();
 
 	_actor = ac;
 	ac->_assignment = this;
@@ -94,16 +87,9 @@ inline int32 ActorAssignment::archiveSize(void) const {
 	return sizeof(startFrame) + sizeof(endFrame);
 }
 
-//----------------------------------------------------------------------
-//	Save the data in this object to a buffer
-
-void *ActorAssignment::archive(void *buf) const {
-	uint16  *a = (uint16 *)buf;
-
-	*a++ = startFrame;
-	*a++ = endFrame;
-
-	return a;
+void ActorAssignment::write(Common::OutSaveFile *out) const {
+	out->writeUint16LE(startFrame);
+	out->writeUint16LE(endFrame);
 }
 
 //----------------------------------------------------------------------
@@ -192,28 +178,21 @@ PatrolRouteAssignment::PatrolRouteAssignment(
 	flags(0) {
 }
 
-//----------------------------------------------------------------------
-//	Restore the data for this object from a buffer
-
-PatrolRouteAssignment::PatrolRouteAssignment(Actor *a, void **buf) :
-	ActorAssignment(a, buf) {
-	void        *bufferPtr = *buf;
+PatrolRouteAssignment::PatrolRouteAssignment(Actor *a, Common::SeekableReadStream *stream) :
+	ActorAssignment(a, stream) {
+	debugC(4, kDebugSaveload, "... Loading PatrolRouteAssignment");
 
 	//  Restore route number
-	routeNo             = *((int16 *)bufferPtr);
+	routeNo = stream->readSint16LE();
 	//  Restore the starting way point
-	startingWayPoint    = *((int16 *)bufferPtr + 1);
+	startingWayPoint = stream->readSint16LE();
 	//  Restore the ending way point
-	endingWayPoint      = *((int16 *)bufferPtr + 2);
-	bufferPtr = (int16 *)bufferPtr + 3;
+	endingWayPoint = stream->readSint16LE();
 
 	//  Restore the route flags
-	routeFlags = *((uint8 *)bufferPtr);
+	routeFlags = stream->readByte();
 	//  Restore the assignment flags
-	flags = *((uint8 *)bufferPtr + 1);
-	bufferPtr = (uint8 *)bufferPtr + 2;
-
-	*buf = bufferPtr;
+	flags = stream->readByte();
 }
 
 //----------------------------------------------------------------------
@@ -229,28 +208,21 @@ inline int32 PatrolRouteAssignment::archiveSize(void) const {
 	            +   sizeof(flags);
 }
 
-//----------------------------------------------------------------------
-//	Save the data in this object to a buffer
+void PatrolRouteAssignment::write(Common::OutSaveFile *out) const {
+	debugC(3, kDebugSaveload, "... Saving PatrolRouteAssignment");
 
-void *PatrolRouteAssignment::archive(void *buf) const {
 	//  Let the base class write its data to the buffer
-	buf = ActorAssignment::archive(buf);
+	ActorAssignment::write(out);
 
 	//  Store the route number
-	*((int16 *)buf)        = routeNo;
-	//  Store the starting way point
-	*((int16 *)buf + 1)    = startingWayPoint;
-	//  Store the ending way point
-	*((int16 *)buf + 2)    = endingWayPoint;
-	buf = (int16 *)buf + 3;
+	out->writeSint16LE(routeNo);
+	out->writeSint16LE(startingWayPoint);
+	out->writeSint16LE(endingWayPoint);
 
 	//  Store the route flags
-	*((uint8 *)buf)        = routeFlags;
+	out->writeByte(routeFlags);
 	//  Store the assignment flags
-	*((uint8 *)buf + 1)   = flags;
-	buf = (uint8 *)buf + 2;
-
-	return buf;
+	out->writeByte(flags);
 }
 
 //----------------------------------------------------------------------
@@ -356,20 +328,15 @@ void HuntToBeNearLocationAssignment::initialize(
 	range = r;
 }
 
-//----------------------------------------------------------------------
-//	Constructor -- constructs from archive buffer
-
-HuntToBeNearLocationAssignment::HuntToBeNearLocationAssignment(Actor *a, void **buf) :
-	ActorAssignment(a, buf) {
-	void    *bufferPtr = *buf;
+HuntToBeNearLocationAssignment::HuntToBeNearLocationAssignment(Actor *a, Common::SeekableReadStream *stream) :
+	ActorAssignment(a, stream) {
+	debugC(4, kDebugSaveload, "... Loading HuntToBeNearLocationAssignment");
 
 	//  Restore the target
-	bufferPtr = constructTarget(targetMem, bufferPtr);
+	readTarget(targetMem, stream);
 
 	//  Restore the range
-	range = *((uint16 *)bufferPtr);
-
-	*buf = (uint16 *)bufferPtr + 1;
+	range = stream->readUint16LE();
 }
 
 //----------------------------------------------------------------------
@@ -382,21 +349,17 @@ inline int32 HuntToBeNearLocationAssignment::archiveSize(void) const {
 	            +   sizeof(range);
 }
 
-//----------------------------------------------------------------------
-//	Write the data from this assignment object to a buffer in order
-//	to save it on disk
+void HuntToBeNearLocationAssignment::write(Common::OutSaveFile *out) const {
+	debugC(3, kDebugSaveload, "... Saving HuntToBeNearLocationAssignment");
 
-void *HuntToBeNearLocationAssignment::archive(void *buf) const {
 	//  Let the base class archive its data
-	buf = ActorAssignment::archive(buf);
+	ActorAssignment::write(out);
 
 	//  Store the target
-	buf = archiveTarget(getTarget(), buf);
+	writeTarget(getTarget(), out);
 
 	//  Store the range
-	*((uint16 *)buf) = range;
-
-	return (uint16 *)buf + 1;
+	out->writeUint16LE(range);
 }
 
 //----------------------------------------------------------------------
@@ -465,25 +428,17 @@ void HuntToBeNearActorAssignment::initialize(
 	flags = trackFlag ? track : 0;
 }
 
-//----------------------------------------------------------------------
-//	Constructor -- constructs from archive buffer
+HuntToBeNearActorAssignment::HuntToBeNearActorAssignment(Actor *a, Common::SeekableReadStream *stream) :
+	ActorAssignment(a, stream) {
+	debugC(4, kDebugSaveload, "... Loading HuntToBeNearActorAssignment");
 
-HuntToBeNearActorAssignment::HuntToBeNearActorAssignment(Actor *a, void **buf) :
-	ActorAssignment(a, buf) {
-	void    *bufferPtr = *buf;
-
-	//  Restore the target
-	bufferPtr = constructTarget(targetMem, bufferPtr);
+	readTarget(targetMem, stream);
 
 	//  Restore the range
-	range = *((uint16 *)bufferPtr);
-	bufferPtr = (uint16 *)bufferPtr + 1;
+	range = stream->readUint16LE();
 
 	//  Restore the flags
-	flags = *((uint8 *)bufferPtr);
-	bufferPtr = (uint8 *)bufferPtr + 1;
-
-	*buf = bufferPtr;
+	flags = stream->readByte();
 }
 
 //----------------------------------------------------------------------
@@ -497,26 +452,20 @@ inline int32 HuntToBeNearActorAssignment::archiveSize(void) const {
 	            +   sizeof(flags);
 }
 
-//----------------------------------------------------------------------
-//	Write the data from this assignment object to a buffer in order
-//	to save it on disk
+void HuntToBeNearActorAssignment::write(Common::OutSaveFile *out) const {
+	debugC(3, kDebugSaveload, "... Saving HuntToBeNearActorAssignment");
 
-void *HuntToBeNearActorAssignment::archive(void *buf) const {
 	//  Let the base class archive its data
-	buf = ActorAssignment::archive(buf);
+	ActorAssignment::write(out);
 
 	//  Store the target
-	buf = archiveTarget(getTarget(), buf);
+	writeTarget(getTarget(), out);
 
 	//  Store the range
-	*((uint16 *)buf) = range;
-	buf = (uint16 *)buf + 1;
+	out->writeUint16LE(range);
 
 	//  Store the flags
-	*((uint8 *)buf) = flags;
-	buf = (uint8 *)buf + 1;
-
-	return buf;
+	out->writeByte(flags);
 }
 
 //----------------------------------------------------------------------
@@ -589,23 +538,6 @@ void HuntToKillAssignment::initialize(
 }
 
 //----------------------------------------------------------------------
-//	Constructor -- constructs from archive buffer
-
-HuntToKillAssignment::HuntToKillAssignment(Actor *a, void **buf) :
-	ActorAssignment(a, buf) {
-	void    *bufferPtr = *buf;
-
-	//  Restore the target
-	bufferPtr = constructTarget(targetMem, bufferPtr);
-
-	//  Restore the flags
-	flags = *((uint8 *)bufferPtr);
-	bufferPtr = (uint8 *)bufferPtr + 1;
-
-	*buf = bufferPtr;
-}
-
-//----------------------------------------------------------------------
 //	Return the number of bytes need to archive the data in this
 //	assignment
 
@@ -615,22 +547,17 @@ inline int32 HuntToKillAssignment::archiveSize(void) const {
 	            +   sizeof(flags);
 }
 
-//----------------------------------------------------------------------
-//	Write the data from this assignment object to a buffer in order
-//	to save it on disk
+void HuntToKillAssignment::write(Common::OutSaveFile *out) const {
+	debugC(3, kDebugSaveload, "... Saving HuntToKillAssignment");
 
-void *HuntToKillAssignment::archive(void *buf) const {
 	//  Let the base class archive its data
-	buf = ActorAssignment::archive(buf);
+	ActorAssignment::write(out);
 
 	//  Store the target
-	buf = archiveTarget(getTarget(), buf);
+	writeTarget(getTarget(), out);
 
 	//  Store the flags
-	*((uint8 *)buf) = flags;
-	buf = (uint8 *)buf + 1;
-
-	return buf;
+	out->writeByte(flags);
 }
 
 //----------------------------------------------------------------------
@@ -688,19 +615,14 @@ Task *HuntToKillAssignment::getTask(TaskStack *ts) {
    TetheredAssignment member functions
  * ===================================================================== */
 
-//----------------------------------------------------------------------
-//	Constructor -- constructs from archive buffer
-
-TetheredAssignment::TetheredAssignment(Actor *ac, void **buf) : ActorAssignment(ac, buf) {
-	int16   *a = (int16 *)*buf;
+TetheredAssignment::TetheredAssignment(Actor *ac, Common::SeekableReadStream *stream) : ActorAssignment(ac, stream) {
+	debugC(4, kDebugSaveload, "... Loading TetheredAssignment");
 
 	//  Read data from buffer
-	minU = *a++;
-	minV = *a++;
-	maxU = *a++;
-	maxV = *a++;
-
-	*buf = a;
+	minU = stream->readSint16LE();
+	minV = stream->readSint16LE();
+	maxU = stream->readSint16LE();
+	maxV = stream->readSint16LE();
 }
 
 //----------------------------------------------------------------------
@@ -715,23 +637,17 @@ inline int32 TetheredAssignment::archiveSize(void) const {
 	            +   sizeof(maxV);
 }
 
-//----------------------------------------------------------------------
-//	Write the data from this assignment object to a buffer in order
-//	to save it on disk
+void TetheredAssignment::write(Common::OutSaveFile *out) const {
+	debugC(3, kDebugSaveload, "... Saving TetheredAssignment");
 
-void *TetheredAssignment::archive(void *buf) const {
 	//  Let the base class archive its data
-	buf = ActorAssignment::archive(buf);
-
-	int16   *a = (int16 *)buf;
+	ActorAssignment::write(out);
 
 	//  Copy data to buffer
-	*a++ = minU;
-	*a++ = minV;
-	*a++ = maxU;
-	*a++ = maxV;
-
-	return a;
+	out->writeSint16LE(minU);
+	out->writeSint16LE(minV);
+	out->writeSint16LE(maxU);
+	out->writeSint16LE(maxV);
 }
 
 /* ===================================================================== *
@@ -775,20 +691,16 @@ AttendAssignment::AttendAssignment(Actor *a, uint16 until, GameObject *o) :
 	obj(o) {
 }
 
-//----------------------------------------------------------------------
-//	Constructor -- constructs from archive buffer
+AttendAssignment::AttendAssignment(Actor *a, Common::SeekableReadStream *stream) : ActorAssignment(a, stream) {
+	debugC(4, kDebugSaveload, "... Loading AttendAssignment");
 
-AttendAssignment::AttendAssignment(Actor *a, void **buf) : ActorAssignment(a, buf) {
-	ObjectID    *bufferPtr = (ObjectID *)*buf;
 	ObjectID    objID;
 
 	//  Get the object ID
-	objID = *bufferPtr++;
+	objID = stream->readUint16LE();
 
 	//  Convert the object ID to an object pointer
 	obj = objID != Nothing ? GameObject::objectAddress(objID) : NULL;
-
-	*buf = bufferPtr;
 }
 
 //----------------------------------------------------------------------
@@ -800,13 +712,11 @@ inline int32 AttendAssignment::archiveSize(void) const {
 	            +   sizeof(ObjectID);
 }
 
-//----------------------------------------------------------------------
-//	Write the data from this assignment object to a buffer in order
-//	to save it on disk
+void AttendAssignment::write(Common::OutSaveFile *out) const {
+	debugC(3, kDebugSaveload, "... Saving AttendAssignment");
 
-void *AttendAssignment::archive(void *buf) const {
 	//  Let the base class write its data to the buffer
-	buf = ActorAssignment::archive(buf);
+	ActorAssignment::write(out);
 
 	ObjectID    objID;
 
@@ -814,9 +724,7 @@ void *AttendAssignment::archive(void *buf) const {
 	objID = obj != NULL ? obj->thisID() : Nothing;
 
 	//  Store the object ID
-	*((ObjectID *)buf) = objID;
-
-	return (ObjectID *)buf + 1;
+	out->writeUint16LE(objID);
 }
 
 //----------------------------------------------------------------------
@@ -838,39 +746,32 @@ Task *AttendAssignment::getTask(TaskStack *ts) {
    Misc functions
  * ===================================================================== */
 
-//----------------------------------------------------------------------
-//	Reconstruct the ActorAssignment object from the archive buffer
-
-void *constructAssignment(Actor *a, void *buf) {
+void readAssignment(Actor *a, Common::InSaveFile *in) {
 	//  Get the type which is the first word in the archive buffer
-	int16   type = *((int16 *)buf);
-
-	buf = (int16 *)buf + 1;
+	int16 type = in->readSint16LE();
 
 	//  Based upon the type, call the correct constructor
 	switch (type) {
 	case patrolRouteAssignment:
-		new PatrolRouteAssignment(a, &buf);
+		new PatrolRouteAssignment(a, in);
 		break;
 
 	case huntToBeNearActorAssignment:
-		new HuntToBeNearActorAssignment(a, &buf);
+		new HuntToBeNearActorAssignment(a, in);
 		break;
 
 	case huntToBeNearLocationAssignment:
-		new HuntToBeNearLocationAssignment(a, &buf);
+		new HuntToBeNearLocationAssignment(a, in);
 		break;
 
 	case tetheredWanderAssignment:
-		new TetheredWanderAssignment(a, &buf);
+		new TetheredWanderAssignment(a, in);
 		break;
 
 	case attendAssignment:
-		new AttendAssignment(a, &buf);
+		new AttendAssignment(a, in);
 		break;
 	}
-
-	return buf;
 }
 
 //----------------------------------------------------------------------
@@ -883,22 +784,14 @@ int32 assignmentArchiveSize(Actor *a) {
 	return assign != NULL ? sizeof(int16) + assign->archiveSize() : 0;
 }
 
-//----------------------------------------------------------------------
-//	Write the specified actor's assignment to an archive buffer
-
-void *archiveAssignment(Actor *a, void *buf) {
-	ActorAssignment     *assign = a->getAssignment();
+void writeAssignment(Actor *a, Common::OutSaveFile *out) {
+	ActorAssignment *assign = a->getAssignment();
 
 	if (assign != NULL) {
-		//  Store the type in the buffer and increment the pointer
-		*((int16 *)buf) = assign->type();
-		buf = (int16 *)buf + 1;
+		out->writeSint16LE(assign->type());
 
-		//  Have the assignment archive itself in the buffer
-		buf = assign->archive(buf);
+		assign->write(out);
 	}
-
-	return buf;
 }
 
 }

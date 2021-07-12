@@ -296,6 +296,10 @@ void Lingo::func_play(Datum &frame, Datum &movie) {
 
 	ref.frameI = _vm->getCurrentMovie()->getScore()->getCurrentFrame();
 
+	// if we are issuing play command from script channel script. then play done should return to next frame
+	if (g_lingo->_currentChannelId == 0)
+		ref.frameI++;
+
 	stage->_movieStack.push_back(ref);
 
 	func_goto(frame, movie);

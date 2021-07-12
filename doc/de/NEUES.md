@@ -24,13 +24,14 @@ Programmcodes finden Sie auf Englisch unter:
    - Unterstützung für die spanische Version von Amazon: Guardians of Eden hinzugefügt.
    - Unterstützung für Nightlong: Union City Conspiracy hinzugefügt.
    - Unterstützung für The Journeyman Project 2: Buried in Time hinzugefügt.
+   - UNterstützung für Crusader: No Remorse hinzugefügt.
 
  Neue Portierungen:
    - Die Version für den Nintendo DS wurde zu großen Teilen neu geschrieben.
 
  Allgemein:
    - Die ScummVM-Benutzeroberfläche unterstützt nun UTF-32.
-   - Code der Roland MT-32-Emulation auf mt32emu 2.5.0 des Munt-Projekts aktualisiert.
+   - Code der Roland MT-32-Emulation auf mt32emu 2.5.1 des Munt-Projekts aktualisiert.
    - Unterstützung für die neue OAuth-Implementierung von Dropbox hinzugefügt.
    - Umfangreiche Verbesserungen an den unterstützten Grafik-Scalern vorgenommen.
    - Der Pfad zur ScummVM-Konfigurationsdatei wird nun in der GUI unter Optionen -> Pfade angezeigt.
@@ -109,6 +110,7 @@ Programmcodes finden Sie auf Englisch unter:
    - Unterstützung für hochauflösende Schriftarten und Cursor-Darstellungen in der 16-Farben-Macintosh-Version von Loom hinzugefügt.
    - Unterstützung für die japanische Macintosh-Version von The Dig hinzugefügt.
    - Teilweise Unterstützung für die hochauflösenden Schriftarten und den Mauszeiger in der 16-Farben-Macintosh-Version von Indiana Jones and the Last Crusade hinzugefügt.
+   - Fehlende Instrumente in der m64k-Mac-Version von Monkey Island 2 und Indiana Jones and the Fate of Atlantis korrigiert.
 
  Tinsel:
    - Unterstützung für die Rückkehr zur ScummVM-Benutzeroberfläche hinzugefügt.
@@ -130,6 +132,8 @@ Programmcodes finden Sie auf Englisch unter:
  Ultima:
    - Ultima 4: Erweiterung des Debuggers um mehrere Befehle.
    - Ultima 4: Die Return-Taste kann nun dazu genutzt werden, die ZStats-Anzeige zu verlassen.
+   - Ultima 8: Mehrere Animations-Fehler für Events und Objekte korrigiert.
+   - Ultima 8: Ursprünglichen Text für das Buch "Spell of Resurrection" wiederhergestellt.
 
  Xeen:
    - Gelegentliche Grafikfehler in Kampf-Szenen korrigiert.
@@ -144,6 +148,10 @@ Programmcodes finden Sie auf Englisch unter:
    - Unterstützung für die Cloud-Anbindung hinzugefügt.
    - Der nuked OPL Adlib-Treiber ist wieder aktiviert.
    - Unterstützung für den CAMD MIDI-Treiber hinzugefügt.
+
+ Windows-Portierung:
+   - Standardmäßig wird nun der OpenGL-Renderer verwendet, der eine deutlich verbesserte Unterstützung für HiDPI-Displays bietet.
+
 
 #### 2.2.0 "Interactive Fantasy" (27.09.2020)
 

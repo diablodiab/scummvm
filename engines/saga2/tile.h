@@ -612,13 +612,14 @@ public:
 	//  Reconstruct the TileActivityTaskList from an archive buffer
 	TileActivityTaskList(void **buf);
 
+	TileActivityTaskList(Common::SeekableReadStream *stream);
+
 	//  Return the number of bytes needed to archive this
 	//  TileActivityTaskList
 	int32 archiveSize(void);
 
-	//  Create an archive of this TileActivityTaskList in the specified
-	//  archive buffer
-	Common::MemorySeekableReadWriteStream *archive(Common::MemorySeekableReadWriteStream *stream);
+	void read(Common::InSaveFile *in);
+	void write(Common::OutSaveFile *out);
 
 	//  Cleanup this list
 	void cleanup(void);
@@ -751,6 +752,10 @@ struct PlatformCacheEntry {
 	                layerNum;               // index of this plat in mt.
 	MetaTileID      metaID;                 // pointer to parent metatile
 	Platform        pl;                     // actual platform data
+
+	enum {
+		kPlatformCacheSize = 256
+	};
 };
 
 /* ======================================================================= *
@@ -766,8 +771,16 @@ struct RipTable {
 	uint16      ripID;
 	int16       zTable[kPlatformWidth][kPlatformWidth];
 
+	enum {
+		kRipTableSize = 25
+	};
+
 	//  Constructor
-	RipTable(void) : metaID(NoMetaTile) {}
+	RipTable(void) : metaID(NoMetaTile), ripID(0) {
+		for (int i = 0; i < kPlatformWidth; i++)
+			for (int j = 0; j < kPlatformWidth; j++)
+				zTable[i][j] = 0;
+	}
 
 	//  Return a pointer to a rip table, given the rip table's ID
 	static RipTable *ripTableAddress(RipTableID id);
@@ -948,6 +961,9 @@ public:
 	TileIterator(int16 mapNum, const TileRegion &reg) :
 		metaIter(mapNum, reg),
 		region(reg) {
+			mt = nullptr;
+			platIndex = 0;
+			platform = nullptr;
 	}
 
 	TileInfo *first(TilePoint *loc, StandingTileInfo *stiResult = NULL);
@@ -958,7 +974,7 @@ public:
    Exports
  * ===================================================================== */
 
-extern TilePoint    viewCenter;             // coordinates of view on map
+extern StaticTilePoint viewCenter;             // coordinates of view on map
 
 //  These two variables define which sectors overlap the view rect.
 
@@ -985,11 +1001,8 @@ void initPlatformCache(void);
 //  Initialize the tile activity task list
 void initTileTasks(void);
 
-//  Save the tile activity task list to a save file
-void saveTileTasks(SaveFileConstructor &saveGame);
-
-//  Load the tile activity task list from a save file
-void loadTileTasks(SaveFileReader &saveGame);
+void saveTileTasks(Common::OutSaveFile *out);
+void loadTileTasks(Common::InSaveFile *in, int32 chunkSize);
 
 //  Cleanup the tile activity task list
 void cleanupTileTasks(void);
@@ -997,18 +1010,18 @@ void cleanupTileTasks(void);
 TilePoint getClosestPointOnTAI(ActiveItem *TAI, GameObject *obj);
 
 void initActiveItemStates(void);
-void saveActiveItemStates(SaveFileConstructor &saveGame);
-void loadActiveItemStates(SaveFileReader &saveGame);
+void saveActiveItemStates(Common::OutSaveFile *out);
+void loadActiveItemStates(Common::InSaveFile *in);
 void cleanupActiveItemStates(void);
 
 void initTileCyclingStates(void);
-void saveTileCyclingStates(SaveFileConstructor &saveGame);
-void loadTileCyclingStates(SaveFileReader &saveGame);
+void saveTileCyclingStates(Common::OutSaveFile *out);
+void loadTileCyclingStates(Common::InSaveFile *in);
 void cleanupTileCyclingStates(void);
 
 void initAutoMap(void);
-void saveAutoMap(SaveFileConstructor &saveGame);
-void loadAutoMap(SaveFileReader &saveGame);
+void saveAutoMap(Common::OutSaveFile *out);
+void loadAutoMap(Common::InSaveFile *in, int32 chunkSize);
 inline void cleanupAutoMap(void) { /* nothing to do */ }
 
 //  Determine if a platform is ripped

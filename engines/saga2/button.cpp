@@ -49,7 +49,7 @@ void gCompImage::init(void) {
 	internalAlloc   = false;
 	currentImage    = 0;
 	numPtrAlloc     = 0;
-//	imageText[0]   = NULL;
+	textFont        = &Onyx10Font;  // default
 }
 
 gCompImage::gCompImage(gPanelList &list, const Rect16 &box, void *image, uint16 ident,
@@ -103,9 +103,10 @@ gCompImage::gCompImage(gPanelList &list, const Rect16 &box, void *image, const c
 	// setup a single image configuration
 	init();
 
-	if (!image) return;
+	if (!image)
+		return;
 
-compImages = (void **)malloc(sizeof(void *) * 1); // allocate room for one pointer
+	compImages = (void **)malloc(sizeof(void *) * 1); // allocate room for one pointer
 
 	compImages[0] = image;
 	max             = 0;
@@ -113,23 +114,6 @@ compImages = (void **)malloc(sizeof(void *) * 1); // allocate room for one point
 	title           = text;
 	textFont        = &Onyx10Font;  // >>> this should be dynamic
 	textPal         = pal;
-
-#if 0
-	// setup the text if any
-	if (text) {
-		// copy the maximum number of chars to the text buffer
-		strncpy(imageText, text, textSize);
-
-		// cap it, in case of overflow
-		imageText[textSize - 1] = NULL;
-
-		// setup the text pallete and font type
-		textPal     = pal;
-		textFont    = &Onyx10Font;  // >>> this should be dynamic
-	} else {
-		*imageText = NULL;
-	}
-#endif
 }
 
 gCompImage::gCompImage(gPanelList &list, const Rect16 &box, void **images,
@@ -137,7 +121,8 @@ gCompImage::gCompImage(gPanelList &list, const Rect16 &box, void **images,
                        uint16 ident, AppFunc *cmd) : gControl(list, box, NULL, ident, cmd) {
 	init();
 
-	if (!images) return;
+	if (!images)
+		return;
 
 	compImages      = images;
 
@@ -162,21 +147,6 @@ gCompImage::gCompImage(gPanelList &list, const Rect16 &box, void **images,
 	title       = text;
 	textFont    = &Onyx10Font;  // >>> this should be dynamic
 	textPal     = pal;
-
-#if 0
-	// setup the text if any
-	if (text) {
-		// copy the maximum number of chars to the text buffer
-		strncpy(imageText, text, textSize);
-
-		// cap it, in case of overflow
-		imageText[textSize - 1] = NULL;
-		textPal     = pal;
-		textFont    = &Onyx10Font;  // >>> this should be dynamic
-	} else {
-		*imageText = NULL;
-	}
-#endif
 }
 
 gCompImage::gCompImage(gPanelList &list, const StaticRect &box, void **images,
@@ -532,8 +502,8 @@ gCompButton::~gCompButton(void) {
 	}
 }
 
-void gCompButton::dim(bool enable) {
-	if (enable) {
+void gCompButton::dim(bool enableFlag) {
+	if (enableFlag) {
 		if (!dimmed) dimmed = true;
 	} else {
 		if (dimmed) dimmed = false;
@@ -761,6 +731,7 @@ gMultCompButton::gMultCompButton(gPanelList &list, const Rect16 &box, void **new
 		max     = 0;
 		min     = 0;
 		current = 0;
+		response = hitResponse;
 		return;
 	}
 
@@ -862,9 +833,9 @@ int16 gSlider::getSliderLenVal(void) {
 	if (slValMin < 0 && slValMax < 0) {
 		val = slValMax - slValMin;
 	} else if (slValMin < 0 && slValMax >= 0) {
-		val = abs(slValMin) + slValMax;
+		val = ABS(slValMin) + slValMax;
 	} else if (slValMin >= 0 && slValMax < 0) {
-		val = abs(slValMax) - slValMin;
+		val = ABS(slValMax) - slValMin;
 	} else if (slValMin >= 0 && slValMax >= 0) {
 		val = slValMax - slValMin;
 	}

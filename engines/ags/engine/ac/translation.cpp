@@ -20,6 +20,7 @@
  *
  */
 
+#include "common/language.h"
 #include "ags/engine/ac/asset_helper.h"
 #include "ags/shared/ac/common.h"
 #include "ags/engine/ac/game_setup.h"
@@ -31,7 +32,6 @@
 #include "ags/shared/ac/words_dictionary.h"
 #include "ags/shared/debugging/out.h"
 #include "ags/shared/game/tra_file.h"
-#include "ags/shared/util/misc.h"
 #include "ags/shared/util/stream.h"
 #include "ags/shared/core/asset_manager.h"
 #include "ags/globals.h"
@@ -40,11 +40,21 @@ namespace AGS3 {
 
 using namespace AGS::Shared;
 
+// TODO: Since ScummVM can't use uconvert, this is a dummy implementation for now
+const char *convert_utf8_to_ascii(const char *mbstr, const char *loc_name) {
+	_G(mbbuf).resize(strlen(mbstr) + 1);
+	strcpy(&_G(mbbuf)[0], mbstr);
+	return &_G(mbbuf)[0];
+}
+
 void close_translation() {
 	_GP(transtree).clear();
 	_GP(trans) = Translation();
 	_G(trans_name) = "";
 	_G(trans_filename) = "";
+
+	// Return back to default game's encoding
+	set_uformat(U_ASCII);
 }
 
 bool init_translation(const String &lang, const String &fallback_lang, bool quit_on_error) {
@@ -99,6 +109,29 @@ bool init_translation(const String &lang, const String &fallback_lang, bool quit
 	} else if (_GP(trans).RightToLeft == 2) {
 		_GP(play).text_align = kHAlignRight;
 		_GP(game).options[OPT_RIGHTLEFTWRITE] = 1;
+	}
+
+	// Setup a text encoding mode depending on the translation data hint
+	String encoding = _GP(trans).StrOptions["encoding"];
+	if (encoding.CompareNoCase("utf-8") == 0)
+		set_uformat(U_UTF8);
+	else
+		set_uformat(U_ASCII);
+
+	// Mixed encoding support: 
+	// original text unfortunately may contain extended ASCII chars (> 127);
+	// if translation is UTF-8 but game is extended ASCII, then the translation
+	// dictionary keys won't match.
+	// With that assumption we must convert dictionary keys into ASCII using
+	// provided locale hint.
+	String key_enc = _GP(trans).StrOptions["gameencoding"];
+	if (!key_enc.IsEmpty()) {
+		StringMap conv_map;
+		for (const auto &item : _GP(trans).Dict) {
+			String key = convert_utf8_to_ascii(item._key.GetCStr(), key_enc.GetCStr());
+			conv_map.insert(std::make_pair(key, item._value));
+		}
+		_GP(trans).Dict = conv_map;
 	}
 
 	Debug::Printf("Translation initialized: %s", _G(trans_filename).GetCStr());

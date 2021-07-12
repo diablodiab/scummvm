@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ScummVM 1.9.0git\n"
 "Report-Msgid-Bugs-To: scummvm-devel@lists.scummvm.org\n"
-"POT-Creation-Date: 2021-07-02 14:20+0000\n"
-"PO-Revision-Date: 2021-07-03 15:25+0000\n"
+"POT-Creation-Date: 2021-07-11 08:17+0000\n"
+"PO-Revision-Date: 2021-07-08 12:39+0000\n"
 "Last-Translator: Eugene Sandulenko <sev@scummvm.org>\n"
 "Language-Team: Ukrainian <https://translations.scummvm.org/projects/scummvm/"
 "scummvm/uk/>\n"
@@ -93,7 +93,7 @@ msgstr "Вибрати"
 msgid "Select directory where to download game data"
 msgstr "Виберіть папку куди завантажувати файли гри"
 
-#: gui/downloaddialog.cpp:50 gui/editgamedialog.cpp:583 gui/launcher.cpp:208
+#: gui/downloaddialog.cpp:50 gui/editgamedialog.cpp:583 gui/launcher.cpp:206
 msgid "Select directory with game data"
 msgstr "Виберіть папку з файлами гри"
 
@@ -128,7 +128,7 @@ msgstr ""
 
 #: gui/downloaddialog.cpp:119 gui/downloaddialog.cpp:153
 #: gui/filebrowser-dialog.cpp:133 gui/fluidsynth-dialog.cpp:218
-#: gui/launcher.cpp:395 gui/launcher.cpp:417 gui/launcher.cpp:460
+#: gui/launcher.cpp:393 gui/launcher.cpp:415 gui/launcher.cpp:458
 #: gui/options.cpp:2876 gui/options.cpp:2914
 #: backends/events/default/default-events.cpp:185 engines/buried/buried.cpp:533
 #: engines/grim/grim.cpp:350 engines/kyra/gui/saveload_eob.cpp:596
@@ -140,7 +140,7 @@ msgstr "Так"
 
 #: gui/downloaddialog.cpp:119 gui/downloaddialog.cpp:154
 #: gui/filebrowser-dialog.cpp:133 gui/fluidsynth-dialog.cpp:218
-#: gui/launcher.cpp:395 gui/launcher.cpp:417 gui/launcher.cpp:460
+#: gui/launcher.cpp:393 gui/launcher.cpp:415 gui/launcher.cpp:458
 #: gui/options.cpp:2876 gui/options.cpp:2914 engines/buried/buried.cpp:533
 #: engines/grim/grim.cpp:350 engines/kyra/gui/saveload_eob.cpp:596
 #: engines/kyra/gui/saveload_eob.cpp:629
@@ -149,7 +149,7 @@ msgstr "Так"
 msgid "No"
 msgstr "Ні"
 
-#: gui/downloaddialog.cpp:137 gui/launcher.cpp:566
+#: gui/downloaddialog.cpp:137 gui/launcher.cpp:564
 msgid "ScummVM couldn't open the specified directory!"
 msgstr "ScummVM не може відкрити вказану папку!"
 
@@ -162,7 +162,7 @@ msgstr ""
 "назвою."
 
 #: gui/downloaddialog.cpp:147 gui/editgamedialog.cpp:385
-#: gui/fluidsynth-dialog.cpp:154 gui/launcher.cpp:516 gui/launcher.cpp:520
+#: gui/fluidsynth-dialog.cpp:154 gui/launcher.cpp:514 gui/launcher.cpp:518
 #: gui/massadd.cpp:89 gui/options.cpp:2095 gui/saveload-dialog.cpp:1169
 #: engines/engine.cpp:504 engines/engine.cpp:516
 #: backends/platform/wii/options.cpp:47 engines/agos/animation.cpp:559
@@ -726,7 +726,7 @@ msgstr "Запис..."
 msgid "~A~dd Game..."
 msgstr "~Д~одати гру..."
 
-#: gui/launcher.cpp:157 gui/launcher.cpp:167
+#: gui/launcher.cpp:157 gui/launcher.cpp:166
 msgid "Add games to the list"
 msgstr "Додати гри до списку"
 
@@ -734,58 +734,58 @@ msgstr "Додати гри до списку"
 msgid "Mass Add..."
 msgstr "Дод. багато..."
 
-#: gui/launcher.cpp:162
+#: gui/launcher.cpp:161
 msgid "~E~dit Game..."
 msgstr "Реда~г~увати гру..."
 
-#: gui/launcher.cpp:162 gui/launcher.cpp:172
+#: gui/launcher.cpp:161 gui/launcher.cpp:170
 msgid "Change game options"
 msgstr "Змінити налаштування гри"
 
-#: gui/launcher.cpp:164
+#: gui/launcher.cpp:163
 msgid "~R~emove Game"
 msgstr "~В~идалити гру"
 
-#: gui/launcher.cpp:164 gui/launcher.cpp:174
+#: gui/launcher.cpp:163 gui/launcher.cpp:172
 msgid "Remove game from the list. The game data files stay intact"
 msgstr "Видалити гру зі списку. Не видаляє гру з жорсткого диску"
 
-#: gui/launcher.cpp:167
+#: gui/launcher.cpp:166
 msgctxt "lowres"
 msgid "~A~dd Game..."
 msgstr "~Д~одати гру..."
 
-#: gui/launcher.cpp:168
+#: gui/launcher.cpp:167
 msgctxt "lowres"
 msgid "Mass Add..."
 msgstr "Дод. багато..."
 
-#: gui/launcher.cpp:172
+#: gui/launcher.cpp:170
 msgctxt "lowres"
 msgid "~E~dit Game..."
 msgstr "Реда~г~. гру..."
 
-#: gui/launcher.cpp:174
+#: gui/launcher.cpp:172
 msgctxt "lowres"
 msgid "~R~emove Game"
 msgstr "~В~идалити гру"
 
-#: gui/launcher.cpp:182
+#: gui/launcher.cpp:180
 msgid "Search in game list"
 msgstr "Пошук у списку ігор"
 
-#: gui/launcher.cpp:186 gui/launcher.cpp:785
+#: gui/launcher.cpp:184 gui/launcher.cpp:783
 msgid "Search:"
 msgstr "Пошук:"
 
-#: gui/launcher.cpp:211 engines/dialogs.cpp:98 engines/engine.cpp:795
+#: gui/launcher.cpp:209 engines/dialogs.cpp:98 engines/engine.cpp:795
 #: engines/buried/saveload.cpp:515 engines/pegasus/pegasus.cpp:384
 #: engines/trecision/saveload.cpp:253 engines/tsage/scenes.cpp:631
 #: engines/wage/saveload.cpp:742 engines/xeen/saves.cpp:256
 msgid "Load game:"
 msgstr "Завантажити гру:"
 
-#: gui/launcher.cpp:211 engines/dialogs.cpp:98 engines/engine.cpp:795
+#: gui/launcher.cpp:209 engines/dialogs.cpp:98 engines/engine.cpp:795
 #: engines/buried/saveload.cpp:515 engines/parallaction/metaengine.cpp:118
 #: engines/parallaction/saveload.cpp:194 engines/pegasus/pegasus.cpp:384
 #: engines/scumm/dialogs.cpp:178 engines/trecision/saveload.cpp:253
@@ -794,11 +794,11 @@ msgstr "Завантажити гру:"
 msgid "Load"
 msgstr "Завантажити"
 
-#: gui/launcher.cpp:383
+#: gui/launcher.cpp:381
 msgid "This directory cannot be used yet, it is being downloaded into!"
 msgstr "Цю папку ще не можна використовувати, в неї іде завантаження!"
 
-#: gui/launcher.cpp:394
+#: gui/launcher.cpp:392
 msgid ""
 "Do you really want to run the mass game detector? This could potentially add "
 "a huge number of games."
@@ -806,31 +806,31 @@ msgstr ""
 "Чи ви дійсно хочете запустити пошук усіх ігор? Це потенційно може додати "
 "велику кількість ігор."
 
-#: gui/launcher.cpp:417
+#: gui/launcher.cpp:415
 msgid "Do you really want to remove this game configuration?"
 msgstr "Ви дійсно хочете видалити налаштування для цієї гри?"
 
-#: gui/launcher.cpp:459
+#: gui/launcher.cpp:457
 msgid "Do you want to load saved game?"
 msgstr "Ви хочете завантажити збережений стан гри?"
 
-#: gui/launcher.cpp:516
+#: gui/launcher.cpp:514
 msgid "This game does not support loading games from the launcher."
 msgstr "Ця гра не підтримує завантаження збережених ігор через головне меню."
 
-#: gui/launcher.cpp:520
+#: gui/launcher.cpp:518
 msgid "ScummVM could not find any engine capable of running the selected game!"
 msgstr "ScummVM не може знайти движок для запуску вибраної гри!"
 
-#: gui/launcher.cpp:585
+#: gui/launcher.cpp:583
 msgid "ScummVM could not find any game in the specified directory!"
 msgstr "ScummVM не може знайти гру у вказаній папці!"
 
-#: gui/launcher.cpp:600
+#: gui/launcher.cpp:598
 msgid "Unknown variant"
 msgstr "Невідомий варіант"
 
-#: gui/launcher.cpp:606
+#: gui/launcher.cpp:604
 msgid "Pick the game:"
 msgstr "Виберіть гру:"
 
@@ -1834,13 +1834,13 @@ msgstr "Відтворити"
 msgid "Edit"
 msgstr "Редагувати"
 
-#: gui/recorderdialog.cpp:84 gui/recorderdialog.cpp:240
-#: gui/recorderdialog.cpp:250
+#: gui/recorderdialog.cpp:84 gui/recorderdialog.cpp:241
+#: gui/recorderdialog.cpp:251
 msgid "Author: "
 msgstr "Автор: "
 
-#: gui/recorderdialog.cpp:85 gui/recorderdialog.cpp:241
-#: gui/recorderdialog.cpp:251
+#: gui/recorderdialog.cpp:85 gui/recorderdialog.cpp:242
+#: gui/recorderdialog.cpp:252
 msgid "Notes: "
 msgstr "Примітки: "
 
@@ -2577,7 +2577,7 @@ msgstr ""
 msgid "Starting MIDI dump"
 msgstr "Починаю створення дампу MIDI"
 
-#: audio/mods/paula.cpp:303
+#: audio/mods/paula.cpp:304
 msgid "Amiga Audio emulator"
 msgstr "Аміга Аудіо Емулятор"
 
@@ -3755,7 +3755,7 @@ msgstr "Не емулюйте артефакти NTSC для тексту"
 #: engines/neverhood/detection.cpp:124 engines/sci/detection.cpp:236
 #: engines/sherlock/detection.cpp:59 engines/toltecs/detection.cpp:213
 #: engines/trecision/detection.cpp:208 engines/ultima/detection.cpp:55
-#: engines/ultima/ultima8/meta_engine.cpp:163
+#: engines/ultima/ultima8/meta_engine.cpp:169
 #: engines/zvision/detection_tables.h:50
 msgid "Use original save/load screens"
 msgstr "Використовувати ориг. екрани збереження/завантаження"
@@ -3765,7 +3765,7 @@ msgstr "Використовувати ориг. екрани збереженн
 #: engines/neverhood/detection.cpp:125 engines/sci/detection.cpp:237
 #: engines/sherlock/detection.cpp:60 engines/toltecs/detection.cpp:214
 #: engines/trecision/detection.cpp:209 engines/ultima/detection.cpp:56
-#: engines/ultima/ultima8/meta_engine.cpp:164
+#: engines/ultima/ultima8/meta_engine.cpp:170
 #: engines/zvision/detection_tables.h:51
 msgid "Use the original save/load screens instead of the ScummVM ones"
 msgstr ""
@@ -4918,13 +4918,13 @@ msgstr "Підтримку для Eye of Beholder не скомпільован�
 
 #: engines/kyra/engine/eobcommon.cpp:368 engines/kyra/engine/lol.cpp:473
 #: engines/ultima/ultima4/meta_engine.cpp:225
-#: engines/ultima/ultima8/meta_engine.cpp:198
+#: engines/ultima/ultima8/meta_engine.cpp:204
 msgid "Interact via Left Click"
 msgstr "Взаємодія через лівий клік"
 
 #: engines/kyra/engine/eobcommon.cpp:369 engines/kyra/engine/lol.cpp:474
 #: engines/ultima/ultima4/meta_engine.cpp:231
-#: engines/ultima/ultima8/meta_engine.cpp:204
+#: engines/ultima/ultima8/meta_engine.cpp:210
 msgid "Interact via Right Click"
 msgstr "Взаємодія через правий клік"
 
@@ -5220,6 +5220,8 @@ msgid ""
 "Toggle screen transitions on or off. Turning off screen transitions will "
 "enable you to navigate more quickly through the game."
 msgstr ""
+"Ввімкнути або вимкнути переходи між екранами. Вимикання переходів дозволить "
+"вам швидше пересуватися у грі."
 
 #: engines/mohawk/dialogs.cpp:121
 msgid "Play the Myst fly by movie"
@@ -5802,6 +5804,8 @@ msgid ""
 "Compressed game detected. Please uncompress it as specified in the game "
 "description on our Wiki"
 msgstr ""
+"Знайдено заархівовану гру. Будь-ласка, розархівуйте її як вказано в описі "
+"гри на Wiki"
 
 #: engines/queen/detection.cpp:45
 msgid "Alternative intro"
@@ -5820,7 +5824,7 @@ msgstr "Пробна версія для Windows не підтримується
 msgid "I Have No Mouth support not compiled in"
 msgstr "Підтримку для I Have no Mouth не скомпільовано"
 
-#: engines/saga/saga.cpp:231
+#: engines/saga/saga.cpp:229
 msgid "Error loading game resources."
 msgstr "Помилка читання файлу ресурсів гри."
 
@@ -5976,7 +5980,7 @@ msgstr ""
 "Будь-ласка, використовуйте іншу програму для переглядання файлу допомоги "
 "ігри: %s"
 
-#: engines/sci/engine/kmisc.cpp:871
+#: engines/sci/engine/kmisc.cpp:872
 msgid ""
 "The Poker logic is hardcoded in an external DLL, and is not implemented yet. "
 "There exists some dummy logic for now, where opponent actions are chosen "
@@ -6854,17 +6858,12 @@ msgstr ""
 "до 320x200, на вкладці \"двигун\"."
 
 #: engines/scumm/scumm.cpp:1335
-#, fuzzy
-#| msgid ""
-#| "Could not find the 'Loom' Macintosh executable. Music and high-"
-#| "resolution\n"
-#| "versions of font and cursor will be disabled."
 msgid ""
 "Could not find the 'Indy' Macintosh executable. High-resolution fonts will\n"
 "be disabled."
 msgstr ""
-"Не вдалося знайти файл програми 'Loom' Macintosh. Музику та шрифти\n"
-"високої роздільності буде вимкнено."
+"Не вдалося знайти файл програми 'Indy' Macintosh. Шрифти високої\n"
+"роздільності буде вимкнено."
 
 #: engines/scumm/scumm.cpp:1361
 msgid ""
@@ -7015,11 +7014,11 @@ msgstr ""
 "Лінійна фільтрація згладжує фонові зображення у повноекранному режимі за "
 "рахунок втрати деяких деталей."
 
-#: engines/stark/detection.cpp:379 engines/ultima/ultima8/meta_engine.cpp:175
+#: engines/stark/detection.cpp:379 engines/ultima/ultima8/meta_engine.cpp:181
 msgid "Enable font anti-aliasing"
 msgstr "Ввімкнути згладжування шрифтів"
 
-#: engines/stark/detection.cpp:380 engines/ultima/ultima8/meta_engine.cpp:176
+#: engines/stark/detection.cpp:380 engines/ultima/ultima8/meta_engine.cpp:182
 msgid "When font anti-aliasing is enabled, the text is smoother."
 msgstr "Якщо згладжування увімкнено, текст стає гладкішим."
 
@@ -7321,11 +7320,11 @@ msgstr "Використовувати версію USA"
 msgid "Enable the USA specific version flags"
 msgstr "Ввімкнути опції гри, специфічні для USA версії"
 
-#: engines/twine/metaengine.cpp:151
+#: engines/twine/metaengine.cpp:151 engines/ultima/ultima8/meta_engine.cpp:147
 msgid "Enable high resolution"
 msgstr "Ввімкнути високе розгалуження"
 
-#: engines/twine/metaengine.cpp:152
+#: engines/twine/metaengine.cpp:152 engines/ultima/ultima8/meta_engine.cpp:148
 msgid "Enable a higher resolution for the game"
 msgstr "Ввімкнути високе розгалуження для гри"
 
@@ -7528,45 +7527,45 @@ msgstr "Ввімкнути чіти"
 msgid "Allow cheats by commands and a menu when player is clicked."
 msgstr "Вмикає чіти через команди та меню під час кліку гравця."
 
-#: engines/ultima/ultima8/meta_engine.cpp:151
+#: engines/ultima/ultima8/meta_engine.cpp:157
 msgid "Play foot step sounds"
 msgstr "Відтворювати звуки кроків"
 
-#: engines/ultima/ultima8/meta_engine.cpp:152
+#: engines/ultima/ultima8/meta_engine.cpp:158
 msgid "Plays sound when the player moves."
 msgstr "Відтворює звуки кроків під час руху гравця."
 
-#: engines/ultima/ultima8/meta_engine.cpp:157
+#: engines/ultima/ultima8/meta_engine.cpp:163
 msgid "Enable jump to mouse position"
 msgstr "Ввімкнути стрибок до позиції миші"
 
-#: engines/ultima/ultima8/meta_engine.cpp:158
+#: engines/ultima/ultima8/meta_engine.cpp:164
 msgid ""
 "Jumping while not moving targets the mouse cursor rather than direction only."
 msgstr ""
 "Стрибати на місце, вказане курсором миші (не під час пересування цілей)."
 
-#: engines/ultima/ultima8/meta_engine.cpp:169
+#: engines/ultima/ultima8/meta_engine.cpp:175
 msgid "Enable font replacement"
 msgstr "Ввімкнути заміну шрифтів"
 
-#: engines/ultima/ultima8/meta_engine.cpp:170
+#: engines/ultima/ultima8/meta_engine.cpp:176
 msgid "Replaces game fonts with rendered fonts"
 msgstr "Замінює шрифти гри на шрифти поліпшеної якості"
 
-#: engines/ultima/ultima8/meta_engine.cpp:191
+#: engines/ultima/ultima8/meta_engine.cpp:197
 msgid "Ultima VIII"
 msgstr "Ultima VIII"
 
-#: engines/ultima/ultima8/meta_engine.cpp:191
+#: engines/ultima/ultima8/meta_engine.cpp:197
 msgid "Crusader"
 msgstr "Crusader"
 
-#: engines/ultima/ultima8/meta_engine.cpp:238
+#: engines/ultima/ultima8/meta_engine.cpp:244
 msgid "Ultima VIII Cheats"
 msgstr "Ultima VIII Чіти"
 
-#: engines/ultima/ultima8/meta_engine.cpp:255
+#: engines/ultima/ultima8/meta_engine.cpp:261
 msgid "Ultima VIII Debug"
 msgstr "Ultima VIII Відладка"
 
@@ -7623,16 +7622,12 @@ msgid "This game requires the HeroCraft subengine, which is not compiled in."
 msgstr "Ця гра потрубує движка HeroCraft, який відсутній у збірці."
 
 #: engines/wintermute/wintermute.cpp:182
-#, fuzzy
-#| msgid ""
-#| "This game requires 3D capabilities that are out ScummVM scope. As such, "
-#| "it is likely to be unplayable totally or partially."
 msgid ""
 "This game requires 3D capabilities, which is not compiled in. As such, it is "
 "likely to be unplayable totally or partially."
 msgstr ""
-"Ця гра потребує підтримки 3D, яка виходить за рамки ScummVM. Тому ця гра "
-"скорше за все не працює частково або повністю."
+"Ця гра потребує підтримки 3D, яку не було скомпільовано. Тому ця гра скорше "
+"за все не працює частково або повністю."
 
 #: engines/wintermute/keymapper_tables.h:150
 #: engines/wintermute/keymapper_tables.h:732
@@ -7758,10 +7753,8 @@ msgstr "Кнопка телефону Вниз"
 #. I18N: Some items are scripted to have alternative "Use" action, when MiddleClick is used
 #. It may result in actor saying different text or item being decomposed to it's parts
 #: engines/wintermute/keymapper_tables.h:361
-#, fuzzy
-#| msgid "Alternative intro"
 msgid "Alternative action"
-msgstr "Альтернативний вступ"
+msgstr "Альтернативна дія"
 
 #: engines/wintermute/keymapper_tables.h:432
 #: engines/wintermute/keymapper_tables.h:565
@@ -8082,25 +8075,19 @@ msgid "Cancel input"
 msgstr "Відміна вводу"
 
 #: engines/wintermute/keymapper_tables.h:1318
-#, fuzzy
-#| msgid "Toggle mute"
 msgid "Toggle subtitles"
-msgstr "Перемкнути звук"
+msgstr "Перемкнути субтитри"
 
 #. I18N: At one of the puzzles game asks to press Up key / Shift key / Down key
 #: engines/wintermute/keymapper_tables.h:1388
-#, fuzzy
-#| msgid "Shift"
 msgid "Shift key"
-msgstr "Shift"
+msgstr "Кнопка Shift"
 
 #. I18N: Chapayev is the name of game character, Vasily Chapayev
 #. This action makes Chapayev interact with item instead of Petka
 #: engines/wintermute/keymapper_tables.h:1490
-#, fuzzy
-#| msgid "Previous action"
 msgid "Chapayev's action"
-msgstr "Попередня дія"
+msgstr "Дія Чапаєва"
 
 #: engines/wintermute/keymapper_tables.h:1538
 #: engines/wintermute/keymapper_tables.h:1791
@@ -8126,17 +8113,13 @@ msgstr "Діалог відповідь 4"
 
 #. I18N: This game is called "Pole Chudes" and it features a wheel similar to "Wheel of Fortune" TV show
 #: engines/wintermute/keymapper_tables.h:1569
-#, fuzzy
-#| msgid "Spin slower"
 msgid "Spin wheel slower"
-msgstr "Крутитися повільніше"
+msgstr "Крутити колесо повільніше"
 
 #. I18N: This game is called "Pole Chudes" and it features a wheel similar to "Wheel of Fortune" TV show
 #: engines/wintermute/keymapper_tables.h:1577
-#, fuzzy
-#| msgid "Spin faster"
 msgid "Spin wheel faster"
-msgstr "Крутитися швидше"
+msgstr "Крутити колесо швидше"
 
 #: engines/wintermute/keymapper_tables.h:1655
 msgid "Zoom out"
@@ -8158,8 +8141,6 @@ msgstr "Вікно Безьє"
 
 #. I18N: Use droid to perform an action
 #: engines/wintermute/keymapper_tables.h:1825
-#, fuzzy
-#| msgid "Droid action"
 msgid "Droid's action"
 msgstr "Дія дроїда"
 

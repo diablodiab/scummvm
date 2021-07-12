@@ -176,6 +176,7 @@ Globals::Globals() {
 
 	// draw_software.cpp globals
 	_BlackRects = new DirtyRects();
+	_GlobalOffs = new Point();
 	_RoomCamRects = new std::vector<DirtyRects>();
 	_RoomCamPositions = new std::vector<std::pair<int, int> >();
 
@@ -189,7 +190,7 @@ Globals::Globals() {
 	_fonts = new std::vector<AGS::Shared::Font>();
 	_ttfRenderer = new TTFFontRenderer();
 	_wfnRenderer = new WFNFontRenderer();
-	_fontLines = new SplitLines();
+	_Lines = new SplitLines();
 
 	// game.cpp globals
 	_ccDynamicGUIObject = new CCGUIObject();
@@ -406,6 +407,7 @@ Globals::~Globals() {
 
 	// draw_software.cpp globals
 	delete _BlackRects;
+	delete _GlobalOffs;
 	delete _RoomCamRects;
 	delete _RoomCamPositions;
 
@@ -419,6 +421,7 @@ Globals::~Globals() {
 	delete _fonts;
 	delete _ttfRenderer;
 	delete _wfnRenderer;
+	delete _Lines;
 
 	// game.cpp globals
 	delete _ccDynamicGUIObject;

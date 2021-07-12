@@ -33,20 +33,21 @@
 
 namespace Saga2 {
 
+class Timer;
 class TimerList;
 
 //  Fetch a specified actor's TimerList
 TimerList *fetchTimerList(GameObject *obj);
+
+void deleteTimer(Timer *t);
 
 //  Check all active Timers
 void checkTimers(void);
 
 //  Initialize the Timers
 void initTimers(void);
-//  Save the active Timers in a save file
-void saveTimers(SaveFileConstructor &saveGame);
-//  Load Timers from a save file
-void loadTimers(SaveFileReader &saveGame);
+void saveTimers(Common::OutSaveFile *out);
+void loadTimers(Common::InSaveFile *in);
 //  Cleanup the active Timers
 void cleanupTimers(void);
 
@@ -61,8 +62,7 @@ public:
 	//  Constructor -- initial construction
 	TimerList(GameObject *o);
 
-	//  Constructor -- reconstruct from archive buffer
-	TimerList(void **buf);
+	TimerList(Common::InSaveFile *in);
 
 	~TimerList();
 
@@ -72,8 +72,7 @@ public:
 		return sizeof(ObjectID);
 	}
 
-	//  Archive this object in a buffer
-	void *archive(void *buf);
+	void write(Common::OutSaveFile *out);
 
 	GameObject *getObject(void) {
 		return _obj;
@@ -93,8 +92,10 @@ class Timer {
 	FrameAlarm _alarm;
 
 public:
+	bool _active;
+
 	//  Constructor -- initial construction
-	Timer(GameObject *o, TimerID timerID, int16 frameInterval) : _obj(o), _id(timerID), _interval(frameInterval) {
+	Timer(GameObject *o, TimerID timerID, int16 frameInterval) : _obj(o), _id(timerID), _interval(frameInterval), _active(true) {
 		_alarm.set(_interval);
 		debugC(1, kDebugTimers, "Creating timer %p for %p (%s)",
 		       (void *)this, (void *)o, o->objName());
@@ -102,16 +103,15 @@ public:
 		g_vm->_timers.push_back(this);
 	}
 
-	//  Constructor -- reconstruct from archive buffer
-	Timer(void **buf);
+	Timer(Common::InSaveFile *in);
+
 	~Timer();
 
 	//  Return the number of bytes needed to archive this object in
 	//  a buffer
 	static int32 archiveSize(void);
 
-	//  Archive this object in a buffer
-	void *archive(void *buf);
+	void write(Common::OutSaveFile *out);
 
 	GameObject *getObject(void) {
 		return _obj;

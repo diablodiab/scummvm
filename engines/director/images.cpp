@@ -104,9 +104,10 @@ bool DIBDecoder::loadStream(Common::SeekableReadStream &stream) {
 * BITD
 ****************************/
 
-BITDDecoder::BITDDecoder(int w, int h, uint16 bitsPerPixel, uint16 pitch, const byte *palette) {
+BITDDecoder::BITDDecoder(int w, int h, uint16 bitsPerPixel, uint16 pitch, const byte *palette, FileVersion version) {
 	_surface = new Graphics::Surface();
 	_pitch = pitch;
+	_version = version;
 
 	if (_pitch < w) {
 		warning("BITDDecoder: pitch is too small: %d < %d", _pitch, w);
@@ -182,7 +183,8 @@ bool BITDDecoder::loadStream(Common::SeekableReadStream &stream) {
 	Common::Array<int> pixels;
 	// If the stream has exactly the required number of bits for this image,
 	// we assume it is uncompressed.
-	if (stream.size() == _pitch * _surface->h * _bitsPerPixel / 8) {
+	// logic above does not fit the situation when _bitsPerPixel == 1, need to fix.
+	if ((stream.size() == _pitch * _surface->h * _bitsPerPixel / 8) || (_bitsPerPixel != 1 && _version < kFileVer300 && stream.size() >= _surface->h * _surface->w * _bitsPerPixel / 8)) {
 		debugC(6, kDebugImages, "Skipping compression");
 		for (int i = 0; i < stream.size(); i++) {
 			pixels.push_back((int)stream.readByte());
@@ -219,15 +221,19 @@ bool BITDDecoder::loadStream(Common::SeekableReadStream &stream) {
 		int tail = (_surface->w * _surface->h * _bitsPerPixel / 8) - pixels.size();
 
 		warning("BITDDecoder::loadStream(): premature end of stream (%d of %d pixels)",
-			pixels.size(), pixels.size() + tail);
+				pixels.size(), pixels.size() + tail);
 
 		for (int i = 0; i < tail; i++)
 			pixels.push_back(0);
 	}
 
 	int offset = 0;
-	if (_surface->w < (pixels.size() / _surface->h))
+	if (_surface->w < (int)(pixels.size() / _surface->h))
 		offset = (pixels.size() / _surface->h) - _surface->w;
+	// looks like the data want to round up to 2, so we either got offset 1 or 0.
+	// but we may met situation when the pixel size is exactly equals to w * h, thus we add a check here.
+	if (offset)
+		offset = _surface->w % 2;
 
 	uint32 color;
 	bool paletted = (g_director->_pixelformat.bytesPerPixel == 1);

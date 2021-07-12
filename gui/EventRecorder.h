@@ -74,13 +74,14 @@ public:
 		kPassthrough = 0,		/**< kPassthrough, do nothing */
 		kRecorderRecord = 1,		/**< kRecorderRecord, do the recording */
 		kRecorderPlayback = 2,		/**< kRecorderPlayback, playback existing recording */
-		kRecorderPlaybackPause = 3	/**< kRecordetPlaybackPause, interal state when user pauses the playback */
+		kRecorderPlaybackPause = 3	/**< kRecordetPlaybackPause, internal state when user pauses the playback */
 	};
 
 	void init(const Common::String &recordFileName, RecordMode mode);
 	void deinit();
 	bool processDelayMillis();
 	uint32 getRandomSeed(const Common::String &name);
+	void processTimeAndDate(TimeDate &td, bool skipRecord);
 	void processMillis(uint32 &millis, bool skipRecord);
 	void processGameDescription(const ADGameDescription *desc);
 	Common::SeekableReadStream *processSaveStream(const Common::String & fileName);
@@ -178,6 +179,7 @@ private:
 	bool notifyEvent(const Common::Event &event) override;
 	bool _initialized;
 	volatile uint32 _fakeTimer;
+	TimeDate _lastTimeDate;
 	bool _savedState;
 	bool _needcontinueGame;
 	int _temporarySlot;
@@ -212,6 +214,10 @@ private:
 	bool checkGameHash(const ADGameDescription *desc);
 
 	void checkForKeyCode(const Common::Event &event);
+	/**
+	 * @return false because we don't want to remap the given event again. This already happened on
+	 * recording the event. We record the custom events already, not the raw backend events.
+	 */
 	bool allowMapping() const override { return false; }
 
 	volatile uint32 _lastMillis;
@@ -226,6 +232,7 @@ private:
 	Common::String _recordFileName;
 	bool _fastPlayback;
 	bool _needRedraw;
+	bool _processingMillis;
 };
 
 } // End of namespace GUI

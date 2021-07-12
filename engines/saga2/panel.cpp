@@ -64,6 +64,10 @@ gPanel::gPanel(gWindow &win, const Rect16 &box, AppFunc *cmd)
 	ghosted = 0;
 	selected = 0;
 	imageLabel = 0;
+	title = nullptr;
+	id = 0;
+	wantMousePoll = 0;
+	userData = nullptr;
 }
 
 gPanel::gPanel(gPanelList &list, const Rect16 &box,
@@ -77,6 +81,8 @@ gPanel::gPanel(gPanelList &list, const Rect16 &box,
 	imageLabel = 0;
 	command = cmd;
 	id = ident;
+	wantMousePoll = 0;
+	userData = nullptr;
 }
 
 gPanel::gPanel(gPanelList &list, const Rect16 &box,
@@ -90,6 +96,8 @@ gPanel::gPanel(gPanelList &list, const Rect16 &box,
 	imageLabel = 1;
 	command = cmd;
 	id = ident;
+	wantMousePoll = 0;
+	userData = nullptr;
 }
 
 gPanel::gPanel(gPanelList &list, const StaticRect &box,
@@ -103,6 +111,8 @@ gPanel::gPanel(gPanelList &list, const StaticRect &box,
 	imageLabel = 0;
 	command = cmd;
 	id = ident;
+	wantMousePoll = 0;
+	userData = nullptr;
 }
 
 //  Dummy virtual functions
@@ -112,7 +122,6 @@ gPanel::~gPanel() {
 		G_BASE.mousePanel = NULL;
 	if (this == G_BASE.activePanel)
 		G_BASE.activePanel = NULL;
-
 }
 void gPanel::draw(void) {}
 void gPanel::drawClipped(gPort &, const Point16 &, const Rect16 &) {}
@@ -608,6 +617,7 @@ gControl::gControl(gPanelList &list, const Rect16 &box, const char *title_, uint
 
 	//  Add control to the window's control list.
 
+	_list = &list;
 	list.contents.push_back(this);
 }
 
@@ -617,11 +627,12 @@ gControl::gControl(gPanelList &list, const Rect16 &box, gPixelMap &img, uint16 i
 
 	//  Add control to the window's control list.
 
+	_list = &list;
 	list.contents.push_back(this);
 }
 
 gControl::~gControl() {
-	window.contents.remove(this);
+	_list->contents.remove(this);
 }
 
 gControl::gControl(gPanelList &list, const StaticRect &box, const char *title_, uint16 ident,
@@ -630,6 +641,7 @@ gControl::gControl(gPanelList &list, const StaticRect &box, const char *title_, 
 
 	//  Add control to the window's control list.
 
+	_list = &list;
 	list.contents.push_back(this);
 }
 
@@ -930,7 +942,7 @@ void gToolBase::handleMouse(Common::Event &event, uint32 time) {
 			        ||  _curMouseState.right > 1) {
 				Point16 diff = lastClickPos - _curMouseState.pos;
 
-				if (abs(diff.x) + abs(diff.y) < 6)
+				if (ABS(diff.x) + ABS(diff.y) < 6)
 					msg.doubleClick = 1;
 			}
 

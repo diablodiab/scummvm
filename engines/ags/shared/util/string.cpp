@@ -419,13 +419,26 @@ void String::Compact() {
 }
 
 void String::Append(const String &str) {
-	size_t length = str._len;
 	if (str._len > 0) {
-		ReserveAndShift(false, length);
-		memcpy(_cstr + _len, str._cstr, length);
-		_len += length;
+		ReserveAndShift(false, str._len);
+		memcpy(_cstr + _len, str._cstr, str._len);
+		_len += str._len;
 		_cstr[_len] = 0;
 	}
+}
+
+void String::Append(const char *cstr, size_t len) {
+	if (len == 0)
+		return;
+	// Test for null-terminator in the range
+	const char *ptr = cstr;
+	for (; *ptr && (static_cast<size_t>(ptr - cstr) < len); ++ptr);
+	if (static_cast<size_t>(ptr - cstr) < len)
+		len = ptr - cstr;
+	ReserveAndShift(false, len);
+	memcpy(_cstr + _len, cstr, len);
+	_len += len;
+	_cstr[_len] = 0;
 }
 
 void String::AppendChar(char c) {
@@ -679,6 +692,30 @@ void String::Reverse() {
 		fw < bw; ++fw, --bw) {
 		SWAP(*fw, *bw);
 	}
+}
+
+void String::ReverseUTF8() {
+	if (_len <= 1)
+		return; // nothing to reverse if 1 char or less
+	// TODO: may this be optimized to not alloc new buffer? or dont care
+	char *newstr = new char[_len + 1];
+	for (char *fw = _cstr, *fw2 = _cstr + 1,
+		*bw = _cstr + _len - 1, *bw2 = _cstr + _len;
+		fw <= bw; // FIXME: <= catches odd middle char, optimize?
+		fw = fw2++, bw2 = bw--) {
+		// find end of next character forwards
+		for (; (fw2 < bw) && ((*fw2 & 0xC0) == 0x80); ++fw2);
+		// find beginning of the prev character backwards
+		for (; (bw > fw) && ((*bw & 0xC0) == 0x80); --bw);
+		// put these in opposite sides on the new buffer
+		char *fw_place = newstr + (_cstr + _len - bw2);
+		char *bw_place = newstr + _len - (fw2 - _cstr);
+		memcpy(fw_place, bw, bw2 - bw);
+		if (fw != bw) // FIXME, optimize?
+			memcpy(bw_place, fw, fw2 - fw);
+	}
+	newstr[_len] = 0;
+	SetString(newstr);
 }
 
 void String::SetAt(size_t index, char c) {

@@ -50,19 +50,16 @@ class PlayerActor {
 	friend class Actor;
 
 	friend void initPlayerActors(void);
-	friend void savePlayerActors(SaveFileConstructor &);
-	friend void loadPlayerActors(SaveFileReader &);
 	friend void cleanupPlayerActors(void);
 
 	ObjectID        actorID;            // ID of player's actor
+
+public:
 	int16           portraitType;       // Integer representing portrait state
 	// for this player actor
 	uint16          flags;              // various flags
 
 	ActorAttributes baseStats;          // Base stats for this actor
-
-
-public:
 	enum PlayerActorFlags {
 		playerAggressive        = (1 << 0), // Player is in aggressive mode
 		playerBanded            = (1 << 1), // Player is banded
@@ -100,22 +97,17 @@ public:
 	bool notifiedOfAttack;
 
 	//  Constructor
-	PlayerActor(ObjectID a) :
-		actorID(a),
-		portraitType(0),
-		flags(0),
-		readyNode(NULL),
-		vitalityMemory(0) {
-		int     i;
+	PlayerActor(ObjectID a) :  actorID(a), portraitType(0), flags(0), readyNode(NULL),
+			vitalityMemory(0), notifiedOfAttack(false) {
 
 		assert(ActorAttributes::skillFracPointsPerLevel > 0);    // this is used in a divide
 
 		memset(&baseStats, 0, sizeof(baseStats));
 
-		for (i = 0; i < numManas; i++)
+		for (int i = 0; i < numManas; i++)
 			manaMemory[i] = 0;
 
-		for (i = 0; i < numSkills; i++) {
+		for (int i = 0; i < numSkills; i++) {
 			attribRecPools[i] = 0;
 			attribMemPools[i] = 0;
 		}
@@ -302,12 +294,8 @@ void handleEndOfCombat(void);
 //  Initialize the player actor list
 void initPlayerActors(void);
 
-
-//  Store the player actor list in a save file
-void savePlayerActors(SaveFileConstructor &saveGame);
-
-//  Load the player list data from a save file
-void loadPlayerActors(SaveFileReader &saveGame);
+void savePlayerActors(Common::OutSaveFile *out);
+void loadPlayerActors(Common::InSaveFile *in);
 
 //  Cleanup the player actor list
 void cleanupPlayerActors(void);
@@ -319,11 +307,8 @@ void cleanupPlayerActors(void);
 //  Initialize the center actor ID and view object ID
 void initCenterActor(void);
 
-//  Save the center actor ID and the view object ID to a save file
-void saveCenterActor(SaveFileConstructor &saveGame);
-
-//  Load the center actor ID and the view object ID from the save file
-void loadCenterActor(SaveFileReader &saveGame);
+void saveCenterActor(Common::OutSaveFile *out);
+void loadCenterActor(Common::InSaveFile *in);
 
 //  Do nothing
 inline void cleanupCenterActor(void) {}

@@ -49,7 +49,7 @@ void EventsManager::pollEvents() {
 			_G(want_exit) = true;
 			_G(abort_engine) = true;
 			_G(check_dynamic_sprites_at_exit) = false;
-			break;
+			return;
 
 		case Common::EVENT_JOYAXIS_MOTION:
 			assert(e.joystick.axis < 32);
@@ -311,7 +311,7 @@ bool EventsManager::ags_key_to_scancode(AGS3::eAGSKeyCode key, Common::KeyCode(&
 	return false;
 }
 
-AGS3::eAGSKeyCode EventsManager::ags_keycode_from_scummvm(const Common::Event &event) {
+AGS3::eAGSKeyCode EventsManager::scummvm_key_to_ags_key(const Common::Event &event) {
 	if (event.type != Common::EVENT_KEYDOWN)
 		return AGS3::eAGSKeyCodeNone;
 

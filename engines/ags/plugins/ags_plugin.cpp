@@ -307,7 +307,7 @@ void IAGSEngine::DrawTextWrapped(int32 xx, int32 yy, int32 wid, int32 font, int3
 	// TODO: use generic function from the engine instead of having copy&pasted code here
 	int linespacing = getfontspacing_outlined(font);
 
-	if (break_up_text_into_lines(text, Lines, wid, font) == 0)
+	if (break_up_text_into_lines(text, _GP(Lines), wid, font) == 0)
 		return;
 
 	Bitmap *ds = _G(gfxDriver)->GetStageBackBuffer(true);
@@ -315,8 +315,8 @@ void IAGSEngine::DrawTextWrapped(int32 xx, int32 yy, int32 wid, int32 font, int3
 		return;
 	color_t text_color = ds->GetCompatibleColor(color);
 	data_to_game_coords((int *)&xx, (int *)&yy); // stupid! quick tweak
-	for (size_t i = 0; i < Lines.Count(); i++)
-		draw_and_invalidate_text(ds, xx, yy + linespacing * i, font, text_color, Lines[i].GetCStr());
+	for (size_t i = 0; i < _GP(Lines).Count(); i++)
+		draw_and_invalidate_text(ds, xx, yy + linespacing * i, font, text_color, _GP(Lines)[i].GetCStr());
 }
 
 Bitmap glVirtualScreenWrap;
@@ -369,18 +369,17 @@ void IAGSEngine::BlitSpriteRotated(int32 x, int32 y, BITMAP *bmp, int32 angle) {
 extern void domouse(int);
 
 void IAGSEngine::PollSystem() {
-
 	domouse(DOMOUSE_NOCURSOR);
 	update_polled_stuff_if_runtime();
 	int mbut, mwheelz;
 	if (run_service_mb_controls(mbut, mwheelz) && mbut >= 0 && !_GP(play).IsIgnoringInput())
 		pl_run_plugin_hooks(AGSE_MOUSECLICK, mbut);
-	int kp;
+	KeyInput kp;
 	if (run_service_key_controls(kp) && !_GP(play).IsIgnoringInput()) {
-		pl_run_plugin_hooks(AGSE_KEYPRESS, kp);
+		pl_run_plugin_hooks(AGSE_KEYPRESS, kp.Key);
 	}
-
 }
+
 AGSCharacter *IAGSEngine::GetCharacter(int32 charnum) {
 	if (charnum >= _GP(game).numcharacters)
 		quit("!AGSEngine::GetCharacter: invalid character request");

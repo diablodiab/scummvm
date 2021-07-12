@@ -63,7 +63,6 @@ Symbol::Symbol() {
 	*refCount = 1;
 	nargs = 0;
 	maxArgs = 0;
-	parens = true;
 	targetType = kNoneObj;
 	argNames = nullptr;
 	varNames = nullptr;
@@ -81,7 +80,6 @@ Symbol::Symbol(const Symbol &s) {
 	*refCount += 1;
 	nargs = s.nargs;
 	maxArgs = s.maxArgs;
-	parens = s.parens;
 	targetType = s.targetType;
 	argNames = s.argNames;
 	varNames = s.varNames;
@@ -103,7 +101,6 @@ Symbol& Symbol::operator=(const Symbol &s) {
 	*refCount += 1;
 	nargs = s.nargs;
 	maxArgs = s.maxArgs;
-	parens = s.parens;
 	targetType = s.targetType;
 	argNames = s.argNames;
 	varNames = s.varNames;
@@ -196,6 +193,7 @@ Lingo::~Lingo() {
 	resetLingo();
 	cleanupFuncs();
 	cleanupMethods();
+	delete _compiler;
 }
 
 void Lingo::reloadBuiltIns() {
@@ -1168,7 +1166,7 @@ void Lingo::varAssign(const Datum &var, const Datum &value) {
 			}
 			switch (member->_type) {
 			case kCastText:
-				((TextCastMember *)member)->setText(value.asString().c_str());
+				((TextCastMember *)member)->setText(Common::U32String(value.asString(), Common::kMacCentralEurope)); // FIXME: Properly handle encoding
 				break;
 			default:
 				warning("varAssign: Unhandled cast type %d", member->_type);
@@ -1289,7 +1287,7 @@ Datum Lingo::varFetch(const Datum &var, bool silent) {
 			switch (member->_type) {
 			case kCastText:
 				result.type = STRING;
-				result.u.s = new Common::String(((TextCastMember *)member)->getText());
+				result.u.s = new Common::String(((TextCastMember *)member)->getText().encode(Common::kMacCentralEurope)); // FIXME: Properly handle encoding
 				break;
 			default:
 				warning("varFetch: Unhandled cast type %d", member->_type);

@@ -20,7 +20,7 @@
  *
  */
 
-#include "ultima/ultima8/gumps/remorse_menu_gump.h"
+#include "ultima/ultima8/gumps/cru_menu_gump.h"
 #include "ultima/ultima8/games/game_data.h"
 #include "ultima/ultima8/graphics/gump_shape_archive.h"
 #include "ultima/ultima8/graphics/shape.h"
@@ -44,12 +44,12 @@
 namespace Ultima {
 namespace Ultima8 {
 
-DEFINE_RUNTIME_CLASSTYPE_CODE(RemorseMenuGump)
+DEFINE_RUNTIME_CLASSTYPE_CODE(CruMenuGump)
 
 static const int MENU_MUSIC_REMORSE = 20;
 static const int MENU_MUSIC_REGRET = 18;
 
-RemorseMenuGump::RemorseMenuGump()
+CruMenuGump::CruMenuGump()
 	: ModalGump(0, 0, 640, 480, 0, FLAG_DONT_SAVE) {
 
 	Mouse *mouse = Mouse::get_instance();
@@ -68,11 +68,11 @@ RemorseMenuGump::RemorseMenuGump()
 	MetaEngine::setGameMenuActive(true);
 }
 
-RemorseMenuGump::~RemorseMenuGump() {
+CruMenuGump::~CruMenuGump() {
 	MetaEngine::setGameMenuActive(false);
 }
 
-void RemorseMenuGump::Close(bool no_del) {
+void CruMenuGump::Close(bool no_del) {
 	// Restore old music state and palette.
 	// Music state can be changed by the Intro and Credits
 	MusicProcess *musicprocess = MusicProcess::get_instance();
@@ -85,22 +85,24 @@ void RemorseMenuGump::Close(bool no_del) {
 	ModalGump::Close(no_del);
 }
 
-static const int frameTopLeft = 54;
-static const int firstMenuEntry = 58;
+static const int FRAME_TOP_LEFT = 54;
+static const int FIRST_MENU_ENTRY = 58;
 
-static const int numMenuEntries = 6;
-static const int menuEntryX[] = {45, 45, 45, 446, 488, 550};
-static const int menuEntryY[] = {50, 101, 151, 58, 151, 198};
+static const int NUM_MENU_ENTRIES = 6;
+static const int MENU_ENTRY_X_REM[] = {45, 45, 45, 446, 488, 550};
+static const int MENU_ENTRY_Y_REM[] = {50, 101, 151, 58, 151, 198};
+static const int MENU_ENTRY_X_REG[] = {45, 45, 45, 446, 489, 550};
+static const int MENU_ENTRY_Y_REG[] = {95, 147, 197, 103, 196, 243};
 
-void RemorseMenuGump::InitGump(Gump *newparent, bool take_focus) {
+void CruMenuGump::InitGump(Gump *newparent, bool take_focus) {
 	ModalGump::InitGump(newparent, take_focus);
 
 	GumpShapeArchive *shapeArchive = GameData::get_instance()->getGumps();
 
-	Shape *topLeft = shapeArchive->getShape(frameTopLeft);
-	Shape *topRight = shapeArchive->getShape(frameTopLeft + 1);
-	Shape *botLeft = shapeArchive->getShape(frameTopLeft + 2);
-	Shape *botRight = shapeArchive->getShape(frameTopLeft + 3);
+	Shape *topLeft = shapeArchive->getShape(FRAME_TOP_LEFT);
+	Shape *topRight = shapeArchive->getShape(FRAME_TOP_LEFT + 1);
+	Shape *botLeft = shapeArchive->getShape(FRAME_TOP_LEFT + 2);
+	Shape *botRight = shapeArchive->getShape(FRAME_TOP_LEFT + 3);
 
 	if (!topLeft || !topRight || !botLeft || !botRight) {
 		error("Couldn't load shapes for menu background");
@@ -130,21 +132,24 @@ void RemorseMenuGump::InitGump(Gump *newparent, bool take_focus) {
 	_dims.setWidth(tlFrame->_width + trFrame->_width);
 	_dims.setHeight(tlFrame->_height + brFrame->_height);
 
-	Gump *tlGump = new Gump(0, 0, tlFrame->_width, tlFrame->_height);
+	Gump *tlGump = new Gump(0, 0, tlFrame->_width, tlFrame->_height, 0, 0, _layer);
 	tlGump->SetShape(topLeft, 0);
 	tlGump->InitGump(this, false);
-	Gump *trGump = new Gump(tlFrame->_width, 0, trFrame->_width, trFrame->_height);
+	Gump *trGump = new Gump(tlFrame->_width, 0, trFrame->_width, trFrame->_height, 0, 0, _layer);
 	trGump->SetShape(topRight, 0);
 	trGump->InitGump(this, false);
-	Gump *blGump = new Gump(0, tlFrame->_height, blFrame->_width, blFrame->_height);
+	Gump *blGump = new Gump(0, tlFrame->_height, blFrame->_width, blFrame->_height, 0, 0, _layer);
 	blGump->SetShape(botLeft, 0);
 	blGump->InitGump(this, false);
-	Gump *brGump = new Gump(blFrame->_width, trFrame->_height, brFrame->_width, brFrame->_height);
+	Gump *brGump = new Gump(blFrame->_width, trFrame->_height, brFrame->_width, brFrame->_height, 0, 0, _layer);
 	brGump->SetShape(botRight, 0);
 	brGump->InitGump(this, false);
 
-	for (int i = 0; i < numMenuEntries; i++) {
-		uint32 entryShapeNum = firstMenuEntry + i;
+	const int *MENU_ENTRY_X = GAME_IS_REMORSE ? MENU_ENTRY_X_REM : MENU_ENTRY_X_REG;
+	const int *MENU_ENTRY_Y = GAME_IS_REMORSE ? MENU_ENTRY_Y_REM : MENU_ENTRY_Y_REG;
+
+	for (int i = 0; i < NUM_MENU_ENTRIES; i++) {
+		uint32 entryShapeNum = FIRST_MENU_ENTRY + i;
 		Shape *menuEntry = shapeArchive->getShape(entryShapeNum);
 		if (!menuEntry) {
 			error("Couldn't load shape for menu entry %d", i);
@@ -160,17 +165,18 @@ void RemorseMenuGump::InitGump(Gump *newparent, bool take_focus) {
 
 		FrameID frame_up(GameData::GUMPS, entryShapeNum, 0);
 		FrameID frame_down(GameData::GUMPS, entryShapeNum, 1);
-		Gump *widget = new ButtonWidget(menuEntryX[i], menuEntryY[i], frame_up, frame_down, true);
+		Gump *widget = new ButtonWidget(MENU_ENTRY_X[i], MENU_ENTRY_Y[i],
+										frame_up, frame_down, true, _layer + 1);
 		widget->InitGump(this, false);
 		widget->SetIndex(i + 1);
 	}
 }
 
-void RemorseMenuGump::PaintThis(RenderSurface *surf, int32 lerp_factor, bool scaled) {
+void CruMenuGump::PaintThis(RenderSurface *surf, int32 lerp_factor, bool scaled) {
 	Gump::PaintThis(surf, lerp_factor, scaled);
 }
 
-bool RemorseMenuGump::OnKeyDown(int key, int mod) {
+bool CruMenuGump::OnKeyDown(int key, int mod) {
 	if (Gump::OnKeyDown(key, mod)) return true;
 
 	if (key == Common::KEYCODE_ESCAPE) {
@@ -185,14 +191,14 @@ bool RemorseMenuGump::OnKeyDown(int key, int mod) {
 	return true;
 }
 
-void RemorseMenuGump::ChildNotify(Gump *child, uint32 message) {
+void CruMenuGump::ChildNotify(Gump *child, uint32 message) {
 	ButtonWidget *buttonWidget = dynamic_cast<ButtonWidget *>(child);
 	if (buttonWidget && message == ButtonWidget::BUTTON_CLICK) {
 		selectEntry(child->GetIndex());
 	}
 }
 
-void RemorseMenuGump::selectEntry(int entry) {
+void CruMenuGump::selectEntry(int entry) {
 	switch (entry) {
 	case 1: { // New Game
 		DifficultyGump *gump = new DifficultyGump();
@@ -223,7 +229,7 @@ void RemorseMenuGump::selectEntry(int entry) {
 	}
 }
 
-bool RemorseMenuGump::OnTextInput(int unicode) {
+bool CruMenuGump::OnTextInput(int unicode) {
 	return Gump::OnTextInput(unicode);
 }
 

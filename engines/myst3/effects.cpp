@@ -281,7 +281,7 @@ void WaterEffect::apply(Graphics::Surface *src, Graphics::Surface *dst, Graphics
 	uint32 *dstPtr = (uint32 *)dst->getPixels();
 	byte *maskPtr = (byte *)mask->getPixels();
 
-	for (uint y = 0; y < dst->h; y++) {
+	for (int y = 0; y < dst->h; y++) {
 		if (!bottomFace) {
 			uint32 strength = (320 * (9 - y / 64)) / waterEffectAttenuation;
 			if (strength > 4)
@@ -289,7 +289,7 @@ void WaterEffect::apply(Graphics::Surface *src, Graphics::Surface *dst, Graphics
 			hDisplacement = _horizontalDisplacements[strength];
 		}
 
-		for (uint x = 0; x < dst->w; x++) {
+		for (int x = 0; x < dst->w; x++) {
 			int8 maskValue = *maskPtr;
 
 			if (maskValue != 0) {
@@ -395,8 +395,8 @@ void LavaEffect::applyForFace(uint face, Graphics::Surface *src, Graphics::Surfa
 	uint32 *dstPtr = (uint32 *)dst->getPixels();
 	byte *maskPtr = (byte *)mask->surface->getPixels();
 
-	for (uint y = 0; y < dst->h; y++) {
-		for (uint x = 0; x < dst->w; x++) {
+	for (int y = 0; y < dst->h; y++) {
+		for (int x = 0; x < dst->w; x++) {
 			uint8 maskValue = *maskPtr;
 
 			if (maskValue != 0) {
@@ -524,8 +524,8 @@ void MagnetEffect::apply(Graphics::Surface *src, Graphics::Surface *dst, Graphic
 	uint32 *dstPtr = (uint32 *)dst->getPixels();
 	byte *maskPtr = (byte *)mask->getPixels();
 
-	for (uint y = 0; y < dst->h; y++) {
-		for (uint x = 0; x < dst->w; x++) {
+	for (int y = 0; y < dst->h; y++) {
+		for (int x = 0; x < dst->w; x++) {
 			uint8 maskValue = *maskPtr;
 
 			if (maskValue != 0) {
@@ -665,7 +665,7 @@ bool ShieldEffect::loadPattern() {
 
 	Common::SeekableReadStream *stream = desc.getData();
 	if (stream->size() != 4096) {
-		error("Incorrect shield effect support file size %d", stream->size());
+		error("Incorrect shield effect support file size %d", (int)stream->size());
 	}
 
 	stream->read(_pattern, 4096);
@@ -778,8 +778,8 @@ void ShieldEffect::applyForFace(uint face, Graphics::Surface *src, Graphics::Sur
 	uint32 *dstPtr = (uint32 *)dst->getPixels();
 	byte *maskPtr = (byte *)mask->surface->getPixels();
 
-	for (uint y = 0; y < dst->h; y++) {
-		for (uint x = 0; x < dst->w; x++) {
+	for (int y = 0; y < dst->h; y++) {
+		for (int x = 0; x < dst->w; x++) {
 			uint8 maskValue = *maskPtr;
 
 			if (maskValue != 0) {

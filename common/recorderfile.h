@@ -38,21 +38,39 @@ namespace Common {
 
 enum RecorderEventType {
 	kRecorderEventTypeNormal = 0,
-	kRecorderEventTypeTimer = 1
+	kRecorderEventTypeTimer = 1,
+	kRecorderEventTypeTimeDate = 2
 };
 
 struct RecorderEvent : Event {
 	RecorderEventType recordedtype;
-	uint32 time;
+	union {
+		uint32 time;
+		TimeDate timeDate;
+	};
 
 	RecorderEvent() {
 		recordedtype = kRecorderEventTypeNormal;
 		time = 0;
+		timeDate.tm_sec = 0;
+		timeDate.tm_min = 0;
+		timeDate.tm_hour = 0;
+		timeDate.tm_mday = 0;
+		timeDate.tm_mon = 0;
+		timeDate.tm_year = 0;
+		timeDate.tm_wday = 0;
 	}
 
 	RecorderEvent(const Event &e) : Event(e) {
 		recordedtype = kRecorderEventTypeNormal;
 		time = 0;
+		timeDate.tm_sec = 0;
+		timeDate.tm_min = 0;
+		timeDate.tm_hour = 0;
+		timeDate.tm_mday = 0;
+		timeDate.tm_mon = 0;
+		timeDate.tm_year = 0;
+		timeDate.tm_wday = 0;
 	}
 };
 
@@ -127,6 +145,7 @@ public:
 	bool openRead(const String &fileName);
 	void close();
 
+	bool hasNextEvent() const;
 	RecorderEvent getNextEvent();
 	void writeEvent(const RecorderEvent &event);
 
@@ -139,6 +158,7 @@ public:
 	void updateHeader();
 	void addSaveFile(const String &fileName, InSaveFile *saveStream);
 private:
+	Array<byte> _tmpBuffer;
 	WriteStream *_recordFile;
 	WriteStream *_writeStream;
 	WriteStream *_screenshotsFile;
@@ -150,7 +170,6 @@ private:
 	bool _headerDumped;
 	int _recordCount;
 	uint32 _eventsSize;
-	byte _tmpBuffer[kRecordBuffSize];
 	PlaybackFileHeader _header;
 	PlaybackFileState _playbackParseState;
 

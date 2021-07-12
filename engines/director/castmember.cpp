@@ -48,6 +48,8 @@ CastMember::CastMember(Cast *cast, uint16 castId, Common::SeekableReadStreamEndi
 	_modified = true;
 
 	_objType = kCastMemberObj;
+
+	_widget = nullptr;
 }
 
 CastMemberInfo *CastMember::getInfo() {
@@ -180,16 +182,61 @@ Graphics::MacWidget *BitmapCastMember::createWidget(Common::Rect &bbox, Channel 
 	}
 
 	Graphics::MacWidget *widget = new Graphics::MacWidget(g_director->getCurrentWindow(), bbox.left, bbox.top, bbox.width(), bbox.height(), g_director->_wm, false);
-	widget->getSurface()->blitFrom(*_img->getSurface());
+
+	// scale for drawing a different size sprite
+	if (bbox.width() != _initialRect.width() || bbox.height() != _initialRect.height()) {
+
+		int scaleX = SCALE_THRESHOLD * _initialRect.width() / bbox.width();
+		int scaleY = SCALE_THRESHOLD * _initialRect.height() / bbox.height();
+
+		for (int y = 0, scaleYCtr = 0; y < bbox.height(); y++, scaleYCtr += scaleY) {
+			if (g_director->_wm->_pixelformat.bytesPerPixel == 1) {
+				for (int x = 0, scaleXCtr = 0; x < bbox.width(); x++, scaleXCtr += scaleX) {
+					const byte *src = (const byte *)_img->getSurface()->getBasePtr(scaleXCtr / SCALE_THRESHOLD, scaleYCtr / SCALE_THRESHOLD);
+					*(byte *)widget->getSurface()->getBasePtr(x, y) = *src;
+				}
+			} else {
+				for (int x = 0, scaleXCtr = 0; x < bbox.width(); x++, scaleXCtr += scaleX) {
+					const int *src = (const int *)_img->getSurface()->getBasePtr(scaleXCtr / SCALE_THRESHOLD, scaleYCtr / SCALE_THRESHOLD);
+					*(int *)widget->getSurface()->getBasePtr(x, y) = *src;
+				}
+			}
+		}
+
+	} else {
+		widget->getSurface()->blitFrom(*_img->getSurface());
+	}
+
 	return widget;
 }
 
-void BitmapCastMember::createMatte() {
+void BitmapCastMember::createMatte(Common::Rect &bbox) {
 	// Like background trans, but all white pixels NOT ENCLOSED by coloured pixels
 	// are transparent
 	Graphics::Surface tmp;
-	tmp.create(_initialRect.width(), _initialRect.height(), g_director->_pixelformat);
-	tmp.copyFrom(*_img->getSurface());
+	tmp.create(bbox.width(), bbox.height(), g_director->_pixelformat);
+
+	if (bbox.width() != _initialRect.width() || bbox.height() != _initialRect.height()) {
+
+		int scaleX = SCALE_THRESHOLD * _initialRect.width() / bbox.width();
+		int scaleY = SCALE_THRESHOLD * _initialRect.height() / bbox.height();
+
+		for (int y = 0, scaleYCtr = 0; y < bbox.height(); y++, scaleYCtr += scaleY) {
+			if (g_director->_wm->_pixelformat.bytesPerPixel == 1) {
+				for (int x = 0, scaleXCtr = 0; x < bbox.width(); x++, scaleXCtr += scaleX) {
+					const byte *src = (const byte *)_img->getSurface()->getBasePtr(scaleXCtr / SCALE_THRESHOLD, scaleYCtr / SCALE_THRESHOLD);
+					*(byte *)tmp.getBasePtr(x, y) = *src;
+				}
+			} else {
+				for (int x = 0, scaleXCtr = 0; x < bbox.width(); x++, scaleXCtr += scaleX) {
+					const int *src = (const int *)_img->getSurface()->getBasePtr(scaleXCtr / SCALE_THRESHOLD, scaleYCtr / SCALE_THRESHOLD);
+					*(int *)tmp.getBasePtr(x, y) = *src;
+				}
+			}
+		}
+	} else {
+		tmp.copyFrom(*_img->getSurface());
+	}
 
 	_noMatte = true;
 
@@ -240,10 +287,16 @@ void BitmapCastMember::createMatte() {
 	tmp.free();
 }
 
-Graphics::Surface *BitmapCastMember::getMatte() {
+Graphics::Surface *BitmapCastMember::getMatte(Common::Rect &bbox) {
 	// Lazy loading of mattes
 	if (!_matte && !_noMatte) {
-		createMatte();
+		createMatte(bbox);
+	}
+
+	// check for the scale matte
+	Graphics::Surface *surface = _matte ? _matte->getMask() : nullptr;
+	if (surface && (surface->w != bbox.width() || surface->h != bbox.height())) {
+		createMatte(bbox);
 	}
 
 	return _matte ? _matte->getMask() : nullptr;
@@ -259,6 +312,7 @@ DigitalVideoCastMember::DigitalVideoCastMember(Cast *cast, uint16 castId, Common
 	_type = kCastDigitalVideo;
 	_video = nullptr;
 	_lastFrame = nullptr;
+	_channel = nullptr;
 
 	_getFirstFrame = false;
 	_duration = 0;
@@ -541,7 +595,9 @@ TextCastMember::TextCastMember(Cast *cast, uint16 castId, Common::SeekableReadSt
 	_textSlant = 0;
 	_bgpalinfo1 = _bgpalinfo2 = _bgpalinfo3 = 0;
 	_fgpalinfo1 = _fgpalinfo2 = _fgpalinfo3 = 0xff;
-	_widget = nullptr;
+
+	// seems like the line spacing is default to 1 in D4
+	_lineSpacing = g_director->getVersion() >= 400 ? 1 : 0;
 
 	if (version < kFileVer400) {
 		_flags1 = flags1; // region: 0 - auto, 1 - matte, 2 - disabled
@@ -679,17 +735,7 @@ Graphics::TextAlign TextCastMember::getAlignment() {
 }
 
 void TextCastMember::importStxt(const Stxt *stxt) {
-	if (_cast->_version < kFileVer400) {
-		if (_cast->_fontMap.contains(stxt->_style.fontId)) {
-			_fontId = _cast->_fontMap[stxt->_style.fontId];
-		} else {
-			_fontId = 1; // fall back to Geneva
-		}
-	} else {
-		// FIXME: This should use the font map.
-		// D4 font maps are not implemented yet, so just use the unmapped ID.
-		_fontId = stxt->_style.fontId;
-	}
+	_fontId = stxt->_style.fontId;
 	_textSlant = stxt->_style.textSlant;
 	_fontSize = stxt->_style.fontSize;
 	_fgpalinfo1 = stxt->_style.r;
@@ -711,7 +757,7 @@ Graphics::MacWidget *TextCastMember::createWidget(Common::Rect &bbox, Channel *c
 			dims.right = MIN<int>(dims.right, dims.left + _initialRect.width());
 			dims.bottom = MIN<int>(dims.bottom, dims.top + _initialRect.height());
 		}
-		widget = new Graphics::MacText(g_director->getCurrentWindow(), bbox.left, bbox.top, dims.width(), dims.height(), g_director->_wm, _ftext, macFont, getForeColor(), getBackColor(), _initialRect.width(), getAlignment(), 0, _borderSize, _gutterSize, _boxShadow, _textShadow, Common::kMacCentralEurope, _textType == kTextTypeFixed);
+		widget = new Graphics::MacText(g_director->getCurrentWindow(), bbox.left, bbox.top, dims.width(), dims.height(), g_director->_wm, _ftext, macFont, getForeColor(), getBackColor(), _initialRect.width(), getAlignment(), 0, _borderSize, _gutterSize, _boxShadow, _textShadow, _textType == kTextTypeFixed);
 		((Graphics::MacText *)widget)->setSelRange(g_director->getCurrentMovie()->_selStart, g_director->getCurrentMovie()->_selEnd);
 		((Graphics::MacText *)widget)->setEditable(_editable);
 		((Graphics::MacText *)widget)->draw();
@@ -753,13 +799,13 @@ void TextCastMember::importRTE(byte *text) {
 	//child2 is positional?
 }
 
-void TextCastMember::setText(const char *text) {
+void TextCastMember::setText(const Common::U32String &text) {
 	// Do nothing if text did not change
 	if (_ptext.equals(text))
 		return;
 
 	// If text has changed, use the cached formatting from first STXT in this castmember.
-	Common::String formatting = Common::String::format("\001\016%04x%02x%04x%04x%04x%04x", _fontId, _textSlant, _fontSize, _fgpalinfo1, _fgpalinfo2, _fgpalinfo3);
+	Common::U32String formatting = Common::String::format("\001\016%04x%02x%04x%04x%04x%04x", _fontId, _textSlant, _fontSize, _fgpalinfo1, _fgpalinfo2, _fgpalinfo3);
 	_ptext = text;
 	_ftext = formatting + text;
 
@@ -774,8 +820,36 @@ void TextCastMember::setText(const char *text) {
 	}
 }
 
-Common::String TextCastMember::getText() {
+// D4 dictionary book said this is line spacing
+int TextCastMember::getTextHeight() {
+	if (_widget)
+		return ((Graphics::MacText *)_widget)->getLineSpacing();
+	else
+		return _lineSpacing;
+	return 0;
+}
+
+// this should be amend when we have some where using this function
+int TextCastMember::getTextSize() {
+	if (_widget)
+		return ((Graphics::MacText *)_widget)->getTextSize();
+	else
+		return _fontSize;
+	return 0;
+}
+
+Common::U32String TextCastMember::getText() {
 	return _ptext;
+}
+
+void TextCastMember::setTextSize(int textSize) {
+	if (_widget) {
+		((Graphics::MacText *)_widget)->setTextSize(textSize);
+		((Graphics::MacText *)_widget)->draw();
+	} else {
+		_fontSize = textSize;
+		_modified = true;
+	}
 }
 
 bool TextCastMember::isEditable() {
@@ -791,7 +865,7 @@ void TextCastMember::setEditable(bool editable) {
 
 void TextCastMember::updateFromWidget(Graphics::MacWidget *widget) {
 	if (widget && _type == kCastText) {
-		_ptext = ((Graphics::MacText *)widget)->getEditedString().encode();
+		_ptext = ((Graphics::MacText *)widget)->getEditedString();
 	}
 }
 

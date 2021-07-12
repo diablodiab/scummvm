@@ -168,7 +168,7 @@ void RecorderDialog::handleCommand(CommandSender *sender, uint32 cmd, uint32 dat
 		TimeDate t;
 		QualifiedGameDescriptor desc = EngineMan.findTarget(_target);
 		g_system->getTimeAndDate(t);
-		EditRecordDialog editDlg(_("Unknown Author"), Common::String::format("%.2d.%.2d.%.4d ", t.tm_mday, t.tm_mon, 1900 + t.tm_year) + desc.description, "");
+		EditRecordDialog editDlg(_("Unknown Author"), Common::String::format("%.2d.%.2d.%.4d ", t.tm_mday, t.tm_mon + 1, 1900 + t.tm_year) + desc.description, "");
 		if (editDlg.runModal() != kOKCmd) {
 			return;
 		}
@@ -201,6 +201,7 @@ void RecorderDialog::updateList() {
 	Common::StringArray files = saveFileMan->listSavefiles(pattern);
 	Common::PlaybackFile file;
 	Common::U32StringArray namesList;
+	Common::sort(files.begin(), files.end());
 	_fileHeaders.clear();
 	for (Common::StringArray::iterator i = files.begin(); i != files.end(); ++i) {
 		if (file.openRead(*i)) {

@@ -36,15 +36,8 @@
 namespace TwinE {
 
 void Debug::debugFillButton(int32 x, int32 y, int32 width, int32 height, int8 color) {
-	uint8 *ptr = (uint8 *)_engine->frontVideoBuffer.getBasePtr(x, y);
-	const int32 offset = _engine->width() - width;
-
-	for (int32 i = 0; i < height; i++) {
-		for (int32 j = 0; j < width; j++) {
-			*ptr++ = color;
-		}
-		ptr += offset;
-	}
+	const Common::Rect rect(x, y, x + width, y + height);
+	_engine->_interface->drawFilledRect(rect, color);
 }
 
 void Debug::debugDrawButton(const Common::Rect &rect, const char *text, int32 textLeft, int32 textTop, int32 isActive, int8 color) {
@@ -194,7 +187,7 @@ void Debug::debugResetButton(int32 type) {
 
 void Debug::debugRedrawScreen() {
 	_engine->_redraw->redrawEngineActions(true);
-	_engine->_screens->copyScreen(_engine->frontVideoBuffer, _engine->workVideoBuffer);
+	_engine->saveFrontBuffer();
 	debugDrawWindows();
 }
 
@@ -421,7 +414,7 @@ void Debug::debugProcessWindow() {
 	int32 count = 0;
 
 	ScopedCursor cursor(_engine);
-	_engine->_screens->copyScreen(_engine->frontVideoBuffer, _engine->workVideoBuffer);
+	_engine->saveFrontBuffer();
 
 	debugResetButtonsState();
 	if (numDebugWindows == 0) {
@@ -441,7 +434,7 @@ void Debug::debugProcessWindow() {
 			int type = 0;
 			if ((type = debugProcessButton(point.x, point.y)) != NO_ACTION) { // process menu item
 				if (debugTypeUseMenu(type)) {
-					_engine->_screens->copyScreen(_engine->workVideoBuffer, _engine->frontVideoBuffer);
+					_engine->restoreFrontBuffer();
 					_engine->copyBlockPhys(205, 55, 634, 474);
 				}
 

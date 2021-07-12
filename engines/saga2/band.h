@@ -51,12 +51,64 @@ Band *getBandAddress(BandID id);
 
 //  Initialize the band list
 void initBands(void);
-//  Save the active band structures in a save file
-void saveBands(SaveFileConstructor &saveGame);
-//  Load the band structures from a save file
-void loadBands(SaveFileReader &saveGame);
+void saveBands(Common::OutSaveFile *out);
+void loadBands(Common::InSaveFile *in, int32 chunkSize);
 //  Cleanup the band list
 void cleanupBands(void);
+
+/* ===================================================================== *
+   BandList class
+ * ===================================================================== */
+
+//  Manages the memory used for the Band's.  There will only be one
+//  global instantiation of this class
+class BandList {
+public:
+	enum {
+		kNumBands = 32
+	};
+
+	Band *_list[kNumBands];
+
+	//  Constructor -- initial construction
+	BandList(void);
+
+	//  Destructor
+	~BandList(void);
+
+	void read(Common::InSaveFile *in);
+
+	//  Return the number of bytes necessary to archive this task list
+	//  in a buffer
+	int32 archiveSize(void);
+
+	void write(Common::OutSaveFile *out);
+
+	//  Place a Band from the inactive list into the active
+	//  list.
+	Band *newBand(void);
+	Band *newBand(BandID id);
+
+	void addBand(Band *band);
+
+	//  Place a Band back into the inactive list.
+	void deleteBand(Band *p);
+
+	//  Return the specified Band's ID
+	BandID getBandID(Band *b) {
+		for (int i = 0; i < kNumBands; i++)
+			if (_list[i] == b)
+				return i;
+
+		error("BandList::getBandID(): Unknown band");
+	}
+
+	//  Return a pointer to a Band given a BandID
+	Band *getBandAddress(BandID id) {
+		assert(id >= 0 && id < kNumBands);
+		return _list[id];
+	}
+};
 
 /* ===================================================================== *
    Band class
@@ -73,8 +125,7 @@ public:
 	Band();
 	Band(Actor *l);
 
-	//  Constructor -- reconstruct from archive buffer
-	Band(void **buf);
+	Band(Common::InSaveFile *in);
 
 	~Band() { deleteBand(this); }
 
@@ -82,8 +133,7 @@ public:
 	//  buffer
 	int32 archiveSize(void);
 
-	//  Archive this object in a buffer
-	void *archive(void *buf);
+	void write(Common::OutSaveFile *out);
 
 	Actor *getLeader(void) {
 		return leader;

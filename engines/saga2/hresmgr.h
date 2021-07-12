@@ -48,8 +48,6 @@ struct hResEntry;
 class hResContext;
 class hResource;
 
-#define EXTERNAL_PATH_SIZE 80
-
 /* ===================================================================== *
    hResEntry struct
  * ===================================================================== */
@@ -112,7 +110,6 @@ protected:
 	uint32          _bytepos;
 
 	hResEntry      *findEntry(hResID id);
-	Common::File   *openExternal(Common::File *fh);
 
 public:
 	bool            _valid;
@@ -120,7 +117,7 @@ public:
 
 	hResContext();
 	hResContext(hResContext *sire, hResID id, const char []);
-	~hResContext();
+	virtual ~hResContext();
 
 	uint32      getResID(void) {
 		return _base->id;
@@ -158,12 +155,11 @@ class hResource : public hResContext {
 	friend class hResContext;
 
 	uint32          _firstGroupOffset;
-	char            _externalPath[EXTERNAL_PATH_SIZE];
 	hResEntry      *_table;
 
 public:
-	hResource(const char *resname, const char *extname, const char []);
-	~hResource();
+	hResource(const char *resname, const char []);
+	virtual ~hResource();
 
 	hResContext *newContext(hResID id, const char []);
 	void        disposeContext(hResContext *con);

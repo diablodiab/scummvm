@@ -34,7 +34,6 @@ namespace Saga2 {
 ModalWindow *mWinPtr;
 
 extern gPixelMap    tileDrawMap;
-extern Point16      fineScroll;
 extern gToolBase    G_BASE;
 
 APPFUNC(cmdModalWindow);
@@ -62,10 +61,12 @@ extern void updateWindowSection(const Rect16 &r);
 
 ModalWindow *ModalWindow::current = NULL;
 
-ModalWindow::ModalWindow(const Rect16 &r,
-                         uint16 ident,
-                         AppFunc *cmd)
-	: DecoratedWindow(r, ident, "DialogWindow", cmd) {
+ModalWindow::ModalWindow(const Rect16 &r, uint16 ident, AppFunc *cmd)
+		: DecoratedWindow(r, ident, "DialogWindow", cmd) {
+	prevModeStackCtr = 0;
+
+	for (int i = 0; i < Max_Modes; i++)
+		prevModeStackPtr[i] = 0;
 }
 
 ModalWindow::~ModalWindow(void) {

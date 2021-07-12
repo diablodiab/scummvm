@@ -70,27 +70,28 @@ Window::~Window() {
 	}
 }
 
-void Window::invertChannel(Channel *channel) {
+void Window::invertChannel(Channel *channel, const Common::Rect &destRect) {
 	const Graphics::Surface *mask = channel->getMask(true);
-	Common::Rect destRect = channel->getBbox();
+	Common::Rect srcRect = channel->getBbox();
+	srcRect.clip(destRect);
 
 	if (_wm->_pixelformat.bytesPerPixel == 1) {
-		for (int i = 0; i < destRect.height(); i++) {
-			byte *src = (byte *)_composeSurface->getBasePtr(destRect.left, destRect.top + i);
+		for (int i = 0; i < srcRect.height(); i++) {
+			byte *src = (byte *)_composeSurface->getBasePtr(srcRect.left, srcRect.top + i);
 			const byte *msk = mask ? (const byte *)mask->getBasePtr(0, i) : nullptr;
 
-			for (int j = 0; j < destRect.width(); j++, src++)
+			for (int j = 0; j < srcRect.width(); j++, src++)
 				if (!mask || (msk && !(*msk++)))
 					*src = ~(*src);
 		}
 	} else {
 		uint32 alpha = _wm->_pixelformat.ARGBToColor(255, 0, 0, 0);
 
-		for (int i = 0; i < destRect.height(); i++) {
-			uint32 *src = (uint32 *)_composeSurface->getBasePtr(destRect.left, destRect.top + i);
+		for (int i = 0; i < srcRect.height(); i++) {
+			uint32 *src = (uint32 *)_composeSurface->getBasePtr(srcRect.left, srcRect.top + i);
 			const uint32 *msk = mask ? (const uint32 *)mask->getBasePtr(0, i) : nullptr;
 
-			for (int j = 0; j < destRect.width(); j++, src++)
+			for (int j = 0; j < srcRect.width(); j++, src++)
 				if (!mask || (msk && !(*msk++)))
 					*src = ~(*src & ~alpha) | alpha;
 		}
@@ -113,6 +114,7 @@ bool Window::render(bool forceRedraw, Graphics::ManagedSurface *blitTo) {
 
 	if (!blitTo)
 		blitTo = _composeSurface;
+	Channel *hiliteChannel = _currentMovie->getScore()->getChannelById(_currentMovie->_currentHiliteChannelId);
 
 	for (Common::List<Common::Rect>::iterator i = _dirtyRects.begin(); i != _dirtyRects.end(); i++) {
 		const Common::Rect &r = *i;
@@ -129,8 +131,11 @@ bool Window::render(bool forceRedraw, Graphics::ManagedSurface *blitTo) {
 						continue;
 				}
 
-				if ((*j)->_visible)
+				if ((*j)->_visible) {
 					inkBlitFrom(*j, r, blitTo);
+					if ((*j) == hiliteChannel)
+						invertChannel(hiliteChannel, r);
+				}
 			}
 		}
 	}
@@ -209,6 +214,9 @@ void Window::inkBlitShape(DirectorPlotData *pd, Common::Rect &srcRect) {
 		Graphics::drawFilledRect(fillAreaRect, pd->ms->foreColor, g_director->getInkDrawPixel(), pd);
 		// fall through
 	case kOutlinedRectangleSprite:
+		// if we have lineSize <= 0, means we are not drawing anything. so we may return directly.
+		if (pd->ms->lineSize <= 0)
+			break;
 		pd->ms->pd = &plotStroke;
 		Graphics::drawRect(strokeRect, pd->ms->foreColor, g_director->getInkDrawPixel(), pd);
 		break;
@@ -217,6 +225,8 @@ void Window::inkBlitShape(DirectorPlotData *pd, Common::Rect &srcRect) {
 		Graphics::drawRoundRect(fillAreaRect, 12, pd->ms->foreColor, true, g_director->getInkDrawPixel(), pd);
 		// fall through
 	case kOutlinedRoundedRectangleSprite:
+		if (pd->ms->lineSize <= 0)
+			break;
 		pd->ms->pd = &plotStroke;
 		Graphics::drawRoundRect(strokeRect, 12, pd->ms->foreColor, false, g_director->getInkDrawPixel(), pd);
 		break;
@@ -225,6 +235,8 @@ void Window::inkBlitShape(DirectorPlotData *pd, Common::Rect &srcRect) {
 		Graphics::drawEllipse(fillAreaRect.left, fillAreaRect.top, fillAreaRect.right, fillAreaRect.bottom, pd->ms->foreColor, true, g_director->getInkDrawPixel(), pd);
 		// fall through
 	case kOutlinedOvalSprite:
+		if (pd->ms->lineSize <= 0)
+			break;
 		pd->ms->pd = &plotStroke;
 		Graphics::drawEllipse(strokeRect.left, strokeRect.top, strokeRect.right, strokeRect.bottom, pd->ms->foreColor, false, g_director->getInkDrawPixel(), pd);
 		break;
@@ -470,6 +482,8 @@ bool Window::step() {
 		g_lingo->resetLingo();
 		if (sharedCast && sharedCast->_castArchive
 				&& sharedCast->_castArchive->getPathName().equalsIgnoreCase(_currentPath + _vm->_sharedCastFile)) {
+			// if we are not deleting shared cast, then we need to clear those previous widget pointer
+			sharedCast->releaseCastMemberWidget();
 			_currentMovie->_sharedCast = sharedCast;
 		} else {
 			delete sharedCast;

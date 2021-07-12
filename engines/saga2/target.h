@@ -56,9 +56,9 @@ class Target;
 //  Deletes targets allocated on the heap using new
 void deleteTarget(Target *t);
 
-void *constructTarget(void *mem, void *buf);
+void readTarget(void *mem, Common::InSaveFile *in);
+void writeTarget(const Target *t, Common::OutSaveFile *out);
 int32 targetArchiveSize(const Target *t);
-void *archiveTarget(const Target *t, void *buf);
 
 /* ===================================================================== *
    TargetLocationArray structure
@@ -142,8 +142,7 @@ public:
 	//  a buffer
 	virtual int32 archiveSize(void) const = 0;
 
-	//  Create an archive of this object in the specified buffer
-	virtual void *archive(void *buf) const = 0;
+	virtual void write(Common::OutSaveFile *out) const = 0;
 
 	//  Return an integer representing the type of target
 	virtual int16 getType(void) const = 0;
@@ -189,15 +188,13 @@ public:
 	//  Constructor -- initial construction
 	LocationTarget(const TilePoint &tp) : loc(tp) {}
 
-	//  Constructor -- reconstruct from archive buffer
-	LocationTarget(void **buf);
+	LocationTarget(Common::SeekableReadStream *stream);
 
 	//  Return the number of bytes needed to archive this object in
 	//  a buffer
 	int32 archiveSize(void) const;
 
-	//  Create an archive of this object in the specified buffer
-	void *archive(void *buf) const;
+	void write(Common::OutSaveFile *out) const;
 
 	//  Return an integer representing the type of target
 	int16 getType(void) const;
@@ -253,15 +250,13 @@ public:
 	//  Constructor -- initial construction
 	SpecificTileTarget(TileID t) : tile(t) {}
 
-	//  Constructor -- reconstruct from archive buffer
-	SpecificTileTarget(void **buf);
+	SpecificTileTarget(Common::SeekableReadStream *stream);
 
 	//  Return the number of bytes needed to archive this object in
 	//  a buffer
 	int32 archiveSize(void) const;
 
-	//  Create an archive of this object in the specified buffer
-	void *archive(void *buf) const;
+	void write(Common::OutSaveFile *out) const;
 
 	//  Return an integer representing the type of target
 	int16 getType(void) const;
@@ -289,15 +284,13 @@ public:
 	//  Constructor -- initial construction
 	TilePropertyTarget(TilePropertyID tProp) : tileProp(tProp) {}
 
-	//  Constructor -- reconstruct from archive buffer
-	TilePropertyTarget(void **buf);
+	TilePropertyTarget(Common::SeekableReadStream *stream);
 
 	//  Return the number of bytes needed to archive this object in
 	//  a buffer
 	int32 archiveSize(void) const;
 
-	//  Create an archive of this object in the specified buffer
-	void *archive(void *buf) const;
+	void write(Common::OutSaveFile *out) const;
 
 	//  Return an integer representing the type of target
 	int16 getType(void) const;
@@ -343,15 +336,13 @@ public:
 	//  Constructor -- initial construction
 	SpecificMetaTileTarget(MetaTileID mt) : meta(mt) {}
 
-	//  Constructor -- reconstruct from archive buffer
-	SpecificMetaTileTarget(void **buf);
+	SpecificMetaTileTarget(Common::SeekableReadStream *stream);
 
 	//  Return the number of bytes needed to archive this object in
 	//  a buffer
 	int32 archiveSize(void) const;
 
-	//  Create an archive of this object in the specified buffer
-	void *archive(void *buf) const;
+	void write(Common::OutSaveFile *out) const;
 
 	//  Return an integer representing the type of target
 	int16 getType(void) const;
@@ -381,15 +372,13 @@ public:
 		metaProp(mtProp) {
 	}
 
-	//  Constructor -- reconstruct from archive buffer
-	MetaTilePropertyTarget(void **buf);
+	MetaTilePropertyTarget(Common::SeekableReadStream *stream);
 
 	//  Return the number of bytes needed to archive this object in
 	//  a buffer
 	int32 archiveSize(void) const;
 
-	//  Create an archive of this object in the specified buffer
-	void *archive(void *buf) const;
+	void write(Common::OutSaveFile *out) const;
 
 	//  Return an integer representing the type of target
 	int16 getType(void) const;
@@ -463,15 +452,13 @@ public:
 		obj((assert(isObject(ptr)), ptr->thisID())) {
 	}
 
-	//  Constructor -- reconstruct from archive buffer
-	SpecificObjectTarget(void **buf);
+	SpecificObjectTarget(Common::SeekableReadStream *stream);
 
 	//  Return the number of bytes needed to archive this object in
 	//  a buffer
 	int32 archiveSize(void) const;
 
-	//  Create an archive of this object in the specified buffer
-	void *archive(void *buf) const;
+	void write(Common::OutSaveFile *out) const;
 
 	//  Return an integer representing the type of target
 	int16 getType(void) const;
@@ -516,15 +503,13 @@ public:
 	//  Constructor -- initial construction
 	ObjectPropertyTarget(ObjectPropertyID prop) : objProp(prop) {}
 
-	//  Constructor -- reconstruct from archive buffer
-	ObjectPropertyTarget(void **buf);
+	ObjectPropertyTarget(Common::SeekableReadStream *stream);
 
 	//  Return the number of bytes needed to archive this object in
 	//  a buffer
 	int32 archiveSize(void) const;
 
-	//  Create an archive of this object in the specified buffer
-	void *archive(void *buf) const;
+	void write(Common::OutSaveFile *out) const;
 
 	//  Return an integer representing the type of target
 	int16 getType(void) const;
@@ -573,15 +558,13 @@ public:
 		a(actor_) {
 	}
 
-	//  Constructor -- reconstruct from archive buffer
-	SpecificActorTarget(void **buf);
+	SpecificActorTarget(Common::SeekableReadStream *stream);
 
 	//  Return the number of bytes needed to archive this object in
 	//  a buffer
 	int32 archiveSize(void) const;
 
-	//  Create an archive of this object in the specified buffer
-	void *archive(void *buf) const;
+	void write(Common::OutSaveFile *out) const;
 
 	//  Return an integer representing the type of target
 	int16 getType(void) const;
@@ -634,15 +617,13 @@ public:
 		actorProp(aProp) {
 	}
 
-	//  Constructor -- reconstruct from archive buffer
-	ActorPropertyTarget(void **buf);
+	ActorPropertyTarget(Common::SeekableReadStream *stream);
 
 	//  Return the number of bytes needed to archive this object in
 	//  a buffer
 	int32 archiveSize(void) const;
 
-	//  Create an archive of this object in the specified buffer
-	void *archive(void *buf) const;
+	void write(Common::OutSaveFile *out) const;
 
 	//  Return an integer representing the type of target
 	int16 getType(void) const;

@@ -367,7 +367,8 @@ int MoveCharacterBlocking(int chaa, int xx, int yy, int direct) {
 		MoveCharacter(chaa, xx, yy);
 
 	GameLoopUntilNotMoving(&_GP(game).chars[chaa].walking);
-	return 1;
+
+	return -1; // replicates legacy engine effect
 }
 
 int GetCharacterSpeechAnimationDelay(CharacterInfo *cha) {

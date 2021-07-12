@@ -248,7 +248,7 @@ int16 scriptActorTransfer(int16 *args) {
 			obj->move(Location(targetSlot, targetID));
 			if ((cSet & (ProtoObj::isIntangible | ProtoObj::isContainer))
 			        == (ProtoObj::isIntangible | ProtoObj::isContainer))
-				globalContainerList.setUpdate(targetID);
+				g_vm->_containerList->setUpdate(targetID);
 		}
 	} else {
 		obj->move(Location(args[1], args[2], args[3], args[0]));
@@ -984,7 +984,7 @@ int16 scriptGameObjectSetMass(int16 *args) {
 	if (obj->proto()->flags & ResourceObjectPrototype::objPropMergeable) {
 		obj->setExtra(args[0]);
 		if (obj->proto()->flags & ResourceObjectPrototype::objPropMergeable) {
-			globalContainerList.setUpdate(obj->IDParent());
+			g_vm->_containerList->setUpdate(obj->IDParent());
 		}
 		return true;
 	} else return false;
@@ -2096,13 +2096,13 @@ int16 scriptActorDeductPayment(int16 *args) {
 
 				if (massCount > paymentAmount) {
 					obj->setExtra(massCount - paymentAmount);
-					globalContainerList.setUpdate(obj->IDParent());
+					g_vm->_containerList->setUpdate(obj->IDParent());
 					break;
 				} else {
 					if (delObj) {
 						ObjectID    dParent = delObj->IDParent();
 						delObj->deleteObject();
-						globalContainerList.setUpdate(dParent);
+						g_vm->_containerList->setUpdate(dParent);
 					}
 					paymentAmount -= massCount;
 					delObj = obj;
@@ -2115,7 +2115,7 @@ int16 scriptActorDeductPayment(int16 *args) {
 				if (delObj) {
 					ObjectID    dParent = delObj->IDParent();
 					delObj->deleteObject();
-					globalContainerList.setUpdate(dParent);
+					g_vm->_containerList->setUpdate(dParent);
 				}
 				delObj = obj;
 			}
@@ -2125,7 +2125,7 @@ int16 scriptActorDeductPayment(int16 *args) {
 	if (delObj) {
 		ObjectID    dParent = delObj->IDParent();
 		delObj->deleteObject();
-		globalContainerList.setUpdate(dParent);
+		g_vm->_containerList->setUpdate(dParent);
 	}
 
 	//  Payment succeeded!
@@ -2989,7 +2989,8 @@ int16 scriptDeleteObject(int16 *args) {
 	assert(obj);
 	oldParentID = obj->IDParent();
 	obj->deleteObjectRecursive();
-	globalContainerList.setUpdate(oldParentID);
+	g_vm->_containerList->setUpdate(oldParentID);
+
 	return 0;
 }
 
@@ -3430,7 +3431,7 @@ int16 scriptPickRandomLivingActor(int16 *args) {
 
 	if (livingCount <= 0) return Nothing;
 
-	livingCount = rand() % livingCount;
+	livingCount = g_vm->_rnd->getRandomNumber(livingCount - 1);
 
 	for (i = 0; i < thisThread->argCount; i++) {
 		if (isActor(args[i])) {
@@ -3619,15 +3620,15 @@ int16 scriptSwapRegions(int16 *args) {
 	region1.min.u = args[1];
 	region1.min.v = args[2];
 	region1.min.z = -128;
-	region1.max.u = args[1] + abs(args[6]);
-	region1.max.v = args[2] + abs(args[7]);
+	region1.max.u = args[1] + ABS(args[6]);
+	region1.max.v = args[2] + ABS(args[7]);
 	region1.max.z = 127;
 
 	region2.min.u = args[4];
 	region2.min.v = args[5];
 	region2.min.z = -128;
-	region2.max.u = args[4] + abs(args[6]);
-	region2.max.v = args[5] + abs(args[7]);
+	region2.max.u = args[4] + ABS(args[6]);
+	region2.max.v = args[5] + ABS(args[7]);
 	region2.max.z = 127;
 
 	//  Count how many objects are in each region
@@ -3678,8 +3679,8 @@ int16 scriptSwapRegions(int16 *args) {
 		obj->move(loc);
 	}
 
-	delete objArray1;
-	delete objArray2;
+	delete[] objArray1;
+	delete[] objArray2;
 
 	return 0;
 }

@@ -42,9 +42,8 @@ class gameObject;
    Exports
  * ===================================================================== */
 
-extern int16    objectCount,        //  Number of elements in the object list
-       actorCount,         //  Number of elements in the actor list
-       worldCount;         //  Number of elements in the world list
+extern const int16 objectCount;  //  Number of elements in the object list
+extern int16 worldCount;         //  Number of elements in the world list
 
 #define Permanent ((uint8)255)
 
@@ -59,7 +58,7 @@ inline bool isObject(ObjectID id) {
 }
 
 inline bool isActor(ObjectID id) {
-	return (id >= ActorBaseID && id < ActorBaseID + actorCount);
+	return (id >= ActorBaseID && id < ActorBaseID + kActorCount);
 }
 
 inline bool isWorld(ObjectID id) {
@@ -128,7 +127,7 @@ public:
 		return *this;
 	}
 
-	Location() {}
+	Location() : context(0) {}
 
 	Location(int16 nu, int16 nv, int16 nz, ObjectID con) {
 		u = nu;
@@ -259,8 +258,34 @@ struct ResourceObjectPrototype {
 
 	uint8           reserved[7];
 
-	//  Default constructor -- do nothing
-	ResourceObjectPrototype(void) {}
+	ResourceObjectPrototype() {
+		classType = 0;
+		script = 0;
+		nameIndex = 0;
+		iconSprite = 0;
+		groundSprite = 0;
+
+		for (int i = 0; i < 4; ++i)
+			colorMap[i] = 0;
+
+		mass = bulk = crossSection = height = toughness = breakType = 0;
+		maxCapacity = 0;
+		lockType = 0;
+		acceptableItems = 0;
+		weaponDamage = weaponFireRate = maximumRange = missileType = 0;
+		whereWearable = 0;
+		damageAbsorbtion = damageDivider = defenseBonus = 0;
+		maxCharges = chargeType = 0;
+		flags = 0;
+		price = 0;
+		heldSpriteBase = 0;
+		resistance = 0;
+		immunity = 0;
+		soundFXClass = 0;
+
+		for (int i = 0; i < 7; ++i)
+			reserved[i] = 0;
+	}
 
 	//  Copy constructor
 	ResourceObjectPrototype(ResourceObjectPrototype &proto) {

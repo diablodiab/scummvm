@@ -23,7 +23,11 @@
 #include "common/file.h"
 #include "common/keyboard.h"
 #include "common/memstream.h"
+#include "common/tokenizer.h"
 #include "common/zlib.h"
+
+#include "graphics/macgui/macwindowmanager.h"
+#include "graphics/macgui/macfontmanager.h"
 
 #include "director/director.h"
 #include "director/movie.h"
@@ -324,12 +328,26 @@ Common::String getPath(Common::String path, Common::String cwd) {
 
 bool testPath(Common::String &path, bool directory) {
 	if (directory) {
-		// TOOD: This directory-searching branch only works for one level from the
-		// current directory, but it fixes current game loading issues.
-		if (path.contains('/'))
-			return false;
+		Common::FSNode d = Common::FSNode(*g_director->getGameDataDir());
 
-		Common::FSNode d = Common::FSNode(*g_director->getGameDataDir()).getChild(path);
+		// check for the game data dir
+		if (!path.contains("/") && path.equalsIgnoreCase(d.getName())) {
+			path = "";
+			return true;
+		}
+
+		Common::StringTokenizer directory_list(path, "/");
+
+		if (d.getChild(directory_list.nextToken()).exists()) {
+			// then this part is for the "relative to current directory"
+			// we find the child directory recursively
+			directory_list.reset();
+			while (!directory_list.empty() && d.exists())
+				d = d.getChild(directory_list.nextToken());
+		} else {
+			return false;
+		}
+
 		return d.exists();
 	}
 
@@ -342,11 +360,11 @@ bool testPath(Common::String &path, bool directory) {
 	return false;
 }
 
+// if we are finding the file path, then this func will return exactly the executable file path
+// if we are finding the directory path, then we will get the path relative to the game data dir.
+// e.g. if we have game data dir as SSwarlock, then "A:SSwarlock" -> "", "A:SSwarlock:Nav" -> "Nav"
 Common::String pathMakeRelative(Common::String path, bool recursive, bool addexts, bool directory) {
 	Common::String initialPath(path);
-
-	if (testPath(initialPath, directory))
-		return initialPath;
 
 	if (recursive) // first level
 		initialPath = convertPath(initialPath);
@@ -735,6 +753,32 @@ uint16 humanVersion(uint16 ver) {
 	if (ver >= kFileVer300)
 		return 300;
 	return 200;
+}
+
+Common::Platform platformFromID(uint16 id) {
+	switch (id) {
+	case 1:
+		return Common::kPlatformMacintosh;
+	case 2:
+		return Common::kPlatformWindows;
+	default:
+		warning("platformFromID: Unknown platform ID %d", id);
+		break;
+	}
+	return Common::kPlatformUnknown;
+}
+
+Common::CodePage detectEncoding(Common::Platform platform, uint16 fontId) {
+	Common::Language lang = g_director->_wm->_fontMan->getFontLanguage(fontId);
+	switch (lang) {
+	case Common::JA_JPN:
+		return Common::kWindows932; // Shift JIS
+	default:
+		break;
+	}
+	return (platform == Common::kPlatformWindows)
+				? Common::kWindows1252
+				: Common::kMacCentralEurope;
 }
 
 } // End of namespace Director

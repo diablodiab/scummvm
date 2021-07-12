@@ -70,6 +70,15 @@ struct FuncDesc {
 
 typedef Common::HashMap<void *, FuncDesc *> FuncHash;
 
+struct BuiltinProto {
+	const char *name;
+	void (*func)(int);
+	int minArgs;	// -1 -- arglist
+	int maxArgs;
+	int version;
+	SymbolType type;
+};
+
 struct Symbol {	/* symbol table entry */
 	Common::String *name;
 	SymbolType type;
@@ -84,7 +93,6 @@ struct Symbol {	/* symbol table entry */
 
 	int nargs;		/* number of arguments */
 	int maxArgs;	/* maximal number of arguments, for builtins */
-	bool parens;	/* whether parens required or not, for builitins */
 	int targetType;	/* valid target objects, for method builtins */
 
 	Common::Array<Common::String> *argNames;
@@ -251,6 +259,7 @@ public:
 
 	void reloadBuiltIns();
 	void initBuiltIns();
+	void initBuiltIns(BuiltinProto protos[]);
 	void cleanupBuiltIns();
 	void initFuncs();
 	void cleanupFuncs();

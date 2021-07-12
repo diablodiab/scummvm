@@ -23,10 +23,12 @@
 #include "twine/flamovies.h"
 #include "common/file.h"
 #include "common/system.h"
+#include "graphics/managed_surface.h"
 #include "image/gif.h"
 #include "twine/audio/music.h"
 #include "twine/audio/sound.h"
 #include "twine/input.h"
+#include "twine/menu/interface.h"
 #include "twine/renderer/screens.h"
 #include "twine/resources/hqr.h"
 #include "twine/resources/resources.h"
@@ -238,24 +240,21 @@ void FlaMovies::processFrame() {
 			break;
 		}
 		case kFlaUnknown7: {
-			byte *ptr = (byte *)_engine->frontVideoBuffer.getPixels();
-			for (int y = 0; y < 200; ++y) {
-				for (int x = 0; x < 80; ++x) {
-					*ptr++ = 0;
-				}
-				ptr = ptr + 80;
-			}
+			const Common::Rect rect(0, 0, 79, 199);
+			_engine->_interface->drawFilledRect(rect, 0);
 			break;
 		}
 		case kFlaUnknown9:
 		case kFlaUnknown16SameAs9: {
+			const Common::Rect rect(0, 0, 80, 200);
 			byte *ptr = (byte *)_engine->frontVideoBuffer.getPixels();
-			for (int y = 0; y < 200; ++y) {
-				for (int x = 0; x < 80; ++x) {
+			for (int y = rect.top; y < rect.bottom; ++y) {
+				for (int x = rect.left; x < rect.right; ++x) {
 					*ptr++ = stream.readByte();
 				}
-				ptr = ptr + 80;
+				ptr = ptr + rect.width();
 			}
+			_engine->frontVideoBuffer.addDirtyRect(rect);
 			break;
 		}
 		case kFlaUnknown4:
@@ -284,8 +283,9 @@ void FlaMovies::prepareGIF(int index) {
 	}
 	const Graphics::Surface *surface = decoder.getSurface();
 	_engine->setPalette(0, decoder.getPaletteColorCount(), decoder.getPalette());
-	g_system->copyRectToScreen(surface->getPixels(), surface->pitch, 0, 0, surface->w, surface->h);
-	g_system->updateScreen();
+	Graphics::ManagedSurface& target = _engine->frontVideoBuffer;
+	const Common::Rect surfaceBounds(0, 0, surface->w, surface->h);
+	target.transBlitFrom(surface, surfaceBounds, target.getBounds(), 0, false, 0, 0xff, nullptr, true);
 	debug(2, "Show gif with id %i from %s", index, Resources::HQR_FLAGIF_FILE);
 	delete stream;
 	_engine->delaySkip(5000);
@@ -425,7 +425,7 @@ void FlaMovies::playFlaMovie(const char *flaName) {
 	}
 
 	if (_engine->cfgfile.CrossFade) {
-		_engine->crossFade(_engine->frontVideoBuffer, _engine->_screens->paletteRGBACustom);
+		_engine->crossFade(_engine->_screens->paletteRGBACustom);
 	} else {
 		_engine->_screens->fadeToBlack(_engine->_screens->paletteRGBACustom);
 	}

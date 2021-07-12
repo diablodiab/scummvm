@@ -1643,11 +1643,16 @@ const PlainGameDescriptor GAME_NAMES[] = {
 	{ 0, 0 }
 };
 
+const char *const PRE_25 = "Pre 2.5";
 
 #define DETECTION_ENTRY(ID, FILENAME, MD5, SIZE, LANG, PLATFORM, PLUGIN_ARR, FLAGS) \
 	{{ ID, PLATFORM, AD_ENTRY1s(FILENAME, MD5, SIZE), LANG, \
 	Common::kPlatformUnknown, FLAGS, GUIO1(GUIO_NOLANG) }, PLUGIN_ARR }
 
+#define PRE_25_ENTRY(ID, FILENAME, MD5, SIZE) \
+	DETECTION_ENTRY(ID, FILENAME, MD5, SIZE, Common::UNK_LANG, "Pre 2.5", nullptr, ADGF_UNSTABLE)
+#define PRE_25_DEMO_ENTRY(ID, FILENAME, MD5, SIZE) \
+	DETECTION_ENTRY(ID, FILENAME, MD5, SIZE, Common::UNK_LANG, "Pre 2.5", nullptr, ADGF_UNSTABLE | ADGF_DEMO)
 
 #define UNSUPPORTED_ENTRY(ID, FILENAME, MD5, SIZE, LANG, PLATFORM) \
 	DETECTION_ENTRY(ID, FILENAME, MD5, SIZE, LANG, PLATFORM, nullptr, ADGF_UNSTABLE)
@@ -1703,135 +1708,133 @@ static const PluginVersion AGSSPRITEFONT_CLIFFTOP[] = { { "agsspritefont", kClif
 
 const AGSGameDescription GAME_DESCRIPTIONS[] = {
 	// Pre-2.5 games that aren't supported by the current AGS engine
-	UNSUPPORTED_DEMO_ENTRY("achristmastale", "tale.exe", "094135f05cf14fc3903e0d3697911a4e", 1484122),
-	UNSUPPORTED_DEMO_ENTRY("deepbright", "tc.exe", "8f80c91d160e333ab7f6be5208ea0533", 3022557),
-	UNSUPPORTED_DEMO_ENTRY("firewall", "firewall demo.exe", "2fd8ca69f236ae1ad46edab4ba26a33d", 2839412),
-	UNSUPPORTED_DEMO_ENTRY("larryvales3", "burns.exe", "094135f05cf14fc3903e0d3697911a4e", 2120885),
-	UNSUPPORTED_DEMO_ENTRY("nicholaswolfe1", "nw1demo.exe", "1f0edcb7fa3f8e2b1dd60fa6c0bce60f", 1539596),
-	UNSUPPORTED_DEMO_ENTRY("pointblank", "future.exe", "385a593828b1edb194e984ce55cda65e", 1379714),
-	UNSUPPORTED_DEMO_ENTRY("uishowoff", "pd.exe", "ecd0793124fbc9b89c6d11162e3b5851", 3853394),
-	UNSUPPORTED_DEMO_ENTRY("waitkey", "ac2game.dat", "8ddf3744922101e33305dfcd06e3b682", 445197),
-	UNSUPPORTED_GAME_ENTRY("6da", "6da.exe", "9027912819f3a319ed9de0fd855310c3", 1608073),
-	UNSUPPORTED_GAME_ENTRY("aaronsepicjourney", "aaron.exe", "1c21bdb52bcafcafe988b30fd6bb4126", 1788404),
-	UNSUPPORTED_GAME_ENTRY("aceduswell", "ace.exe", "be48a6b0b81a71d34a41930623c065f1", 3103822),
-	UNSUPPORTED_GAME_ENTRY("adayinthefuture", "space.exe", "ecd0793124fbc9b89c6d11162e3b5851", 4120328),
-	UNSUPPORTED_GAME_ENTRY("adventuregame", "adventure.exe", "221637e5d62e2ca3cc146846ab0b2e49", 5533207),
-	UNSUPPORTED_GAME_ENTRY("asapadventure", "asap.exe", "8f80c91d160e333ab7f6be5208ea0533", 1405072),
-	UNSUPPORTED_GAME_ENTRY("bertthenewsreader", "bert.exe", "80bdce9a1052e896c7cba6a4334cecce", 2814934),
-	UNSUPPORTED_GAME_ENTRY("blackjack", "blackjack.exe", "73f87b30f84e9c34ab09ec8dd7ae109d", 1153092),
-	UNSUPPORTED_GAME_ENTRY("bluecupontherun", "ac2game.dat", "c290455f00f630c8a52c7eceb7c663eb", 1995708),
-	UNSUPPORTED_GAME_ENTRY("bobsquest2", "bq2.exe", "1c21bdb52bcafcafe988b30fd6bb4126", 2540006),
-	UNSUPPORTED_GAME_ENTRY("bookofspells1", "ac2game.dat", "fe66cb08bcffd094c159cd4ee72bacd3", 3442073),
-	UNSUPPORTED_GAME_ENTRY("bookofspells2", "ac2game.dat", "9df87a8e5bbcc7206b001c0b8316b7f9", 3263169),
-	UNSUPPORTED_GAME_ENTRY("bookofspells3", "ac2game.dat", "9f0181393bdceb2c0bbdb06634714023", 4806518),
-	UNSUPPORTED_GAME_ENTRY("calsoon", "calsoon.exe", "5477f4ed8f860427d1492548b677073c", 2865508),
-	UNSUPPORTED_GAME_ENTRY("carverisland1", "secret.exe", "8f80c91d160e333ab7f6be5208ea0533", 3116071),
-	UNSUPPORTED_GAME_ENTRY("carverisland2", "carver2.exe", "ed778afb4f46c3f2a70d330532a83a2f", 6265594),
-	UNSUPPORTED_GAME_ENTRY("chamber", "indy.exe", "094135f05cf14fc3903e0d3697911a4e", 1545150),
-	UNSUPPORTED_GAME_ENTRY("compensation", "comp.exe", "094135f05cf14fc3903e0d3697911a4e", 2054366),
-	UNSUPPORTED_GAME_ENTRY("darts", "dart.exe", "ed778afb4f46c3f2a70d330532a83a2f", 736848),
-	UNSUPPORTED_GAME_ENTRY("demonslayer1", "mags.exe", "1f0edcb7fa3f8e2b1dd60fa6c0bce60f", 3820347),
-	UNSUPPORTED_GAME_ENTRY("demonslayer2", "bert.exe", "0c057c5e6df6f45772286986ab7b7a5b", 1726766),
-	UNSUPPORTED_GAME_ENTRY("demonslayer3", "tiler.exe", "426e34f40e0dc5285af3fb5fc32a220e", 2586532),
-	UNSUPPORTED_GAME_ENTRY("demonslayer4", "dem four.exe", "426e34f40e0dc5285af3fb5fc32a220e", 5110674),
-	UNSUPPORTED_GAME_ENTRY("dirkchafberg", "ac2game.dat", "be7bec4a433beb5085184b64119351c8", 1906822),
-	UNSUPPORTED_GAME_ENTRY("earwigisangry", "earwig.exe", "04eedea9846d380d6d9a120f657daa43", 2371856),
-	UNSUPPORTED_GAME_ENTRY("eclair1", "eclair 1.exe", "9fa0358760f1f1bffddd080532f586f0", 1864283),
-	UNSUPPORTED_GAME_ENTRY("eclair2", "eclair 2.exe", "9fa0358760f1f1bffddd080532f586f0", 5644093),
-	UNSUPPORTED_GAME_ENTRY("elburro", "burro.exe", "1f0edcb7fa3f8e2b1dd60fa6c0bce60f", 2209309),
-	UNSUPPORTED_GAME_ENTRY("erniesbigadventure1", "magsjune.exe", "fc5f54dcfc82d3b991f670490a316958", 8814849),
-	UNSUPPORTED_GAME_ENTRY("erniesbigadventure2", "magsjuly.exe", "2fd8ca69f236ae1ad46edab4ba26a33d", 6647578),
-	UNSUPPORTED_GAME_ENTRY("exile", "exile.exe", "aad0a09714fab4de51e5488da48fd5d4", 13421451),
-	UNSUPPORTED_GAME_ENTRY("eyesofthejadesphinx", "jade.exe", "f2fe94ab604612e4595f3c79b0245529", 10763660),
-	UNSUPPORTED_GAME_ENTRY("floyd", "floyd.exe", "9ef5bffe7b85377751c25af806345794", 5477588),
-	UNSUPPORTED_GAME_ENTRY("gaeafallen", "gaea_fallen.exe", "80bdce9a1052e896c7cba6a4334cecce", 11273205),
-	UNSUPPORTED_GAME_ENTRY("gorthor", "fart.exe", "fc5f54dcfc82d3b991f670490a316958", 1138006),
-	UNSUPPORTED_GAME_ENTRY("grannyzombiekiller", "mags.exe", "0c057c5e6df6f45772286986ab7b7a5b", 12855495),
-	UNSUPPORTED_GAME_ENTRY("gregsmountainousadventure", "mags.exe", "80a17966fc547849d43646acf89de296", 2112993),
-	UNSUPPORTED_GAME_ENTRY("greysgreytadv", "greywin.exe", "80bdce9a1052e896c7cba6a4334cecce", 1283447),
-	UNSUPPORTED_GAME_ENTRY("hermit", "hermit.exe", "4689069dd6b241e38311d0586e610a8d", 13995403),
-	UNSUPPORTED_GAME_ENTRY("jamesbondage", "jbdos.exe", "1f0edcb7fa3f8e2b1dd60fa6c0bce60f", 2056737),
-	UNSUPPORTED_GAME_ENTRY("jinglebells", "jinglebells.exe", "385a593828b1edb194e984ce55cda65e", 1620588),
-	UNSUPPORTED_GAME_ENTRY("kidnapped", "ac2game.dat", "27daca01ccbbbaf02bf6b4b85d5990b4", 1205017),
-	UNSUPPORTED_GAME_ENTRY("larryvales1", "larryvtd.exe", "610b7a3d1fd90f24d2218aa26b29d8ca", 3129645),
-	UNSUPPORTED_GAME_ENTRY("larryvales2", "dead.exe", "be48a6b0b81a71d34a41930623c065f1", 3946993),
-	UNSUPPORTED_GAME_ENTRY("lassi", "lassi.exe", "ed778afb4f46c3f2a70d330532a83a2f", 3681914),
-	UNSUPPORTED_GAME_ENTRY("lassiandrogermeetgod", "mtg.exe", "ed778afb4f46c3f2a70d330532a83a2f", 1618544),
-	UNSUPPORTED_GAME_ENTRY("lassiquest1", "lassi.exe", "c391c6676099032440b206189babe76e", 1700368),
-	UNSUPPORTED_GAME_ENTRY("littlejonnyevil", "lje.exe", "e93037e8efc7abc19b8978903ef5b409", 2133182),
-	UNSUPPORTED_GAME_ENTRY("littlewillie", "ac2game.dat", "239b11ab644222c67d981494766a3c25", 254128),
-	UNSUPPORTED_GAME_ENTRY("ludwig", "ludwig.exe", "727a30f9244441ad57a76086f4faa779", 3658869),
-	UNSUPPORTED_GAME_ENTRY("lupoinutile", "lupo.exe", "19f4045333d9c823a5439d0447d55985", 1856459),
-	UNSUPPORTED_GAME_ENTRY("mafio", "crimetim.exe", "be48a6b0b81a71d34a41930623c065f1", 1303660),
-	UNSUPPORTED_GAME_ENTRY("meninbrown", "0112.men in brown.exe", "426e34f40e0dc5285af3fb5fc32a220e", 2072392),
-	UNSUPPORTED_GAME_ENTRY("midtownshootout", "mtsowin.exe", "73f87b30f84e9c34ab09ec8dd7ae109d", 1076035),
-	UNSUPPORTED_GAME_ENTRY("momsquest", "mom's quest.exe", "73f87b30f84e9c34ab09ec8dd7ae109d", 3173896),
-	UNSUPPORTED_GAME_ENTRY("monkeyplank", "plank.exe", "1f0edcb7fa3f8e2b1dd60fa6c0bce60f", 815948),
-	UNSUPPORTED_GAME_ENTRY("moose", "moose.exe", "f4585823c1b4ce97d78c8acb433bec52", 1448684),
-	UNSUPPORTED_GAME_ENTRY("moosewars", "moose.exe", "f4585823c1b4ce97d78c8acb433bec52", 1448684),
-	UNSUPPORTED_GAME_ENTRY("murder", "murder.exe", "221637e5d62e2ca3cc146846ab0b2e49", 935799),
-	UNSUPPORTED_GAME_ENTRY("nightoftheplumber", "night of the plumber.exe", "1f0edcb7fa3f8e2b1dd60fa6c0bce60f", 1703896),
-	UNSUPPORTED_GAME_ENTRY("novomestro", "novo.exe", "07f9921784124d9e09f39bb831e06131", 1122507),
-	UNSUPPORTED_GAME_ENTRY("odysseus", "odysseus.exe", "426e34f40e0dc5285af3fb5fc32a220e", 2799113), // Windows
-	UNSUPPORTED_GAME_ENTRY("odysseus", "odysseus.exe", "00dce98d598e9b7ad3c6674bfd4880d9", 2570368), // DOS
-	UNSUPPORTED_GAME_ENTRY("permanentdaylight", "daylight.exe", "07f9921784124d9e09f39bb831e06131", 1799958),
-	UNSUPPORTED_GAME_ENTRY("perpetrator", "ac2game.dat", "56ef979be112e122e24d0cc8caea4ea4", 994303),
-	UNSUPPORTED_GAME_ENTRY("pizzaquest", "pqwin.exe", "73f87b30f84e9c34ab09ec8dd7ae109d", 2500089),
-	UNSUPPORTED_GAME_ENTRY("pornquest", "porn.exe", "04eedea9846d380d6d9a120f657daa43", 1012323),
-	UNSUPPORTED_GAME_ENTRY("qfc", "qfc.exe", "04eedea9846d380d6d9a120f657daa43", 2038696),
-	UNSUPPORTED_GAME_ENTRY("qfg412", "qfg.exe", "8b21668ca462b0b6b35df43c5902b074", 26674790),
-	UNSUPPORTED_GAME_ENTRY("qfg412", "qfg.exe", "9027912819f3a319ed9de0fd855310c3", 26954823),
-	UNSUPPORTED_GAME_ENTRY("racingmanager", "raceman.exe", "465f972675db2da6040518221af5b0ba", 15971689),
-	UNSUPPORTED_GAME_ENTRY("raymondskeys", "keys.exe", "e016cb68731d0e38fe97905dbf0d5b36", 1032178),
-	UNSUPPORTED_GAME_ENTRY("red", "red.exe", "be48a6b0b81a71d34a41930623c065f1", 1101194),
-	UNSUPPORTED_GAME_ENTRY("richardlonghurst", "rlbat-win.exe", "04eedea9846d380d6d9a120f657daa43", 7935723),
-	UNSUPPORTED_GAME_ENTRY("rickylonghurst", "bleach.exe", "9027912819f3a319ed9de0fd855310c3", 1174829),
-	UNSUPPORTED_GAME_ENTRY("ripp", "ripp.exe", "426e34f40e0dc5285af3fb5fc32a220e", 10489586),
-	UNSUPPORTED_GAME_ENTRY("robblanc1", "ac2game.dat", "29c2ced2f2e6ad764e4249b4e4c45bba", 920415),
-	UNSUPPORTED_GAME_ENTRY("robblanc1", "rb.exe", "426e34f40e0dc5285af3fb5fc32a220e", 1804361), // v1.2
-	UNSUPPORTED_GAME_ENTRY("robblanc2", "ac2game.dat", "dd6c52e5a6e9b70efef4654769f11c69", 2056386),
-	UNSUPPORTED_GAME_ENTRY("robblanc2", "rb2.exe", "426e34f40e0dc5285af3fb5fc32a220e", 2973290), // v1.2
-	UNSUPPORTED_GAME_ENTRY("robblanc3", "ac2game.dat", "8f8264de3c1bd91e26b84fe37fb5e53e", 2828959),
-	UNSUPPORTED_GAME_ENTRY("robblanc3", "rb3.exe", "426e34f40e0dc5285af3fb5fc32a220e", 3783355), // v1.2
-	UNSUPPORTED_GAME_ENTRY("rodekill", "rodekill.exe", "72f3c950b4d9d14580a11db885a63310", 11995954),
-	UNSUPPORTED_GAME_ENTRY("rodequest", "rodequest1.exe", "72f3c950b4d9d14580a11db885a63310", 1196458),
-	UNSUPPORTED_GAME_ENTRY("rollinfoy", "rollinfoy.exe", "19f4045333d9c823a5439d0447d55985", 3454107),
-	UNSUPPORTED_GAME_ENTRY("samthepiratemonkey", "monkey.exe", "73f87b30f84e9c34ab09ec8dd7ae109d", 1401414),
-	UNSUPPORTED_GAME_ENTRY("sma1", "moonsdt.exe", "9027912819f3a319ed9de0fd855310c3", 1276725),
-	UNSUPPORTED_GAME_ENTRY("slackerquest", "ac2game.dat", "e0998f2d2e14a55aae2291fdfab1ce7d", 1306492),
-	UNSUPPORTED_GAME_ENTRY("snailquest1", "snailquest.exe", "dd69243e3cc9e955215e0d556301b58e", 1095860),
-	UNSUPPORTED_GAME_ENTRY("snailquest2", "sq2.exe", "1bccd2edef19abc99e9683519d80c0e0", 955614),
-	UNSUPPORTED_GAME_ENTRY("snailquest3", "sq3.exe", "1bccd2edef19abc99e9683519d80c0e0", 1501892),
-	UNSUPPORTED_GAME_ENTRY("sol", "sol.exe", "73f87b30f84e9c34ab09ec8dd7ae109d", 4702799),
-	UNSUPPORTED_GAME_ENTRY("space", "space.exe", "094135f05cf14fc3903e0d3697911a4e", 3790026),
-	UNSUPPORTED_GAME_ENTRY("stickmen", "stickmen.exe", "094135f05cf14fc3903e0d3697911a4e", 2145142),
-	UNSUPPORTED_GAME_ENTRY("superdisk", "superdisk.exe", "80bdce9a1052e896c7cba6a4334cecce", 1304065),
-	UNSUPPORTED_GAME_ENTRY("teamwork", "teamwork.exe", "538274077115c6d8b4a0927dd3cceeac", 1096149),
-	UNSUPPORTED_GAME_ENTRY("thecrownofgold", "the crown of gold.exe", "e407143be000e44f113ba5ff1fbd17f9", 1971515),
-	UNSUPPORTED_GAME_ENTRY("theinexperiencedassassin", "assassin.exe", "73f87b30f84e9c34ab09ec8dd7ae109d", 2659741),
-	UNSUPPORTED_GAME_ENTRY("theisland", "island.exe", "e93037e8efc7abc19b8978903ef5b409", 1814801),
-	UNSUPPORTED_GAME_ENTRY("thendor", "ac2game.dat", "b9c2ad76574c08bbcfd56eb1b49d2cd3", 8580708),
-	UNSUPPORTED_GAME_ENTRY("thetower", "thetower.exe", "9027912819f3a319ed9de0fd855310c3", 3431385),
-	UNSUPPORTED_GAME_ENTRY("thewarp", "warp.exe", "9027912819f3a319ed9de0fd855310c3", 881957),
-	UNSUPPORTED_GAME_ENTRY("tommato", "tom mato's grand wing-ding.exe", "73f87b30f84e9c34ab09ec8dd7ae109d", 2735158),
-	UNSUPPORTED_GAME_ENTRY("tulliesworld1", "candale.exe", "1c21bdb52bcafcafe988b30fd6bb4126", 3936603),
-	UNSUPPORTED_GAME_ENTRY("tvquest", "mags.exe", "fc5f54dcfc82d3b991f670490a316958", 1318019),
-	UNSUPPORTED_GAME_ENTRY("whokilledkennyrogers", "mags.exe", "ed778afb4f46c3f2a70d330532a83a2f", 1240103),
-	UNSUPPORTED_GAME_ENTRY("winfry", "fry.exe", "73f87b30f84e9c34ab09ec8dd7ae109d", 4164041),
+	PRE_25_DEMO_ENTRY("achristmastale", "tale.exe", "094135f05cf14fc3903e0d3697911a4e", 1484122),
+	PRE_25_DEMO_ENTRY("deepbright", "tc.exe", "8f80c91d160e333ab7f6be5208ea0533", 3022557),
+	PRE_25_DEMO_ENTRY("firewall", "firewall demo.exe", "2fd8ca69f236ae1ad46edab4ba26a33d", 2839412),
+	PRE_25_DEMO_ENTRY("larryvales3", "burns.exe", "094135f05cf14fc3903e0d3697911a4e", 2120885),
+	PRE_25_DEMO_ENTRY("nicholaswolfe1", "nw1demo.exe", "1f0edcb7fa3f8e2b1dd60fa6c0bce60f", 1539596),
+	PRE_25_DEMO_ENTRY("pointblank", "future.exe", "385a593828b1edb194e984ce55cda65e", 1379714),
+	PRE_25_DEMO_ENTRY("uishowoff", "pd.exe", "ecd0793124fbc9b89c6d11162e3b5851", 3853394),
+	PRE_25_DEMO_ENTRY("waitkey", "ac2game.dat", "8ddf3744922101e33305dfcd06e3b682", 445197),
+	PRE_25_ENTRY("6da", "6da.exe", "9027912819f3a319ed9de0fd855310c3", 1608073),
+	PRE_25_ENTRY("aaronsepicjourney", "aaron.exe", "1c21bdb52bcafcafe988b30fd6bb4126", 1788404),
+	PRE_25_ENTRY("aceduswell", "ace.exe", "be48a6b0b81a71d34a41930623c065f1", 3103822),
+	PRE_25_ENTRY("adayinthefuture", "space.exe", "ecd0793124fbc9b89c6d11162e3b5851", 4120328),
+	PRE_25_ENTRY("adventuregame", "adventure.exe", "221637e5d62e2ca3cc146846ab0b2e49", 5533207),
+	PRE_25_ENTRY("asapadventure", "asap.exe", "8f80c91d160e333ab7f6be5208ea0533", 1405072),
+	PRE_25_ENTRY("bertthenewsreader", "bert.exe", "80bdce9a1052e896c7cba6a4334cecce", 2814934),
+	PRE_25_ENTRY("blackjack", "blackjack.exe", "73f87b30f84e9c34ab09ec8dd7ae109d", 1153092),
+	PRE_25_ENTRY("bluecupontherun", "ac2game.dat", "c290455f00f630c8a52c7eceb7c663eb", 1995708),
+	PRE_25_ENTRY("bobsquest2", "bq2.exe", "1c21bdb52bcafcafe988b30fd6bb4126", 2540006),
+	PRE_25_ENTRY("bookofspells1", "ac2game.dat", "fe66cb08bcffd094c159cd4ee72bacd3", 3442073),
+	PRE_25_ENTRY("bookofspells2", "ac2game.dat", "9df87a8e5bbcc7206b001c0b8316b7f9", 3263169),
+	PRE_25_ENTRY("bookofspells3", "ac2game.dat", "9f0181393bdceb2c0bbdb06634714023", 4806518),
+	PRE_25_ENTRY("calsoon", "calsoon.exe", "5477f4ed8f860427d1492548b677073c", 2865508),
+	PRE_25_ENTRY("carverisland1", "secret.exe", "8f80c91d160e333ab7f6be5208ea0533", 3116071),
+	PRE_25_ENTRY("carverisland2", "carver2.exe", "ed778afb4f46c3f2a70d330532a83a2f", 6265594),
+	PRE_25_ENTRY("chamber", "indy.exe", "094135f05cf14fc3903e0d3697911a4e", 1545150),
+	PRE_25_ENTRY("compensation", "comp.exe", "094135f05cf14fc3903e0d3697911a4e", 2054366),
+	PRE_25_ENTRY("darts", "dart.exe", "ed778afb4f46c3f2a70d330532a83a2f", 736848),
+	PRE_25_ENTRY("demonslayer1", "mags.exe", "1f0edcb7fa3f8e2b1dd60fa6c0bce60f", 3820347),
+	PRE_25_ENTRY("demonslayer2", "bert.exe", "0c057c5e6df6f45772286986ab7b7a5b", 1726766),
+	PRE_25_ENTRY("demonslayer3", "tiler.exe", "426e34f40e0dc5285af3fb5fc32a220e", 2586532),
+	PRE_25_ENTRY("demonslayer4", "dem four.exe", "426e34f40e0dc5285af3fb5fc32a220e", 5110674),
+	PRE_25_ENTRY("dirkchafberg", "ac2game.dat", "be7bec4a433beb5085184b64119351c8", 1906822),
+	PRE_25_ENTRY("earwigisangry", "earwig.exe", "04eedea9846d380d6d9a120f657daa43", 2371856),
+	PRE_25_ENTRY("eclair1", "eclair 1.exe", "9fa0358760f1f1bffddd080532f586f0", 1864283),
+	PRE_25_ENTRY("eclair2", "eclair 2.exe", "9fa0358760f1f1bffddd080532f586f0", 5644093),
+	PRE_25_ENTRY("elburro", "burro.exe", "1f0edcb7fa3f8e2b1dd60fa6c0bce60f", 2209309),
+	PRE_25_ENTRY("erniesbigadventure1", "magsjune.exe", "fc5f54dcfc82d3b991f670490a316958", 8814849),
+	PRE_25_ENTRY("erniesbigadventure2", "magsjuly.exe", "2fd8ca69f236ae1ad46edab4ba26a33d", 6647578),
+	PRE_25_ENTRY("exile", "exile.exe", "aad0a09714fab4de51e5488da48fd5d4", 13421451),
+	PRE_25_ENTRY("eyesofthejadesphinx", "jade.exe", "f2fe94ab604612e4595f3c79b0245529", 10763660),
+	PRE_25_ENTRY("floyd", "floyd.exe", "9ef5bffe7b85377751c25af806345794", 5477588),
+	PRE_25_ENTRY("gaeafallen", "gaea_fallen.exe", "80bdce9a1052e896c7cba6a4334cecce", 11273205),
+	PRE_25_ENTRY("gorthor", "fart.exe", "fc5f54dcfc82d3b991f670490a316958", 1138006),
+	PRE_25_ENTRY("grannyzombiekiller", "mags.exe", "0c057c5e6df6f45772286986ab7b7a5b", 12855495),
+	PRE_25_ENTRY("gregsmountainousadventure", "mags.exe", "80a17966fc547849d43646acf89de296", 2112993),
+	PRE_25_ENTRY("greysgreytadv", "greywin.exe", "80bdce9a1052e896c7cba6a4334cecce", 1283447),
+	PRE_25_ENTRY("hermit", "hermit.exe", "4689069dd6b241e38311d0586e610a8d", 13995403),
+	PRE_25_ENTRY("jamesbondage", "jbdos.exe", "1f0edcb7fa3f8e2b1dd60fa6c0bce60f", 2056737),
+	PRE_25_ENTRY("jinglebells", "jinglebells.exe", "385a593828b1edb194e984ce55cda65e", 1620588),
+	PRE_25_ENTRY("kidnapped", "ac2game.dat", "27daca01ccbbbaf02bf6b4b85d5990b4", 1205017),
+	PRE_25_ENTRY("larryvales1", "larryvtd.exe", "610b7a3d1fd90f24d2218aa26b29d8ca", 3129645),
+	PRE_25_ENTRY("larryvales2", "dead.exe", "be48a6b0b81a71d34a41930623c065f1", 3946993),
+	PRE_25_ENTRY("lassi", "lassi.exe", "ed778afb4f46c3f2a70d330532a83a2f", 3681914),
+	PRE_25_ENTRY("lassiandrogermeetgod", "mtg.exe", "ed778afb4f46c3f2a70d330532a83a2f", 1618544),
+	PRE_25_ENTRY("lassiquest1", "lassi.exe", "c391c6676099032440b206189babe76e", 1700368),
+	PRE_25_ENTRY("littlejonnyevil", "lje.exe", "e93037e8efc7abc19b8978903ef5b409", 2133182),
+	PRE_25_ENTRY("littlewillie", "ac2game.dat", "239b11ab644222c67d981494766a3c25", 254128),
+	PRE_25_ENTRY("ludwig", "ludwig.exe", "727a30f9244441ad57a76086f4faa779", 3658869),
+	PRE_25_ENTRY("lupoinutile", "lupo.exe", "19f4045333d9c823a5439d0447d55985", 1856459),
+	PRE_25_ENTRY("mafio", "crimetim.exe", "be48a6b0b81a71d34a41930623c065f1", 1303660),
+	PRE_25_ENTRY("meninbrown", "0112.men in brown.exe", "426e34f40e0dc5285af3fb5fc32a220e", 2072392),
+	PRE_25_ENTRY("midtownshootout", "mtsowin.exe", "73f87b30f84e9c34ab09ec8dd7ae109d", 1076035),
+	PRE_25_ENTRY("momsquest", "mom's quest.exe", "73f87b30f84e9c34ab09ec8dd7ae109d", 3173896),
+	PRE_25_ENTRY("monkeyplank", "plank.exe", "1f0edcb7fa3f8e2b1dd60fa6c0bce60f", 815948),
+	PRE_25_ENTRY("moose", "moose.exe", "f4585823c1b4ce97d78c8acb433bec52", 1448684),
+	PRE_25_ENTRY("moosewars", "moose.exe", "f4585823c1b4ce97d78c8acb433bec52", 1448684),
+	PRE_25_ENTRY("murder", "murder.exe", "221637e5d62e2ca3cc146846ab0b2e49", 935799),
+	PRE_25_ENTRY("nightoftheplumber", "night of the plumber.exe", "1f0edcb7fa3f8e2b1dd60fa6c0bce60f", 1703896),
+	PRE_25_ENTRY("novomestro", "novo.exe", "07f9921784124d9e09f39bb831e06131", 1122507),
+	PRE_25_ENTRY("odysseus", "odysseus.exe", "426e34f40e0dc5285af3fb5fc32a220e", 2799113), // Windows
+	PRE_25_ENTRY("odysseus", "odysseus.exe", "00dce98d598e9b7ad3c6674bfd4880d9", 2570368), // DOS
+	PRE_25_ENTRY("permanentdaylight", "daylight.exe", "07f9921784124d9e09f39bb831e06131", 1799958),
+	PRE_25_ENTRY("perpetrator", "ac2game.dat", "56ef979be112e122e24d0cc8caea4ea4", 994303),
+	PRE_25_ENTRY("pizzaquest", "pqwin.exe", "73f87b30f84e9c34ab09ec8dd7ae109d", 2500089),
+	PRE_25_ENTRY("pornquest", "porn.exe", "04eedea9846d380d6d9a120f657daa43", 1012323),
+	PRE_25_ENTRY("qfc", "qfc.exe", "04eedea9846d380d6d9a120f657daa43", 2038696),
+	PRE_25_ENTRY("qfg412", "qfg.exe", "8b21668ca462b0b6b35df43c5902b074", 26674790),
+	PRE_25_ENTRY("qfg412", "qfg.exe", "9027912819f3a319ed9de0fd855310c3", 26954823),
+	PRE_25_ENTRY("racingmanager", "raceman.exe", "465f972675db2da6040518221af5b0ba", 15971689),
+	PRE_25_ENTRY("raymondskeys", "keys.exe", "e016cb68731d0e38fe97905dbf0d5b36", 1032178),
+	PRE_25_ENTRY("red", "red.exe", "be48a6b0b81a71d34a41930623c065f1", 1101194),
+	PRE_25_ENTRY("richardlonghurst", "rlbat-win.exe", "04eedea9846d380d6d9a120f657daa43", 7935723),
+	PRE_25_ENTRY("rickylonghurst", "bleach.exe", "9027912819f3a319ed9de0fd855310c3", 1174829),
+	PRE_25_ENTRY("ripp", "ripp.exe", "426e34f40e0dc5285af3fb5fc32a220e", 10489586),
+	PRE_25_ENTRY("robblanc1", "ac2game.dat", "29c2ced2f2e6ad764e4249b4e4c45bba", 920415),
+	PRE_25_ENTRY("robblanc1", "rb.exe", "426e34f40e0dc5285af3fb5fc32a220e", 1804361), // v1.2
+	PRE_25_ENTRY("robblanc2", "ac2game.dat", "dd6c52e5a6e9b70efef4654769f11c69", 2056386),
+	PRE_25_ENTRY("robblanc2", "rb2.exe", "426e34f40e0dc5285af3fb5fc32a220e", 2973290), // v1.2
+	PRE_25_ENTRY("robblanc3", "ac2game.dat", "8f8264de3c1bd91e26b84fe37fb5e53e", 2828959),
+	PRE_25_ENTRY("robblanc3", "rb3.exe", "426e34f40e0dc5285af3fb5fc32a220e", 3783355), // v1.2
+	PRE_25_ENTRY("rodekill", "rodekill.exe", "72f3c950b4d9d14580a11db885a63310", 11995954),
+	PRE_25_ENTRY("rodequest", "rodequest1.exe", "72f3c950b4d9d14580a11db885a63310", 1196458),
+	PRE_25_ENTRY("rollinfoy", "rollinfoy.exe", "19f4045333d9c823a5439d0447d55985", 3454107),
+	PRE_25_ENTRY("samthepiratemonkey", "monkey.exe", "73f87b30f84e9c34ab09ec8dd7ae109d", 1401414),
+	PRE_25_ENTRY("sma1", "moonsdt.exe", "9027912819f3a319ed9de0fd855310c3", 1276725),
+	PRE_25_ENTRY("slackerquest", "ac2game.dat", "e0998f2d2e14a55aae2291fdfab1ce7d", 1306492),
+	PRE_25_ENTRY("snailquest1", "snailquest.exe", "dd69243e3cc9e955215e0d556301b58e", 1095860),
+	PRE_25_ENTRY("snailquest2", "sq2.exe", "1bccd2edef19abc99e9683519d80c0e0", 955614),
+	PRE_25_ENTRY("snailquest3", "sq3.exe", "1bccd2edef19abc99e9683519d80c0e0", 1501892),
+	PRE_25_ENTRY("sol", "sol.exe", "73f87b30f84e9c34ab09ec8dd7ae109d", 4702799),
+	PRE_25_ENTRY("space", "space.exe", "094135f05cf14fc3903e0d3697911a4e", 3790026),
+	PRE_25_ENTRY("stickmen", "stickmen.exe", "094135f05cf14fc3903e0d3697911a4e", 2145142),
+	PRE_25_ENTRY("superdisk", "superdisk.exe", "80bdce9a1052e896c7cba6a4334cecce", 1304065),
+	PRE_25_ENTRY("teamwork", "teamwork.exe", "538274077115c6d8b4a0927dd3cceeac", 1096149),
+	PRE_25_ENTRY("thecrownofgold", "the crown of gold.exe", "e407143be000e44f113ba5ff1fbd17f9", 1971515),
+	PRE_25_ENTRY("theinexperiencedassassin", "assassin.exe", "73f87b30f84e9c34ab09ec8dd7ae109d", 2659741),
+	PRE_25_ENTRY("theisland", "island.exe", "e93037e8efc7abc19b8978903ef5b409", 1814801),
+	PRE_25_ENTRY("thendor", "ac2game.dat", "b9c2ad76574c08bbcfd56eb1b49d2cd3", 8580708),
+	PRE_25_ENTRY("thetower", "thetower.exe", "9027912819f3a319ed9de0fd855310c3", 3431385),
+	PRE_25_ENTRY("thewarp", "warp.exe", "9027912819f3a319ed9de0fd855310c3", 881957),
+	PRE_25_ENTRY("tommato", "tom mato's grand wing-ding.exe", "73f87b30f84e9c34ab09ec8dd7ae109d", 2735158),
+	PRE_25_ENTRY("tulliesworld1", "candale.exe", "1c21bdb52bcafcafe988b30fd6bb4126", 3936603),
+	PRE_25_ENTRY("tvquest", "mags.exe", "fc5f54dcfc82d3b991f670490a316958", 1318019),
+	PRE_25_ENTRY("whokilledkennyrogers", "mags.exe", "ed778afb4f46c3f2a70d330532a83a2f", 1240103),
+	PRE_25_ENTRY("winfry", "fry.exe", "73f87b30f84e9c34ab09ec8dd7ae109d", 4164041),
 
+	// Post 2.5 games that aren't currently supported
 	// uses unsupported agslua plugin
 	UNSUPPORTED_GAME_ENTRY("allthewaydown", "deepuns3.exe", "6c0b5468657c22d62201e3769cd8d2b3", 29830067),
 	// MMM13 crashes during the intro with an error
 	// Error: unexpected data size for WRITELIT op: 8
 	GAME_ENTRY("mmm13", "traum.exe", "3b7cceb3e4bdb031dc5d8f290936e94b", 6703140),
-	// Strangeland isn't yet supported becuase the executable is >2Gb.
-	UNSUPPORTED_GAME_ENTRY("strangeland", "Strangeland.exe", "c5978d50a9b7ee1c8a50a731847d8504", -1),
 	// Commercial game that likely uses custom extensions. Not only does it seem
 	// to use AGSController plugin built-in, even when I hooked up AGSController for
 	// the stand-alone AGS 3.5 interpreter, it hangs just like in ScummVM
 	UNSUPPORTED_GAME_ENTRY("untilihaveyou", "until i have you.exe", "cda1d7e36993dd55ba5513c1c43e5b2b", 1089857773), // Steam
 	UNSUPPORTED_GAME_ENTRY("untilihaveyou", "until i have you.exe", "cda1d7e36993dd55ba5513c1c43e5b2b", 1072879555),
-	// Post 2.5 games that aren't currently supported
 	// 2.55 game, but uses a plugin agsflashlight. Also, even with AGS interpreter
 	// hacked to specify plugin, errors on loading room107 saying that
 	// "room animations are no longer supported"
@@ -1874,20 +1877,24 @@ const AGSGameDescription GAME_DESCRIPTIONS[] = {
 	GAME_ENTRY("alemmoanozira", "postcards from anozira.exe", "f5f73b35e809d9e01a2cff32abeffadf", 5567476), // 3.0, Desura
 	GAME_ENTRY_STEAM("alemmoanozira", "Postcards_from_Anozira.exe", "a33691e4a84e2645b4cbe1f681511798", 5567690),
 	GAME_ENTRY("alemmoanozira", "postcards from anozira.exe", "893f31faa33f1219b316894a0cbe7b27", 174781776),
-	GAME_ENTRY_STEAM("alum", "alum.exe", "6d2f8e80c5f2372b705fdd4cc32f3579", 429203260),
+	GAME_ENTRY_STEAM("alum", "alum.exe", "6d2f8e80c5f2372b705fdd4cc32f3579", 429203260), // Windows
+	GAME_ENTRY_STEAM("alum", "Alum.exe", "6d2f8e80c5f2372b705fdd4cc32f3579", 429197066), // Linux & Mac
 	GAME_ENTRY("alum", "alum.exe", "6d2f8e80c5f2372b705fdd4cc32f3579", 428902430),
 	GAME_ENTRY_STEAM("atotkdeluxe", "atotk.exe", "68d4f3488a9dcec74584651c0e29e439", 5078719),
 	GAME_ENTRY("apotheosis", "the apotheosis project.exe", "0cab252e992e5da65bdbf3648c2b70df", 1144087889), // 1.0
 	GAME_ENTRY_STEAM("apotheosis", "the apotheosis project.exe", "0115a64ddec9396108f32da31d761ecb", 1144677502),
+	GAME_ENTRY_STEAM("apotheosis", "The Apotheosis Project.exe", "4c0c28d58ebd53823fc0248e5b777c52", 1144826071),
 	GAME_ENTRY_STEAM("apotheosis", "The Apotheosis Project.ags", "0d9ae5a4ffd3e3e968c6addb5d524954", 1142362222), // Linux
 	GAME_ENTRY_STEAM("astroloco", "astroloco1.exe", "c71919e3b0cc415ef725cf1a9818a515", 42894919),
 	GAME_ENTRY("astroloco", "astroloco1.exe", "06e70a826fde73b3f86f974885d31abe", 42492070),
-	GAME_ENTRY_STEAM("beer", "beer!.exe", "6f201fd7a19869c85f49c7c471d0479a", 5055091),
+	GAME_ENTRY_STEAM("beer", "beer!.exe", "6f201fd7a19869c85f49c7c471d0479a", 5055091), // Windows
+	GAME_ENTRY_STEAM("beer", "Beer!.ags", "6f201fd7a19869c85f49c7c471d0479a", 5042748), // Linux
 	GAME_ENTRY_GOG("blackwell1", "blackwell1.exe", "605e124cb7e0b56841c471e2d641c224", 18822697),
 	GAME_ENTRY_PLUGIN_STEAM("blackwell1", "blackwell1.exe", "605e124cb7e0b56841c471e2d641c224", 18824597, AGSTEAM_WADJETEYE),
 	GAME_ENTRY_PLUGIN_STEAM("blackwell1", "blackwell1.exe", "605e124cb7e0b56841c471e2d641c224", 19757071, AGSTEAM_WADJETEYE),
 	GAME_ENTRY_PLUGIN_STEAM("blackwell1", "blackwell1.exe", "e5a75b86a0ea8143e1784261f5f52e83", 67241529, AGSTEAM_WADJETEYE),
-	GAME_ENTRY_PLUGIN_STEAM("blackwell1", "ac2game.dat", "ff5b05b81909683fcd57580c58a81d87", 64200209, AGSTEAM_WADJETEYE), //Linux
+	GAME_ENTRY_PLUGIN_STEAM("blackwell1", "ac2game.dat", "ff5b05b81909683fcd57580c58a81d87", 64200209, AGSTEAM_WADJETEYE), // Linux & Mac
+	GAME_ENTRY_PLUGIN_STEAM("blackwell1", "ac2game.dat", "1051d3fa462b1e0cc8973a8775128307", 66679994, AGSTEAM_WADJETEYE), // Mac
 	GAME_ENTRY("blackwell1", "blackwell1.exe", "605e124cb7e0b56841c471e2d641c224", 18824247), // Humble Bundle (Windows)
 	GAME_ENTRY("blackwell1", "ac2game.dat", "605e124cb7e0b56841c471e2d641c224", 68665467), // Android
 	GAME_ENTRY("blackwell1", "ac2game.dat", "4668e05ef2a94267b0d571e715413302", 64200367), // Humble Bundle (Linux)
@@ -1896,7 +1903,7 @@ const AGSGameDescription GAME_DESCRIPTIONS[] = {
 	GAME_ENTRY_PLUGIN_STEAM("blackwell2", "unbound.exe", "5c3a940514d91431e8e1c372018851ca", 14496128, AGSTEAM_WADJETEYE),
 	GAME_ENTRY_PLUGIN_STEAM("blackwell2", "unbound.exe", "5c3a940514d91431e8e1c372018851ca", 14469500, AGSTEAM_WADJETEYE),
 	GAME_ENTRY_PLUGIN_STEAM("blackwell2", "unbound.exe", "00edc7b69ae377f6093ac567fd901849", 15683333, AGSTEAM_WADJETEYE),
-	GAME_ENTRY_PLUGIN_STEAM("blackwell2", "ac2game.dat", "87c0681f4eebafddc60533f799456d53", 57672335, AGSTEAM_WADJETEYE), //Linux
+	GAME_ENTRY_PLUGIN_STEAM("blackwell2", "ac2game.dat", "87c0681f4eebafddc60533f799456d53", 57672335, AGSTEAM_WADJETEYE), // Linux & Mac
 	GAME_ENTRY("blackwell2", "unbound.exe", "5c3a940514d91431e8e1c372018851ca", 14495742), // Humble Bunde (Windows)
 	GAME_ENTRY("blackwell2", "ac2game.dat", "5c3a940514d91431e8e1c372018851ca", 69452991), // Android
 	GAME_ENTRY("blackwell2", "ac2game.dat", "e28670a676a3e4e78eef76b9573e490a", 57670660), // Humble Bunde (Linux)
@@ -1905,7 +1912,7 @@ const AGSGameDescription GAME_DESCRIPTIONS[] = {
 	GAME_ENTRY_PLUGIN_STEAM("blackwell3", "convergence.exe", "2260c1a21aba7ac00baf0100d4ca54f1", 172578803, AGSTEAM_WADJETEYE),
 	GAME_ENTRY_PLUGIN_STEAM("blackwell3", "convergence.exe", "2260c1a21aba7ac00baf0100d4ca54f1", 171969680, AGSTEAM_WADJETEYE),
 	GAME_ENTRY_PLUGIN_STEAM("blackwell3", "convergence.exe", "f261c2505f98503a1ec9f1dff7f13bda", 173873229, AGSTEAM_WADJETEYE),
-	GAME_ENTRY_PLUGIN_STEAM("blackwell3", "ac2game.dat", "2844e3823d74652d282b8173bbde2b8b", 170703726, AGSTEAM_WADJETEYE), //Linux
+	GAME_ENTRY_PLUGIN_STEAM("blackwell3", "ac2game.dat", "2844e3823d74652d282b8173bbde2b8b", 170703726, AGSTEAM_WADJETEYE), // Linux & Mac
 	GAME_ENTRY("blackwell3", "convergence.exe", "2260c1a21aba7ac00baf0100d4ca54f1", 172578032), // Humble Bundle (Windows, v1.1)
 	GAME_ENTRY("blackwell3", "ac2game.dat", "2260c1a21aba7ac00baf0100d4ca54f1", 173301005), // Android
 	GAME_ENTRY("blackwell3", "ac2game.dat", "c894f6005f479ba8f12e87223920aa6a", 170700456), // Humble Bundle (Linux)
@@ -1939,12 +1946,14 @@ const AGSGameDescription GAME_DESCRIPTIONS[] = {
 	GAME_ENTRY_LANG("downfall2009", "downfall.exe", "10212624b951711c4b44f5cb9eecbf0a", 143360, Common::RU_RUS), // GOG
 	GAME_ENTRY_GOG("downfall2016", "downfall.exe", "08b1340f3528feeebce1ecc59cc17907", 1995812750),
 	GAME_ENTRY_STEAM("downfall2016", "downfall.exe", "08b1340f3528feeebce1ecc59cc17907", 224368590),
+	GAME_ENTRY_STEAM("downfall2016", "Downfall.ags", "7c87b99ce309a46085e40ac1a2b20e75", 224024207), // Linux
 	GAME_ENTRY_STEAM("dustbowl", "dustbowl.exe", "aa349d52fd620cf9642935cd5bdec5d8", 63365026),
 	GAME_ENTRY("dustbowl", "dustbowl.exe", "aa349d52fd620cf9642935cd5bdec5d8", 82185295),
 	GAME_ENTRY_STEAM("falconcity", "game.exe", "e816b31cfe3512c2ec24ac0bc6cfc605", 584191058),
 	GAME_ENTRY_STEAM("feriadarles", "feria d'arles.exe", "6a3291595263debd129e1e2064baeea5", 275649462),
+	GAME_ENTRY_STEAM("feriadarles", "ac2game.dat", "6a3291595263debd129e1e2064baeea5", 275640157), // Mac
 	GAME_ENTRY("feriadarles", "feria d'arles.exe", "6a3291595263debd129e1e2064baeea5", 275659086),
-	GAME_ENTRY_STEAM("footballgame", "football game", "76703ac67835bdbfde5b378a147c8ba2", 164951859),
+	GAME_ENTRY_STEAM("footballgame", "Football Game.exe", "76703ac67835bdbfde5b378a147c8ba2", 164951859),
 	GAME_ENTRY("footballgame", "football game.exe", "76703ac67835bdbfde5b378a147c8ba2", 164951859),
 	GAME_ENTRY("footballgame", "football game.exe", "8283bcdb6ec07ec4a4040ef34215ec96", 164960522),
 	GAME_ENTRY("geminirue", "GeminiRue.exe", "0bdfb2139abaae5ae2dc85f1aacfd3f6", 61906750), // v1.1 CD Release
@@ -1960,7 +1969,7 @@ const AGSGameDescription GAME_DESCRIPTIONS[] = {
 	GAME_ENTRY_GOG("geminirue", "agsgame.dat", "f3c0c7d3892bdd8963e8ce017f73de08", 62069353), // Linux
 	GAME_ENTRY("ghostdream", "ghostdream.exe", "05594881531d62e4575545f3c8fd2576", 225600520),
 	GAME_ENTRY_STEAM("ghostdream", "ghostdream.exe", "05594881531d62e4575545f3c8fd2576", 480856325),
-	GAME_ENTRY_STEAM("goldenwake", "a-golden-wake.exe", "dbe281d93c914899886e77c09c3c65ec", 130844360),
+	GAME_ENTRY_STEAM("goldenwake", "a-golden-wake.exe", "dbe281d93c914899886e77c09c3c65ec", 130844360), // Linux & Mac
 	GAME_ENTRY_STEAM("goldenwake", "a-golden-wake.exe", "e7080df9729aae2a0097b752198f3cca", 130846774),
 	GAME_ENTRY_GOG("goldenwake", "a-golden-wake.exe", "7056895c888d6cf3f0120d2edfeb7f7b", 130912596),
 	GAME_ENTRY("goldenwake", "a-golden-wake.exe", "e80586fdc2db32f65658b235d8cbc159", 129814364), // Humble Bundle
@@ -1985,6 +1994,7 @@ const AGSGameDescription GAME_DESCRIPTIONS[] = {
 	GAME_ENTRY_GOG("mage", "ac2game.dat", "2e822f554994f36e0c62da2acda874da", 30492258), // Mac
 	GAME_ENTRY_GOG("mage", "mages_initiation.exe", "2e822f554994f36e0c62da2acda874da", 30492089),
 	GAME_ENTRY_STEAM("mage", "mages_initiation.exe", "2e822f554994f36e0c62da2acda874da", 30492087),
+	GAME_ENTRY_STEAM("mage", "ac2game.dat", "2e822f554994f36e0c62da2acda874da", 30492087), // Mac
 	GAME_ENTRY_STEAM("metaldead", "metaldead.exe", "91996c5379e82787b68e84ab67d9672f", 1504754877),
 	GAME_ENTRY("metaldead", "metaldead.exe", "3b0874c12fa643efa5fcdc43f647c871", 1501335400),
 	GAME_ENTRY_STEAM("neofeud", "neofeud.exe", "6e861b1f476ff7cdf036082abb271329", 2078740517),
@@ -1992,6 +2002,7 @@ const AGSGameDescription GAME_DESCRIPTIONS[] = {
 	GAME_ENTRY_GOG("oott", "oott-tkc.exe", "11c2421258465cba4bd773c49d918ee3", 467834855),
 	GAME_ENTRY_GOG("oott", "oott-tkc.exe", "11c2421258465cba4bd773c49d918ee3", 467845009),
 	GAME_ENTRY_STEAM("oott", "oott-tkc.exe", "11c2421258465cba4bd773c49d918ee3", 467844896),
+	GAME_ENTRY_STEAM("oott", "agsgame.dat", "801b35fe313a432e44671ab04178b679", 465670839), // Linux
 	GAME_ENTRY_GOG("oott", "agsgame.dat", "ca8414acc5dc5687891db2d8ac5a0e76", 465662744), // Linux
 	GAME_ENTRY_GOG("primordia", "primordia.exe", "22313e59c3233001488c26f18c80cc08", 973495830),
 	GAME_ENTRY_GOG("primordia", "primordia.exe", "f2edc9c3161f1f538df9b4c59fc89e24", 978377890),
@@ -2028,6 +2039,13 @@ const AGSGameDescription GAME_DESCRIPTIONS[] = {
 	GAME_ENTRY_GOG("shivah", "shivah.exe", "0aaf5445a3544a631d6e7dd4561fc7ae", 32319665), // Windows GOG, Humble Bundle
 	GAME_ENTRY_STEAM("sumatra", "sumatra fate of yandi.exe", "57c868b1a81c0335ab60970292cd79d8", 170088886),
 	GAME_ENTRY("superjazzman", "sjm.exe", "0710e2ec71042617f565c01824f0cf3c", 10841689), // Official website
+	GAME_ENTRY("symploke1", "Symploke.exe", "ff20c8c9dda8379607db87e7726909c6", 29996616), // Videojuegos Fermin website (Spanish)
+	GAME_ENTRY("symploke1", "symploke1.exe", "ff20c8c9dda8379607db87e7726909c6", 57363019), // Steam (English), same as Videojuegos Fermin website (English)
+	GAME_ENTRY("symploke1", "symploke1.exe", "ff20c8c9dda8379607db87e7726909c6", 29996469), // Steam (Spanish)
+	GAME_ENTRY("symploke2", "symploke2.exe", "ff20c8c9dda8379607db87e7726909c6", 184247323), // Steam (English)
+	GAME_ENTRY("symploke2", "symploke2.exe", "ff20c8c9dda8379607db87e7726909c6", 124539110), // Steam (Spanish)
+	GAME_ENTRY("symploke3", "symploke3.exe", "c7acc0fba53cb6a656c9cbc788868a2d", 284040264), // Steam (English)
+	GAME_ENTRY("symploke3", "symploke3.exe", "c7acc0fba53cb6a656c9cbc788868a2d", 284098408), // Steam (Spanish)
 	GAME_ENTRY("tales", "tales.exe", "4f6c7ec127e8b0ce077abb357903612f", 112930701),
 	GAME_ENTRY_STEAM("tales", "tales.exe", "7b5842e8954354ef6e21dc1837073182", 150969855),
 	GAME_ENTRY_STEAM("technobabylon", "technobabylon.exe", "e523535e730f313e1ed9b19b1a9dd228", 447900356),
@@ -2105,6 +2123,7 @@ const AGSGameDescription GAME_DESCRIPTIONS[] = {
 	DEMO_ENTRY("phantomfellows", "TPF.exe", "71961f24fd94e30e61167d7b0720cd35", 96799674),
 	DEMO_ENTRY("phantomfellows", "TPF.exe", "71961f24fd94e30e61167d7b0720cd35", 96799833),
 	DEMO_ENTRY("phantomfellows", "TPF.exe", "71961f24fd94e30e61167d7b0720cd35", 96800964),
+	DEMO_ENTRY("phantomfellows", "TPF.exe", "71961f24fd94e30e61167d7b0720cd35", 430357136),
 	DEMO_ENTRY("primordia", "primordia.exe", "22313e59c3233001488c26f18c80cc08", 727898212),
 	DEMO_ENTRY("pubmastersquest", "pub master quest [demo].exe", "e1676318c8a040fcf508b817013dc8fe", 23431689),
 	DEMO_ENTRY("puzzlebots", "puzzlebots_demo.exe", "34b49df9cf6eadb5c3587b3921d5b72f", 354138961),
@@ -3393,6 +3412,8 @@ const AGSGameDescription GAME_DESCRIPTIONS[] = {
 	GAME_ENTRY("stickmeni", "stick.exe", "f3a13b2d6c2e0fe04c6f466062920e23", 2399329),
 	GAME_ENTRY("stickythestickfigurepart1thecrimsonhouse", "Crimson House Files.exe", "3b095a7872e04769d04ab45e9c1b66eb", 3610653),
 	GAME_ENTRY("stranded", "Stranded.exe", "18b284c22010850f79bc5c20054a70c4", 39791629),
+	GAME_ENTRY("strangeland", "Strangeland.exe", "c5978d50a9b7ee1c8a50a731847d8504", 3186614879),
+	GAME_ENTRY("strangeland", "Strangeland.exe", "c5978d50a9b7ee1c8a50a731847d8504", -1), // for 32-bit limited filesystems
 	GAME_ENTRY("stranger", "Stranger.exe", "0500aacb6c176d47ac0f8158f055db83", 5854099),
 	GAME_ENTRY("strangerinstickworld", "game1.exe", "a524cbb1c51589903c4043b98917f1d9", 42525810),
 	GAME_ENTRY("strangerthings", "StrangerThings.exe", "cc19db728abbcf657db6b76afb0e92d1", 43636017),
@@ -3408,10 +3429,6 @@ const AGSGameDescription GAME_DESCRIPTIONS[] = {
 	GAME_ENTRY("sword", "Sword.exe", "0500aacb6c176d47ac0f8158f055db83", 1847692),
 	GAME_ENTRY("sydneyfindsemployment", "sydney.exe", "06a03fe35791b0578068ab1873455463", 17351738),
 	GAME_ENTRY("sydneytreadsthecatwalk", "sydney two.exe", "615e806856b7730afadf1fea9a756b70", 31480339),
-	GAME_ENTRY("symploke1", "Symploke.exe", "ff20c8c9dda8379607db87e7726909c6", 29996616),
-	GAME_ENTRY("symploke1", "symploke1.exe", "ff20c8c9dda8379607db87e7726909c6", 57363019),
-	GAME_ENTRY("symploke2", "symploke2.exe", "ff20c8c9dda8379607db87e7726909c6", 184247323),
-	GAME_ENTRY("symploke3", "symploke3.exe", "c7acc0fba53cb6a656c9cbc788868a2d", 284040264),
 	GAME_ENTRY("taleofalegacy", "A Tale of a Legacy.exe", "387ff720e746ae46e93f463fd58d77a4", 347029015),
 	GAME_ENTRY("talesofchickenry", "Chickenry.exe", "aabdafae8b57dfc48fdf158a72326c23", 50338519),
 	GAME_ENTRY("tao", "Tao through space and time AGS.exe", "7a3096ac0237cb6aa8e1718e28caf039", 35930047),

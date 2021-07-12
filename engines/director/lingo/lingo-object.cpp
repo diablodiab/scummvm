@@ -22,6 +22,8 @@
 
 #include "common/endian.h"
 
+#include "graphics/macgui/mactext.h"
+
 #include "director/director.h"
 #include "director/cast.h"
 #include "director/channel.h"
@@ -32,9 +34,12 @@
 #include "director/lingo/lingo-code.h"
 #include "director/lingo/lingo-object.h"
 #include "director/lingo/lingo-the.h"
+
 #include "director/lingo/xlibs/fileio.h"
-#include "director/lingo/xlibs/palxobj.h"
 #include "director/lingo/xlibs/flushxobj.h"
+#include "director/lingo/xlibs/fplayxobj.h"
+#include "director/lingo/xlibs/labeldrvxobj.h"
+#include "director/lingo/xlibs/palxobj.h"
 #include "director/lingo/xlibs/winxobj.h"
 
 namespace Director {
@@ -105,9 +110,11 @@ static struct XLibProto {
 	int type;
 	int version;
 } xlibs[] = {
-	{ "FileIO",					FileIO::initialize,					kXObj | kFactoryObj,	200 },	// D2
+	{ "FileIO",					FileIO::initialize,					kXObj | kXtraObj,		200 },	// D2
 	{ "FlushXObj",				FlushXObj::initialize,				kXObj,					400 },	// D4
+	{ "FPlayXObj",				FPlayXObj::initialize,				kXObj,					200 },	// D2
 	{ "PalXObj",				PalXObj:: initialize,				kXObj,					400 }, 	// D4
+	{ "LabelDrv",				LabelDrvXObj:: initialize,			kXObj,					400 }, 	// D4
 	{ "winXObj",				RearWindowXObj::initialize,			kXObj,					400 },	// D4
 	{ 0, 0, 0, 0 }
 
@@ -876,7 +883,7 @@ Datum TextCastMember::getField(int field) {
 		d = _hilite;
 		break;
 	case kTheText:
-		d = getText();
+		d = getText().encode(Common::kMacCentralEurope); // FIXME: Properly handle encoding
 		break;
 	case kTheTextAlign:
 		d.type = STRING;
@@ -896,16 +903,16 @@ Datum TextCastMember::getField(int field) {
 		}
 		break;
 	case kTheTextFont:
-		warning("TextCastMember::getField(): Unprocessed getting field \"%s\" of field %d", g_lingo->field2str(field), _castId);
+		d.u.i = _fontId;
 		break;
 	case kTheTextHeight:
-		warning("TextCastMember::getField(): Unprocessed getting field \"%s\" of field %d", g_lingo->field2str(field), _castId);
+		d.u.i = getTextHeight();
 		break;
 	case kTheTextSize:
-		warning("TextCastMember::getField(): Unprocessed getting field \"%s\" of field %d", g_lingo->field2str(field), _castId);
+		d.u.i = getTextSize();
 		break;
 	case kTheTextStyle:
-		warning("TextCastMember::getField(): Unprocessed getting field \"%s\" of field %d", g_lingo->field2str(field), _castId);
+		d.u.i = _textSlant;
 		break;
 	default:
 		d = CastMember::getField(field);
@@ -937,7 +944,7 @@ bool TextCastMember::setField(int field, const Datum &d) {
 		}
 		break;
 	case kTheText:
-		setText(d.asString().c_str());
+		setText(Common::U32String(d.asString(), Common::kMacCentralEurope)); // FIXME: Properly handle encoding
 		return true;
 	case kTheTextAlign:
 		{
@@ -958,19 +965,22 @@ bool TextCastMember::setField(int field, const Datum &d) {
 
 			_textAlign = align;
 			_modified = true;
-		}
+	}
 		return true;
 	case kTheTextFont:
-		warning("TextCastMember::setField(): Unprocessed setting field \"%s\" of field %d", g_lingo->field2str(field), _castId);
+		_fontId = d.asInt();
+		_modified = true;
 		return false;
 	case kTheTextHeight:
-		warning("TextCastMember::setField(): Unprocessed setting field \"%s\" of field %d", g_lingo->field2str(field), _castId);
+		_lineSpacing = d.asInt();
+		_modified = true;
 		return false;
 	case kTheTextSize:
-		warning("TextCastMember::setField(): Unprocessed setting field \"%s\" of field %d", g_lingo->field2str(field), _castId);
+		setTextSize(d.asInt());
 		return false;
 	case kTheTextStyle:
-		warning("TextCastMember::setField(): Unprocessed setting field \"%s\" of field %d", g_lingo->field2str(field), _castId);
+		_textSlant = d.asInt();
+		_modified = true;
 		return false;
 	default:
 		break;
@@ -996,21 +1006,38 @@ bool TextCastMember::hasChunkField(int field) {
 Datum TextCastMember::getChunkField(int field, int start, int end) {
 	Datum d;
 
+	Graphics::MacText *macText = ((Graphics::MacText *)_widget);
+	if (!_widget)
+		warning("TextCastMember::getChunkField getting chunk field when there is no linked widget, returning the default value");
+
 	switch (field) {
 	case kTheForeColor:
-		warning("TextCastMember::getChunkField(): Unprocessed getting field \"%s\" of field %d", g_lingo->field2str(field), _castId);
+		if (_widget)
+			d.u.i = macText->getTextColor(start, end);
+		else
+			d.u.i = getForeColor();
 		break;
 	case kTheTextFont:
-		warning("TextCastMember::getChunkField(): Unprocessed getting field \"%s\" of field %d", g_lingo->field2str(field), _castId);
+		if (_widget)
+			d.u.i = macText->getTextFont(start, end);
+		else
+			d.u.i = _fontId;
 		break;
 	case kTheTextHeight:
-		warning("TextCastMember::getChunkField(): Unprocessed getting field \"%s\" of field %d", g_lingo->field2str(field), _castId);
+		warning("TextCastMember::getChunkField getting text height(line spacing) is not implemented yet, returning the default one");
+		d.u.i = _lineSpacing;
 		break;
 	case kTheTextSize:
-		warning("TextCastMember::getChunkField(): Unprocessed getting field \"%s\" of field %d", g_lingo->field2str(field), _castId);
+		if (_widget)
+			d.u.i = macText->getTextSize(start, end);
+		else
+			d.u.i = _fontSize;
 		break;
 	case kTheTextStyle:
-		warning("TextCastMember::getChunkField(): Unprocessed getting field \"%s\" of field %d", g_lingo->field2str(field), _castId);
+		if (_widget)
+			d.u.i = macText->getTextSlant(start, end);
+		else
+			d.u.i = _textSlant;
 		break;
 	default:
 		break;
@@ -1020,22 +1047,30 @@ Datum TextCastMember::getChunkField(int field, int start, int end) {
 }
 
 bool TextCastMember::setChunkField(int field, int start, int end, const Datum &d) {
+	Graphics::MacText *macText = ((Graphics::MacText *)_widget);
+	if (!_widget)
+		warning("TextCastMember::setChunkField setting chunk field when there is no linked widget");
+
 	switch (field) {
 	case kTheForeColor:
-		warning("TextCastMember::setChunkField(): Unprocessed setting field \"%s\" of field %d", g_lingo->field2str(field), _castId);
-		return false;
+		if (_widget)
+			macText->setTextColor(d.asInt(), start, end);
+		return true;
 	case kTheTextFont:
-		warning("TextCastMember::setChunkField(): Unprocessed setting field \"%s\" of field %d", g_lingo->field2str(field), _castId);
-		return false;
+		if (_widget)
+			macText->setTextFont(d.asInt(), start, end);
+		return true;
 	case kTheTextHeight:
-		warning("TextCastMember::setChunkField(): Unprocessed setting field \"%s\" of field %d", g_lingo->field2str(field), _castId);
+		warning("TextCastMember::setChunkField setting text height(line spacing) is not implemented yet");
 		return false;
 	case kTheTextSize:
-		warning("TextCastMember::setChunkField(): Unprocessed setting field \"%s\" of field %d", g_lingo->field2str(field), _castId);
-		return false;
+		if (_widget)
+			macText->setTextSize(d.asInt(), start, end);
+		return true;
 	case kTheTextStyle:
-		warning("TextCastMember::setChunkField(): Unprocessed setting field \"%s\" of field %d", g_lingo->field2str(field), _castId);
-		return false;
+		if (_widget)
+			macText->setTextSlant(d.asInt(), start, end);
+		return true;
 	default:
 		break;
 	}

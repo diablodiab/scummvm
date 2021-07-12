@@ -138,6 +138,7 @@ struct NonBlockingScriptFunction;
 struct ObjectCache;
 struct OnScreenWindow;
 struct PluginObjectReader;
+struct Point;
 struct ResourcePaths;
 struct RGB_MAP;
 struct RoomCameraDrawData;
@@ -206,6 +207,8 @@ public:
 	int _trans_blend_green = 0;
 	int _trans_blend_blue = 0;
 	BlenderMode __blender_mode = kRgbToRgbBlender;
+	/* current format information and worker routines */
+	int _utype = U_UTF8;
 
 	/* default palette structures */
 	PALETTE _black_palette;
@@ -587,10 +590,11 @@ public:
 	 * @{
 	 */
 
-	// Dirty rects for the main viewport background (black screen);
+	// Dirty rects for the game screen background (black screen);
 	// these are used when the room viewport does not cover whole screen,
 	// so that we know when to paint black after mouse cursor and gui.
 	DirtyRects *_BlackRects;
+	Point *_GlobalOffs;
 	// Dirty rects object for the single room camera
 	std::vector<DirtyRects> *_RoomCamRects;
 	// Saved room camera offsets to know if we must invalidate whole surface.
@@ -679,7 +683,7 @@ public:
 	std::vector<AGS::Shared::Font> *_fonts;
 	TTFFontRenderer *_ttfRenderer;
 	WFNFontRenderer *_wfnRenderer;
-	SplitLines *_fontLines;
+	SplitLines *_Lines;
 
 	/**@}*/
 
@@ -742,7 +746,7 @@ public:
 	int _new_room_pos = 0;
 	int _new_room_x = SCR_NO_VALUE, _new_room_y = SCR_NO_VALUE;
 	int _new_room_loop = SCR_NO_VALUE;
-	bool _proper_exit = false;
+	bool _proper_exit = true;
 	int _our_eip = 0;
 
 	int _oldmouse = 0;
@@ -1317,6 +1321,8 @@ public:
 	String _trans_name, _trans_filename;
 	long _lang_offs_start = 0;
 	char _transFileName[MAX_PATH] = { 0 };
+	std::vector<uint16> _wcsbuf; // widechar buffer
+	std::vector<char> _mbbuf;  // utf8 buffer
 
 	/**@}*/
 

@@ -155,7 +155,7 @@ void inkDrawPixel(int x, int y, int src, void *data) {
 
 	if (p->ms) {
 		// Get the pixel that macDrawPixel will give us, but store it to apply the
-		// ink later.
+		// ink later
 		tmpDst = *dst;
 		(p->_wm->getDrawPixel())(x, y, src, p->ms->pd);
 		src = *dst;

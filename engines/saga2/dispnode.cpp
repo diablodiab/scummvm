@@ -44,7 +44,6 @@ DisplayNode                     *DisplayNodeList::head;
 DisplayNodeList                 mainDisplayList;
 
 SpellDisplayList                activeSpells(maxActiveSpells);
-//extern SpellDisplayPrototypeList      SpellDisplayPrototypeList::sdpList;
 
 bool                            centerActorIndicatorEnabled;
 
@@ -55,7 +54,7 @@ bool                            centerActorIndicatorEnabled;
 extern int16        currentMapNum;
 extern WorldMapData *mapList;
 
-extern Point16      fineScroll;
+extern StaticPoint16 fineScroll;
 extern gPort        backPort;
 
 extern SpriteSet    *objectSprites,        // object sprites
@@ -130,7 +129,12 @@ void  DisplayNodeList::init(uint16 s) {
 // DisplayNode stuff
 
 DisplayNode::DisplayNode() {
-	efx = NULL;
+	nextDisplayed = nullptr;
+	sortDepth = 0;
+	object = nullptr;
+	flags = 0;                  // various flags
+	type = nodeTypeObject;
+	efx = nullptr;
 }
 
 TilePoint DisplayNode::SpellPos(void) {
@@ -207,8 +211,8 @@ void DisplayNodeList::buildObjects(bool fromScratch) {
 		int16       dist;
 
 		//  Compute distance from object to screen center.
-		dist =      abs(viewCenter.u - objLoc.u)
-		            +   abs(viewCenter.v - objLoc.v);
+		dist =      ABS(viewCenter.u - objLoc.u)
+		            +   ABS(viewCenter.v - objLoc.v);
 
 		//  Determine if the object is beyond the screen threshold
 		if ((dist >= loadDist
@@ -990,7 +994,7 @@ void Effectron::drawEffect(void) {
 	sc->sp = spellSprites->sprite(spriteID());   //tempSpellSpriteIDs[rand()%39] );
 	sc->offset.x = scList->offset.y = 0;
 
-	SpellDisplayPrototypeList::sdpList[parent->spell]->
+	(*g_vm->_sdpList)[parent->spell]->
 	getColorTranslation(eColors, this);
 
 	sc->colorTable = eColors;

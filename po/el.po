@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ScummVM 1.10.0git\n"
 "Report-Msgid-Bugs-To: scummvm-devel@lists.scummvm.org\n"
-"POT-Creation-Date: 2021-07-02 14:20+0000\n"
+"POT-Creation-Date: 2021-07-11 08:17+0000\n"
 "PO-Revision-Date: 2021-07-01 15:36+0000\n"
 "Last-Translator: Antoniou Athanasios <a.antoniou79@gmail.com>\n"
 "Language-Team: Greek <https://translations.scummvm.org/projects/scummvm/"
@@ -90,7 +90,7 @@ msgstr "Επιλογή"
 msgid "Select directory where to download game data"
 msgstr "Επιλέξτε φάκελο για να μεταφορτώσετε τα δεδομένα παιχνιδιού"
 
-#: gui/downloaddialog.cpp:50 gui/editgamedialog.cpp:583 gui/launcher.cpp:208
+#: gui/downloaddialog.cpp:50 gui/editgamedialog.cpp:583 gui/launcher.cpp:206
 msgid "Select directory with game data"
 msgstr "Επιλέξτε φάκελο με δεδομένα παιχνιδιού"
 
@@ -125,7 +125,7 @@ msgstr ""
 
 #: gui/downloaddialog.cpp:119 gui/downloaddialog.cpp:153
 #: gui/filebrowser-dialog.cpp:133 gui/fluidsynth-dialog.cpp:218
-#: gui/launcher.cpp:395 gui/launcher.cpp:417 gui/launcher.cpp:460
+#: gui/launcher.cpp:393 gui/launcher.cpp:415 gui/launcher.cpp:458
 #: gui/options.cpp:2876 gui/options.cpp:2914
 #: backends/events/default/default-events.cpp:185 engines/buried/buried.cpp:533
 #: engines/grim/grim.cpp:350 engines/kyra/gui/saveload_eob.cpp:596
@@ -137,7 +137,7 @@ msgstr "Ναι"
 
 #: gui/downloaddialog.cpp:119 gui/downloaddialog.cpp:154
 #: gui/filebrowser-dialog.cpp:133 gui/fluidsynth-dialog.cpp:218
-#: gui/launcher.cpp:395 gui/launcher.cpp:417 gui/launcher.cpp:460
+#: gui/launcher.cpp:393 gui/launcher.cpp:415 gui/launcher.cpp:458
 #: gui/options.cpp:2876 gui/options.cpp:2914 engines/buried/buried.cpp:533
 #: engines/grim/grim.cpp:350 engines/kyra/gui/saveload_eob.cpp:596
 #: engines/kyra/gui/saveload_eob.cpp:629
@@ -146,7 +146,7 @@ msgstr "Ναι"
 msgid "No"
 msgstr "Όχι"
 
-#: gui/downloaddialog.cpp:137 gui/launcher.cpp:566
+#: gui/downloaddialog.cpp:137 gui/launcher.cpp:564
 msgid "ScummVM couldn't open the specified directory!"
 msgstr "Το ScummVM δε μπόρεσε να ανοίξει το καθορισμένο φάκελο!"
 
@@ -159,7 +159,7 @@ msgstr ""
 "αρχείο με το ίδιο όνομα."
 
 #: gui/downloaddialog.cpp:147 gui/editgamedialog.cpp:385
-#: gui/fluidsynth-dialog.cpp:154 gui/launcher.cpp:516 gui/launcher.cpp:520
+#: gui/fluidsynth-dialog.cpp:154 gui/launcher.cpp:514 gui/launcher.cpp:518
 #: gui/massadd.cpp:89 gui/options.cpp:2095 gui/saveload-dialog.cpp:1169
 #: engines/engine.cpp:504 engines/engine.cpp:516
 #: backends/platform/wii/options.cpp:47 engines/agos/animation.cpp:559
@@ -728,7 +728,7 @@ msgstr "Εγγραφή..."
 msgid "~A~dd Game..."
 msgstr "~Π~ροσθήκη Παιχνιδιού..."
 
-#: gui/launcher.cpp:157 gui/launcher.cpp:167
+#: gui/launcher.cpp:157 gui/launcher.cpp:166
 msgid "Add games to the list"
 msgstr "Προσθήκη παιχνιδιών στη λίστα"
 
@@ -736,60 +736,60 @@ msgstr "Προσθήκη παιχνιδιών στη λίστα"
 msgid "Mass Add..."
 msgstr "Μαζική Προσθήκη..."
 
-#: gui/launcher.cpp:162
+#: gui/launcher.cpp:161
 msgid "~E~dit Game..."
 msgstr "~Δ~ιόρθωση Παιχνιδιού..."
 
-#: gui/launcher.cpp:162 gui/launcher.cpp:172
+#: gui/launcher.cpp:161 gui/launcher.cpp:170
 msgid "Change game options"
 msgstr "Αλλαγή επιλογών παιχνιδιού"
 
-#: gui/launcher.cpp:164
+#: gui/launcher.cpp:163
 msgid "~R~emove Game"
 msgstr "~Α~φαίρεση Παιχνιδιού"
 
-#: gui/launcher.cpp:164 gui/launcher.cpp:174
+#: gui/launcher.cpp:163 gui/launcher.cpp:172
 msgid "Remove game from the list. The game data files stay intact"
 msgstr ""
 "Αφαίρεση παιχνιδιού από τη λίστα. Τα αρχεία δεδομένων του παιχνιδιού μένουν "
 "ανέπαφα"
 
-#: gui/launcher.cpp:167
+#: gui/launcher.cpp:166
 msgctxt "lowres"
 msgid "~A~dd Game..."
 msgstr "~Π~ροσθ. Παιχν..."
 
-#: gui/launcher.cpp:168
+#: gui/launcher.cpp:167
 msgctxt "lowres"
 msgid "Mass Add..."
 msgstr "Μαζική Προσθήκη..."
 
-#: gui/launcher.cpp:172
+#: gui/launcher.cpp:170
 msgctxt "lowres"
 msgid "~E~dit Game..."
 msgstr "~Δ~ιόρθ. Παιχν..."
 
-#: gui/launcher.cpp:174
+#: gui/launcher.cpp:172
 msgctxt "lowres"
 msgid "~R~emove Game"
 msgstr "~Α~φαίρ. Παιχν"
 
-#: gui/launcher.cpp:182
+#: gui/launcher.cpp:180
 msgid "Search in game list"
 msgstr "Αναζήτηση στη λίστα παιχνιδιών"
 
-#: gui/launcher.cpp:186 gui/launcher.cpp:785
+#: gui/launcher.cpp:184 gui/launcher.cpp:783
 msgid "Search:"
 msgstr "Αναζήτηση:"
 
-#: gui/launcher.cpp:211 engines/dialogs.cpp:98 engines/engine.cpp:795
+#: gui/launcher.cpp:209 engines/dialogs.cpp:98 engines/engine.cpp:795
 #: engines/buried/saveload.cpp:515 engines/pegasus/pegasus.cpp:384
 #: engines/trecision/saveload.cpp:253 engines/tsage/scenes.cpp:631
 #: engines/wage/saveload.cpp:742 engines/xeen/saves.cpp:256
 msgid "Load game:"
 msgstr "Φόρτωση παιχνιδιού:"
 
-#: gui/launcher.cpp:211 engines/dialogs.cpp:98 engines/engine.cpp:795
+#: gui/launcher.cpp:209 engines/dialogs.cpp:98 engines/engine.cpp:795
 #: engines/buried/saveload.cpp:515 engines/parallaction/metaengine.cpp:118
 #: engines/parallaction/saveload.cpp:194 engines/pegasus/pegasus.cpp:384
 #: engines/scumm/dialogs.cpp:178 engines/trecision/saveload.cpp:253
@@ -798,13 +798,13 @@ msgstr "Φόρτωση παιχνιδιού:"
 msgid "Load"
 msgstr "Φόρτωση"
 
-#: gui/launcher.cpp:383
+#: gui/launcher.cpp:381
 msgid "This directory cannot be used yet, it is being downloaded into!"
 msgstr ""
 "Αυτός ο φάκελος δε μπορεί να χρησιμοποιηθεί ακόμη, γίνεται μεταφόρτωση σε "
 "αυτόν!"
 
-#: gui/launcher.cpp:394
+#: gui/launcher.cpp:392
 msgid ""
 "Do you really want to run the mass game detector? This could potentially add "
 "a huge number of games."
@@ -812,34 +812,34 @@ msgstr ""
 "Θέλετε σίγουρα να τρέξετε τον μαζικό ανιχνευτή παιχνιδιών; Αυτό ενδέχεται να "
 "προσθέσει ένα τεράστιο αριθμό παιχνιδιών."
 
-#: gui/launcher.cpp:417
+#: gui/launcher.cpp:415
 msgid "Do you really want to remove this game configuration?"
 msgstr "Θέλετε σίγουρα να σβήσετε τις ρυθμίσεις αυτού του παιχνιδιού;"
 
-#: gui/launcher.cpp:459
+#: gui/launcher.cpp:457
 msgid "Do you want to load saved game?"
 msgstr "Θέλετε να φορτώσετε το αποθηκευμένο παιχνίδι;"
 
-#: gui/launcher.cpp:516
+#: gui/launcher.cpp:514
 msgid "This game does not support loading games from the launcher."
 msgstr "Αυτό το παιχνίδι δεν υποστηρίζει φόρτωση παιχνιδιών από τον launcher."
 
-#: gui/launcher.cpp:520
+#: gui/launcher.cpp:518
 msgid "ScummVM could not find any engine capable of running the selected game!"
 msgstr ""
 "Το ScummVM δε μπόρεσε να βρεί κάποια μηχανή ικανή να εκτελέσει το επιλεγμένο "
 "παιχνίδι!"
 
-#: gui/launcher.cpp:585
+#: gui/launcher.cpp:583
 msgid "ScummVM could not find any game in the specified directory!"
 msgstr ""
 "Το ScummVM δεν μπόρεσε να βρει κάποιο παιχνίδι στον συγκεκριμένο φάκελο!"
 
-#: gui/launcher.cpp:600
+#: gui/launcher.cpp:598
 msgid "Unknown variant"
 msgstr "Άγνωστη εκδοχή παιχνιδιού"
 
-#: gui/launcher.cpp:606
+#: gui/launcher.cpp:604
 msgid "Pick the game:"
 msgstr "Διαλέξτε το παιχνίδι:"
 
@@ -1867,13 +1867,13 @@ msgstr "Αναπαραγωγή"
 msgid "Edit"
 msgstr "Επεξεργασία"
 
-#: gui/recorderdialog.cpp:84 gui/recorderdialog.cpp:240
-#: gui/recorderdialog.cpp:250
+#: gui/recorderdialog.cpp:84 gui/recorderdialog.cpp:241
+#: gui/recorderdialog.cpp:251
 msgid "Author: "
 msgstr "Συγγραφέας: "
 
-#: gui/recorderdialog.cpp:85 gui/recorderdialog.cpp:241
-#: gui/recorderdialog.cpp:251
+#: gui/recorderdialog.cpp:85 gui/recorderdialog.cpp:242
+#: gui/recorderdialog.cpp:252
 msgid "Notes: "
 msgstr "Σημειώσεις: "
 
@@ -2625,7 +2625,7 @@ msgstr ""
 msgid "Starting MIDI dump"
 msgstr "Έναρξη εξαγωγής MIDI δεδομένων"
 
-#: audio/mods/paula.cpp:303
+#: audio/mods/paula.cpp:304
 msgid "Amiga Audio emulator"
 msgstr "Εξομοιωτής Ήχου Amiga"
 
@@ -3812,7 +3812,7 @@ msgstr "Να μη γίνει προσομοίωση \"παράσιτων\" το�
 #: engines/neverhood/detection.cpp:124 engines/sci/detection.cpp:236
 #: engines/sherlock/detection.cpp:59 engines/toltecs/detection.cpp:213
 #: engines/trecision/detection.cpp:208 engines/ultima/detection.cpp:55
-#: engines/ultima/ultima8/meta_engine.cpp:163
+#: engines/ultima/ultima8/meta_engine.cpp:169
 #: engines/zvision/detection_tables.h:50
 msgid "Use original save/load screens"
 msgstr "Χρήση αρχικών οθονών αποθήκευσης/φόρτωσης"
@@ -3822,7 +3822,7 @@ msgstr "Χρήση αρχικών οθονών αποθήκευσης/φόρτω
 #: engines/neverhood/detection.cpp:125 engines/sci/detection.cpp:237
 #: engines/sherlock/detection.cpp:60 engines/toltecs/detection.cpp:214
 #: engines/trecision/detection.cpp:209 engines/ultima/detection.cpp:56
-#: engines/ultima/ultima8/meta_engine.cpp:164
+#: engines/ultima/ultima8/meta_engine.cpp:170
 #: engines/zvision/detection_tables.h:51
 msgid "Use the original save/load screens instead of the ScummVM ones"
 msgstr ""
@@ -5002,13 +5002,13 @@ msgstr "Η υποστήριξη του Eye of Beholder δεν έχει ενσω�
 
 #: engines/kyra/engine/eobcommon.cpp:368 engines/kyra/engine/lol.cpp:473
 #: engines/ultima/ultima4/meta_engine.cpp:225
-#: engines/ultima/ultima8/meta_engine.cpp:198
+#: engines/ultima/ultima8/meta_engine.cpp:204
 msgid "Interact via Left Click"
 msgstr "Αλληλεπίδραση με Αριστερό Click"
 
 #: engines/kyra/engine/eobcommon.cpp:369 engines/kyra/engine/lol.cpp:474
 #: engines/ultima/ultima4/meta_engine.cpp:231
-#: engines/ultima/ultima8/meta_engine.cpp:204
+#: engines/ultima/ultima8/meta_engine.cpp:210
 msgid "Interact via Right Click"
 msgstr "Αλληλεπίδραση με Δεξί Click"
 
@@ -5931,7 +5931,7 @@ msgid "I Have No Mouth support not compiled in"
 msgstr ""
 "Η υποστήριξη για το I Have No Mouth δεν έχει ενσωματωθεί στο εκτελέσιμο"
 
-#: engines/saga/saga.cpp:231
+#: engines/saga/saga.cpp:229
 msgid "Error loading game resources."
 msgstr "Σφάλμα στη φόρτωση πόρων παιχνιδιού."
 
@@ -6091,7 +6091,7 @@ msgstr ""
 "Πρέπει να χρησιμοποιήσετε ένα εξωτερικό πρόγραμμα για να ανοίξετε το "
 "ακόλουθο αρχείο βοηθείας του παιχνιδιού: %s"
 
-#: engines/sci/engine/kmisc.cpp:871
+#: engines/sci/engine/kmisc.cpp:872
 msgid ""
 "The Poker logic is hardcoded in an external DLL, and is not implemented yet. "
 "There exists some dummy logic for now, where opponent actions are chosen "
@@ -7153,11 +7153,11 @@ msgstr ""
 "ομαλά σε λειτουργία πλήρους οθόνης, με αντίτιμο την απώλεια κάποιας "
 "λεπτομέρειας."
 
-#: engines/stark/detection.cpp:379 engines/ultima/ultima8/meta_engine.cpp:175
+#: engines/stark/detection.cpp:379 engines/ultima/ultima8/meta_engine.cpp:181
 msgid "Enable font anti-aliasing"
 msgstr "Ενεργοποίηση εξομάλυνσης γραμματοσειράς"
 
-#: engines/stark/detection.cpp:380 engines/ultima/ultima8/meta_engine.cpp:176
+#: engines/stark/detection.cpp:380 engines/ultima/ultima8/meta_engine.cpp:182
 msgid "When font anti-aliasing is enabled, the text is smoother."
 msgstr ""
 "Όταν η εξομάλυνση γραμματοσειράς (font anti-aliasing) είναι ενεργοποιημένη, "
@@ -7475,11 +7475,11 @@ msgstr "Χρήση της έκδοσης από ΗΠΑ"
 msgid "Enable the USA specific version flags"
 msgstr "Ενεργοποίηση ειδικών ρυθμίσεων που είχε η έκδοση από ΗΠΑ"
 
-#: engines/twine/metaengine.cpp:151
+#: engines/twine/metaengine.cpp:151 engines/ultima/ultima8/meta_engine.cpp:147
 msgid "Enable high resolution"
 msgstr "Ενεργοποίηση υψηλής ανάλυσης"
 
-#: engines/twine/metaengine.cpp:152
+#: engines/twine/metaengine.cpp:152 engines/ultima/ultima8/meta_engine.cpp:148
 msgid "Enable a higher resolution for the game"
 msgstr "Ενεργοποίηση υψηλής ανάλυσης για το παιχνίδι"
 
@@ -7688,46 +7688,46 @@ msgstr ""
 "Να επιτρέπονται τα cheats με εντολές και ένα μενού όταν γίνεται κλικ πάνω "
 "στον παίκτη."
 
-#: engines/ultima/ultima8/meta_engine.cpp:151
+#: engines/ultima/ultima8/meta_engine.cpp:157
 msgid "Play foot step sounds"
 msgstr "Να έχουν ήχο οι πατημασιές"
 
-#: engines/ultima/ultima8/meta_engine.cpp:152
+#: engines/ultima/ultima8/meta_engine.cpp:158
 msgid "Plays sound when the player moves."
 msgstr "Αναπαραγωγή ήχου όταν κινείται ο παίκτης."
 
-#: engines/ultima/ultima8/meta_engine.cpp:157
+#: engines/ultima/ultima8/meta_engine.cpp:163
 msgid "Enable jump to mouse position"
 msgstr "Ενεργοποίηση άλματος στο σημείο του ποντικιού"
 
-#: engines/ultima/ultima8/meta_engine.cpp:158
+#: engines/ultima/ultima8/meta_engine.cpp:164
 msgid ""
 "Jumping while not moving targets the mouse cursor rather than direction only."
 msgstr ""
 "Τα άλματα χωρίς φορά (χωρίς πρότερη κίνηση) γίνονται προς το σημείο του "
 "κέρσορα ποντικιού αντί απλά την γενική κατεύθυνση."
 
-#: engines/ultima/ultima8/meta_engine.cpp:169
+#: engines/ultima/ultima8/meta_engine.cpp:175
 msgid "Enable font replacement"
 msgstr "Ενεργοποίηση αντικατάστασης γραμματοσειράς"
 
-#: engines/ultima/ultima8/meta_engine.cpp:170
+#: engines/ultima/ultima8/meta_engine.cpp:176
 msgid "Replaces game fonts with rendered fonts"
 msgstr "Αντικαθιστά γραμματοσειρές του παιχνιδιού με rendered γραμματοσειρές"
 
-#: engines/ultima/ultima8/meta_engine.cpp:191
+#: engines/ultima/ultima8/meta_engine.cpp:197
 msgid "Ultima VIII"
 msgstr "Ultima VIII"
 
-#: engines/ultima/ultima8/meta_engine.cpp:191
+#: engines/ultima/ultima8/meta_engine.cpp:197
 msgid "Crusader"
 msgstr "Σταυροφόρος"
 
-#: engines/ultima/ultima8/meta_engine.cpp:238
+#: engines/ultima/ultima8/meta_engine.cpp:244
 msgid "Ultima VIII Cheats"
 msgstr "Ultima VIII Κόλπα"
 
-#: engines/ultima/ultima8/meta_engine.cpp:255
+#: engines/ultima/ultima8/meta_engine.cpp:261
 msgid "Ultima VIII Debug"
 msgstr "Ultima VIII Αποσφαλμάτωση"
 

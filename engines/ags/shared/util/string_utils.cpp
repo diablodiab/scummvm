@@ -30,13 +30,6 @@ namespace AGS3 {
 
 using namespace AGS::Shared;
 
-String cbuf_to_string_and_free(char *char_buf) {
-	String s = char_buf;
-	free(char_buf);
-	return s;
-}
-
-
 namespace AGS {
 namespace Shared {
 
@@ -196,6 +189,23 @@ void StrUtil::WriteCStr(const char *cstr, Stream *out) {
 
 void StrUtil::WriteCStr(const String &s, Stream *out) {
 	out->Write(s.GetCStr(), s.GetLength() + 1);
+}
+
+void StrUtil::ReadStringMap(StringMap &map, Stream *in) {
+	size_t count = in->ReadInt32();
+	for (size_t i = 0; i < count; ++i) {
+		String key = StrUtil::ReadString(in);
+		String value = StrUtil::ReadString(in);
+		map.insert(std::make_pair(key, value));
+	}
+}
+
+void StrUtil::WriteStringMap(const StringMap &map, Stream *out) {
+	out->WriteInt32(map.size());
+	for (const auto &kv : map) {
+		StrUtil::WriteString(kv._key, out);
+		StrUtil::WriteString(kv._value, out);
+	}
 }
 
 } // namespace Shared

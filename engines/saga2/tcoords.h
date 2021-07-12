@@ -27,6 +27,8 @@
 #ifndef SAGA2_TCOORDS_H
 #define SAGA2_TCOORDS_H
 
+#include "common/savefile.h"
+
 namespace Saga2 {
 
 enum facingDirections {
@@ -142,6 +144,18 @@ struct TilePoint {
 		z = p.z;
 	}
 
+	void load(Common::SeekableReadStream *stream) {
+		u = stream->readSint16LE();
+		v = stream->readSint16LE();
+		z = stream->readSint16LE();
+	}
+
+	void write(Common::OutSaveFile *out) const {
+		out->writeSint16LE(u);
+		out->writeSint16LE(v);
+		out->writeSint16LE(z);
+	}
+
 		// TilePoint operators
 	friend TilePoint operator+ (TilePoint a, TilePoint b)
 		{ return TilePoint( (int16) (a.u + b.u), (int16) (a.v + b.v), (int16) (a.z + b.z) ); }
@@ -174,8 +188,8 @@ struct TilePoint {
 	void operator-= (TilePoint a) { u -= a.u; v -= a.v; z -= a.z; }
 
 	int16 quickHDistance(void) {
-		int16		au = (int16)abs(u),
-					av = (int16)abs(v);
+		int16		au = (int16)ABS(u),
+					av = (int16)ABS(v);
 
 		if (au > av)
 			return (int16)(au + (av >> 1));
@@ -208,6 +222,16 @@ const extern StaticTilePoint Nowhere;
 struct TileRegion {
 	TilePoint	min,
 				max;
+
+	void read(Common::InSaveFile *in) {
+		min.load(in);
+		max.load(in);
+	}
+
+	void write(Common::OutSaveFile *out) {
+		min.write(out);
+		max.write(out);
+	}
 };
 
 /* ============================================================================ *
@@ -264,8 +288,8 @@ public:
 	void operator-= (TilePoint32 a) { u -= a.u; v -= a.v; z -= a.z; }
 
 	int32 quickHDistance( void ) {
-		int32		au = abs( u ),
-					av = abs( v );
+		int32		au = ABS( u ),
+					av = ABS( v );
 
 		if (au > av) return au + (av >> 1);
 		else return av + (au >> 1);

@@ -24,8 +24,6 @@
  *   (c) 1993-1996 The Wyrmkeep Entertainment Co.
  */
 
-#define FORBIDDEN_SYMBOL_ALLOW_ALL // FIXME: Remove
-
 #include "common/debug.h"
 
 #include "saga2/saga2.h"
@@ -42,7 +40,6 @@
 #include "saga2/localize.h"
 #include "saga2/intrface.h"
 #include "saga2/contain.h"
-#include "saga2/savefile.h"
 #include "saga2/combat.h"
 
 //  Include files needed for SAGA script dispatch
@@ -72,7 +69,6 @@ extern ProtoObj     *objectProtos;
 extern ActorProto   *actorProtos;
 
 extern Actor        *actorList;
-extern int16        actorCount;
 
 extern int32        actorListSize;
 
@@ -202,7 +198,7 @@ bool ActorProto::closeAction(ObjectID dObj, ObjectID) {
 	assert(isActor(dObj));
 
 	GameObject      *dObjPtr = GameObject::objectAddress(dObj);
-	ContainerNode   *cn = globalContainerList.find(dObj, ContainerNode::deadType);
+	ContainerNode   *cn = g_vm->_containerList->find(dObj, ContainerNode::deadType);
 
 	assert(dObjPtr->isOpen());
 	assert(cn);
@@ -383,7 +379,7 @@ bool ActorProto::acceptDamageAction(
 	assert(isObject(enactor) || isActor(enactor));
 
 	int8        pdm = 0; //=perDieMod+(resistant ? -2 : 0);
-	int16       damage = 0;
+	int16       damageScore = 0;
 	Actor       *a = (Actor *)GameObject::objectAddress(dObj);
 	Actor       *enactorPtr;
 	int16       &vitality = a->effectiveStats.vitality;
@@ -392,21 +388,21 @@ bool ActorProto::acceptDamageAction(
 
 
 	if (!a->isImmuneTo((effectImmuneTypes) dType)) {
-		damage = absDamage;
+		damageScore = absDamage;
 
 		if (dice)
-			for (int d = 0; d < abs(dice); d++)
-				damage += ((rand() % sides) + pdm + 1) * (dice > 0 ? 1 : -1);
+			for (int d = 0; d < ABS(dice); d++)
+				damageScore += (g_vm->_rnd->getRandomNumber(sides - 1) + pdm + 1) * (dice > 0 ? 1 : -1);
 	}
 
-	if (damage > 0 && resistant)
-		damage /= 2;
+	if (damageScore > 0 && resistant)
+		damageScore /= 2;
 
-	if (damage > 0 && isMagicDamage(dType) && makeSavingThrow())
-		damage /= 2;
+	if (damageScore > 0 && isMagicDamage(dType) && makeSavingThrow())
+		damageScore /= 2;
 
-	if (damage < 0)
-		return acceptHealing(dObj, enactor, -damage);
+	if (damageScore < 0)
+		return acceptHealing(dObj, enactor, -damageScore);
 
 	//  Apply applicable armor adjustments
 	if (dType == kDamageImpact
@@ -415,11 +411,11 @@ bool ActorProto::acceptDamageAction(
 		ArmorAttributes     armorAttribs;
 
 		a->totalArmorAttributes(armorAttribs);
-		damage /= armorAttribs.damageDivider;
-		damage = MAX(damage - armorAttribs.damageAbsorbtion, 0);
+		damageScore /= armorAttribs.damageDivider;
+		damageScore = MAX(damageScore - armorAttribs.damageAbsorbtion, 0);
 	}
 
-	if (damage == 0) return false;
+	if (damageScore == 0) return false;
 
 	if (isActor(enactor))
 		enactorPtr = (Actor *)GameObject::objectAddress(enactor);
@@ -436,26 +432,26 @@ bool ActorProto::acceptDamageAction(
 		Location        al = Location(a->getLocation(), a->IDParent());
 		if (gruntStyle > 0
 		        && ((flags & ResourceObjectPrototype::objPropNoSurface)
-		            || (damage > 2 && (rand() % vitality) < (damage * 2))))
+		            || (damageScore > 2 && (int16)g_vm->_rnd->getRandomNumber(vitality - 1) < (damageScore * 2))))
 			makeGruntSound(gruntStyle, al);
 
 		if (enactorPtr != NULL) {
 			enactorPtr->handleSuccessfulStrike(
 			    a,
-			    damage < vitality ? damage : vitality);
+			    damageScore < vitality ? damageScore : vitality);
 		}
 
 		//  If we've just lost all vitality, we're dead, else make a
 		//  morale check
-		if (damage >= vitality) {
+		if (damageScore >= vitality) {
 			MotionTask::die(*a);
 			AddFactionTally(a->faction, factionNumKills, 1);
 			if (enactorPtr != NULL)
 				enactorPtr->handleSuccessfulKill(a);
 		} else
-			a->handleDamageTaken(damage);
+			a->handleDamageTaken(damageScore);
 
-		vitality -= damage;
+		vitality -= damageScore;
 
 		if (actorToPlayerID(a, pID)) {
 			updateBrotherControls(pID);
@@ -465,7 +461,7 @@ bool ActorProto::acceptDamageAction(
 				                    oldVitality;
 
 				baseVitality = a->getBaseStats()->vitality;
-				oldVitality = vitality + damage;
+				oldVitality = vitality + damageScore;
 
 				if (baseVitality >= vitality * 3
 				        &&  baseVitality < oldVitality * 3) {
@@ -477,7 +473,7 @@ bool ActorProto::acceptDamageAction(
 			}
 		}
 
-		WriteStatusF(5, "Damage: %d", damage);
+		WriteStatusF(5, "Damage: %d", damageScore);
 	}
 
 	return true;
@@ -570,7 +566,7 @@ bool ActorProto::acceptStrikeAction(
 	hitChance = MAX<uint8>(hitChance, 5);
 
 	//  Randomly determine hit success
-	if (rand() % toHitBase < hitChance) {
+	if (g_vm->_rnd->getRandomNumber(toHitBase - 1) < hitChance) {
 		//  Hit has succeeded
 
 		GameObject      *blockingObj = a->blockingObject(enactorPtr);
@@ -583,7 +579,7 @@ bool ActorProto::acceptStrikeAction(
 			                   - (int)blockingObj->proto()->getSkillValue(dObj))
 			                *   skillScalingFactor;
 
-			if (rand() % toHitBase >= hitChance) {
+			if (g_vm->_rnd->getRandomNumber(toHitBase - 1) >= hitChance) {
 				//  The shield was hit
 				blockingObj->acceptStrike(
 				    enactor,
@@ -606,8 +602,8 @@ bool ActorProto::acceptStrikeAction(
 			if (!a->isDead()) {
 				int16 pmass = a->proto()->mass;
 
-				if (pmass <= 100 || (rand() % 156) >= pmass - 100) {
-					if ((rand() & 0x7) == 0)
+				if (pmass <= 100 || (int16)g_vm->_rnd->getRandomNumber(154) >= pmass - 100) {
+					if (g_vm->_rnd->getRandomNumber(7) == 0)
 						MotionTask::fallDown(*a, *enactorPtr);
 					else
 						MotionTask::acceptHit(*a, *enactorPtr);
@@ -787,7 +783,7 @@ void ActorProto::doBackgroundUpdate(GameObject *obj) {
 			} else {
 				//  If the actor has failed morale there is a random
 				//  chance of him regaining his courage
-				if ((a->flags & Actor::afraid) && rand() % 128 == 0)
+				if ((a->flags & Actor::afraid) && g_vm->_rnd->getRandomNumber(127) == 0)
 					a->flags &= ~Actor::afraid;
 			}
 		}
@@ -839,7 +835,7 @@ void ActorProto::applySkillGrowth(ObjectID enactor, uint8 points) {
 
 		player->skillAdvance(skillIDBludgeon, points);
 
-		if (rand() & 1)
+		if (g_vm->_rnd->getRandomNumber(1))
 			player->skillAdvance(skillIDBrawn, points);
 	}
 }
@@ -1046,6 +1042,7 @@ void Actor::init(
 	currentRecoveryPoints   = 0;
 	leader              = NULL;
 	followers           = NULL;
+	_followersID = NoBand;
 	for (i = 0; i < ARMOR_COUNT; i++)
 		armorObjects[i] = Nothing;
 	currentTarget       = NULL;
@@ -1113,6 +1110,7 @@ Actor::Actor(void) {
 	currentRecoveryPoints   = 0;
 	leader              = nullptr;
 	followers           = nullptr;
+	_followersID = NoBand;
 	for (int i = 0; i < ARMOR_COUNT; i++)
 		armorObjects[i] = Nothing;
 	currentTarget       = nullptr;
@@ -1169,10 +1167,9 @@ Actor::Actor(const ResourceActor &res) : GameObject(res) {
 	deactivationCounter = 0;
 	_assignment = nullptr;
 
-	memcpy(
-	    &effectiveStats,
-	    &((ActorProto *)prototype)->baseStats,
-	    sizeof(effectiveStats));
+	if (prototype)
+		memcpy(&effectiveStats, &((ActorProto *)prototype)->baseStats, sizeof(effectiveStats));
+
 	effectiveStats.vitality = MAX<uint16>(effectiveStats.vitality, 1);
 
 	actionCounter       = 0;
@@ -1182,6 +1179,7 @@ Actor::Actor(const ResourceActor &res) : GameObject(res) {
 	currentRecoveryPoints   = 0;
 	leader              = NULL;
 	followers           = NULL;
+	_followersID = NoBand;
 	for (i = 0; i < ARMOR_COUNT; i++)
 		armorObjects[i] = Nothing;
 	currentTarget       = NULL;
@@ -1191,79 +1189,124 @@ Actor::Actor(const ResourceActor &res) : GameObject(res) {
 	evalActorEnchantments(this);
 }
 
-//-----------------------------------------------------------------------
-//	Reconstruct from archive buffer
-
-Actor::Actor(void **buf) : GameObject(buf) {
-	void    *bufferPtr = *buf;
-	int     i;
+Actor::Actor(Common::InSaveFile *in) : GameObject(in) {
+	debugC(3, kDebugSaveload, "Loading actor %d", thisID());
 
 	//  Fixup the prototype pointer to point to an actor prototype
-	prototype   =   prototype != NULL
+	prototype   =   prototype != nullptr
 	                ? (ProtoObj *)&actorProtos[prototype - objectProtos]
-	                :   NULL;
+	                :   nullptr;
 
-	ActorArchive    *a = (ActorArchive *)bufferPtr;
+	faction = in->readByte();
+	colorScheme = in->readByte();
+	appearanceID = in->readSint32LE();
+	attitude = in->readSByte();
+	mood = in->readSByte();
 
-	//  Read individual fields from buffer
-	faction             = a->faction;
-	colorScheme         = a->colorScheme;
-	appearanceID        = a->appearanceID;
-	attitude            = a->attitude;
-	mood                = a->mood;
-	disposition         = a->disposition;
-	currentFacing       = a->currentFacing;
-	tetherLocU          = a->tetherLocU;
-	tetherLocV          = a->tetherLocV;
-	tetherDist          = a->tetherDist;
-	leftHandObject      = a->leftHandObject;
-	rightHandObject     = a->rightHandObject;
-	memcpy(&knowledge, &a->knowledge, sizeof(knowledge));
-	schedule            = a->schedule;
-	*((uint32 *)conversationMemory) = *((uint32 *)a->conversationMemory);
-	currentAnimation    = a->currentAnimation;
-	currentPose         = a->currentPose;
-	animationFlags      = a->animationFlags;
-	flags               = a->flags;
-	memcpy(&poseInfo, &a->poseInfo, sizeof(poseInfo));
-	cycleCount          = a->cycleCount;
-	kludgeCount         = a->kludgeCount;
-	enchantmentFlags    = a->enchantmentFlags;
-	currentGoal         = a->currentGoal;
-	deactivationCounter = a->deactivationCounter;
-	memcpy(&effectiveStats, &a->effectiveStats, sizeof(effectiveStats));
-	actionCounter       = a->actionCounter;
-	effectiveResistance = a->effectiveResistance;
-	effectiveImmunity   = a->effectiveImmunity;
-	recPointsPerUpdate      = a->recPointsPerUpdate;
-	currentRecoveryPoints   = a->currentRecoveryPoints;
-	leader              =   a->leaderID != Nothing
-	                        ? (Actor *)GameObject::objectAddress(a->leaderID)
-	                        :   NULL;
-	followers           =   a->followersID != NoBand
-	                        ?   getBandAddress(a->followersID)
-	                        :   NULL;
-	for (i = 0; i < ARMOR_COUNT; i++)
-		armorObjects[i] = a->armorObjects[i];
-	currentTarget       =   a->currentTargetID != Nothing
-	                        ?   GameObject::objectAddress(a->currentTargetID)
-	                        :   NULL;
-	for (i = 0; i < actorScriptVars; i++)
-		scriptVar[i] = a->scriptVar[i];
+	disposition = in->readByte();
+	currentFacing = in->readByte();
+	tetherLocU = in->readSint16LE();
+	tetherLocV = in->readSint16LE();
+	tetherDist = in->readSint16LE();
+	leftHandObject = in->readUint16LE();
+	rightHandObject = in->readUint16LE();
 
-	bufferPtr = &a[1];
+	for (int i = 0; i < ARRAYSIZE(knowledge); ++i)
+		knowledge[i] = in->readUint16LE();
+
+	schedule = in->readUint16LE();
+
+	for (int i = 0; i < ARRAYSIZE(conversationMemory); ++i)
+		conversationMemory[i] = in->readByte();
+
+	currentAnimation = in->readByte();
+	currentPose = in->readByte();
+	animationFlags = in->readByte();
+
+	flags = in->readByte();
+	poseInfo.load(in);
+	cycleCount = in->readSint16LE();
+	kludgeCount = in->readSint16LE();
+	enchantmentFlags = in->readUint32LE();
+	currentGoal = in->readByte();
+	deactivationCounter = in->readByte();
+	effectiveStats.read(in);
+	actionCounter = in->readByte();
+	effectiveResistance = in->readUint16LE();
+	effectiveImmunity = in->readUint16LE();
+	recPointsPerUpdate = in->readSint16LE();
+	currentRecoveryPoints = in->readUint16LE();
+
+	int leaderID = in->readUint16LE();
+
+	leader = leaderID != Nothing
+	         ? (Actor *)GameObject::objectAddress(leaderID)
+	         :   nullptr;
+
+	_followersID = in->readSint16LE();
+
+	followers = _followersID != NoBand
+	            ?   getBandAddress(_followersID)
+	            :   nullptr;
+
+	for (int i = 0; i < ARRAYSIZE(armorObjects); ++i)
+		armorObjects[i] = in->readUint16LE();
+
+	int currentTargetID = in->readUint16LE();
+
+	currentTarget = currentTargetID != Nothing
+	                ?   GameObject::objectAddress(currentTargetID)
+	                :   nullptr;
+
+	for (int i = 0; i < ARRAYSIZE(scriptVar); ++i)
+		scriptVar[i] = in->readSint16LE();
 
 	if (flags & hasAssignment) {
-		delete _assignment;
-		bufferPtr = constructAssignment(this, bufferPtr);
+		readAssignment(this, in);
+	} else {
+		_assignment = nullptr;
 	}
 
-	appearance      = NULL;
-	moveTask        = NULL;
-	curTask         = NULL;
+	appearance = nullptr;
+	moveTask = nullptr;
+	curTask = nullptr;
 
-	//  Return address of memory after actor archive
-	*buf = bufferPtr;
+	debugC(4, kDebugSaveload, "... faction = %d", faction);
+	debugC(4, kDebugSaveload, "... colorScheme = %d", colorScheme);
+	debugC(4, kDebugSaveload, "... appearanceID = %d", appearanceID);
+	debugC(4, kDebugSaveload, "... attitude = %d", attitude);
+	debugC(4, kDebugSaveload, "... mood = %d", mood);
+	debugC(4, kDebugSaveload, "... disposition = %d", disposition);
+	debugC(4, kDebugSaveload, "... currentFacing = %d", currentFacing);
+	debugC(4, kDebugSaveload, "... tetherLocU = %d", tetherLocU);
+	debugC(4, kDebugSaveload, "... tetherLocV = %d", tetherLocV);
+	debugC(4, kDebugSaveload, "... tetherDist = %d", tetherDist);
+	debugC(4, kDebugSaveload, "... leftHandObject = %d", leftHandObject);
+	debugC(4, kDebugSaveload, "... rightHandObject = %d", rightHandObject);
+//	debugC(4, kDebugSaveload, "... knowledge = %d", knowledge);
+	debugC(4, kDebugSaveload, "... schedule = %d", schedule);
+//	debugC(4, kDebugSaveload, "... conversationMemory = %d", conversationMemory);
+	debugC(4, kDebugSaveload, "... currentAnimation = %d", currentAnimation);
+	debugC(4, kDebugSaveload, "... currentPose = %d", currentPose);
+	debugC(4, kDebugSaveload, "... animationFlags = %d", animationFlags);
+	debugC(4, kDebugSaveload, "... flags = %d", flags);
+//	debugC(4, kDebugSaveload, "... out = %d", out);
+	debugC(4, kDebugSaveload, "... cycleCount = %d", cycleCount);
+	debugC(4, kDebugSaveload, "... kludgeCount = %d", kludgeCount);
+	debugC(4, kDebugSaveload, "... enchantmentFlags = %d", enchantmentFlags);
+	debugC(4, kDebugSaveload, "... currentGoal = %d", currentGoal);
+	debugC(4, kDebugSaveload, "... deactivationCounter = %d", deactivationCounter);
+//	debugC(4, kDebugSaveload, "... out = %d", out);
+	debugC(4, kDebugSaveload, "... actionCounter = %d", actionCounter);
+	debugC(4, kDebugSaveload, "... effectiveResistance = %d", effectiveResistance);
+	debugC(4, kDebugSaveload, "... effectiveImmunity = %d", effectiveImmunity);
+	debugC(4, kDebugSaveload, "... recPointsPerUpdate = %d", recPointsPerUpdate);
+	debugC(4, kDebugSaveload, "... currentRecoveryPoints = %d", currentRecoveryPoints);
+	debugC(4, kDebugSaveload, "... leaderID = %d", leaderID);
+	debugC(4, kDebugSaveload, "... followersID = %d", _followersID);
+//	debugC(4, kDebugSaveload, "... armorObjects = %d", armorObjects);
+	debugC(4, kDebugSaveload, "... currentTargetID = %d", currentTargetID);
+//	debugC(4, kDebugSaveload, "... scriptVar = %d", scriptVar);
 }
 
 //-----------------------------------------------------------------------
@@ -1272,7 +1315,8 @@ Actor::Actor(void **buf) : GameObject(buf) {
 Actor::~Actor(void) {
 	if (appearance != NULL) ReleaseActorAppearance(appearance);
 
-	delete _assignment;
+	if (getAssignment())
+		delete getAssignment();
 }
 
 //-----------------------------------------------------------------------
@@ -1288,72 +1332,111 @@ int32 Actor::archiveSize(void) {
 	return size;
 }
 
-//-----------------------------------------------------------------------
-//	Archive this actor in a buffer
-
-void *Actor::archive(void *buf) {
-	int         i;
+void Actor::write(Common::OutSaveFile *out) {
 	ProtoObj    *holdProto = prototype;
 
-	//  Modify the protoype temporarily so the GameObject::archive()
+	debugC(3, kDebugSaveload, "Saving actor %d", thisID());
+
+	warning("STUB: Actor::write: Pointer arithmetic");
+	//  Modify the protoype temporarily so the GameObject::write()
 	//  will store the index correctly
 	if (prototype != NULL)
 		prototype = &objectProtos[(ActorProto *)prototype - actorProtos];
 
-	//  Let the base class archive its data
-	buf = GameObject::archive(buf);
+	GameObject::write(out);
 
 	//  Restore the prototype pointer
 	prototype = holdProto;
 
-	ActorArchive    *a = (ActorArchive *)buf;
+	out->writeByte(faction);
+	out->writeByte(colorScheme);
+	out->writeSint32LE(appearanceID);
+	out->writeSByte(attitude);
+	out->writeSByte(mood);
 
-	//  Store individual fields in buffer
-	a->faction          = faction;
-	a->colorScheme      = colorScheme;
-	a->appearanceID     = appearanceID;
-	a->attitude         = attitude;
-	a->mood             = mood;
-	a->disposition      = disposition;
-	a->currentFacing    = currentFacing;
-	a->tetherLocU       = tetherLocU;
-	a->tetherLocV       = tetherLocV;
-	a->tetherDist       = tetherDist;
-	a->leftHandObject   = leftHandObject;
-	a->rightHandObject  = rightHandObject;
-	memcpy(&a->knowledge, &knowledge, sizeof(a->knowledge));
-	a->schedule         = schedule;
-	*((uint32 *)a->conversationMemory) = *((uint32 *)conversationMemory);
-	a->currentAnimation = currentAnimation;
-	a->currentPose      = currentPose;
-	a->animationFlags   = animationFlags;
-	a->flags            = flags;
-	memcpy(&a->poseInfo, &poseInfo, sizeof(a->poseInfo));
-	a->cycleCount       = cycleCount;
-	a->kludgeCount      = kludgeCount;
-	a->enchantmentFlags = enchantmentFlags;
-	a->currentGoal      = currentGoal;
-	a->deactivationCounter = deactivationCounter;
-	memcpy(&a->effectiveStats, &effectiveStats, sizeof(a->effectiveStats));
-	a->actionCounter    = actionCounter;
-	a->effectiveResistance = effectiveResistance;
-	a->effectiveImmunity = effectiveImmunity;
-	a->recPointsPerUpdate       = recPointsPerUpdate;
-	a->currentRecoveryPoints    = currentRecoveryPoints;
-	a->leaderID         = leader != NULL ? leader->thisID() : Nothing;
-	a->followersID      = followers != NULL ? getBandID(followers) : NoBand;
-	for (i = 0; i < ARRAYSIZE(a->armorObjects); i++)
-		a->armorObjects[i] = armorObjects[i];
-	a->currentTargetID  = currentTarget != NULL ? currentTarget->thisID() : Nothing;
-	for (i = 0; i < actorScriptVars; i++)
-		a->scriptVar[i] = scriptVar[i];
+	out->writeByte(disposition);
+	out->writeByte(currentFacing);
+	out->writeSint16LE(tetherLocU);
+	out->writeSint16LE(tetherLocV);
+	out->writeSint16LE(tetherDist);
+	out->writeUint16LE(leftHandObject);
+	out->writeUint16LE(rightHandObject);
 
-	buf = &a[1];
+	out->write(knowledge, sizeof(knowledge));
+	out->writeUint16LE(schedule);
+	out->write(conversationMemory, sizeof(conversationMemory));
+
+	out->writeByte(currentAnimation);
+	out->writeByte(currentPose);
+	out->writeByte(animationFlags);
+
+	out->writeByte(flags);
+	poseInfo.write(out);
+	out->writeSint16LE(cycleCount);
+	out->writeSint16LE(kludgeCount);
+	out->writeUint32LE(enchantmentFlags);
+	out->writeByte(currentGoal);
+	out->writeByte(deactivationCounter);
+	effectiveStats.write(out);
+	out->writeByte(actionCounter);
+	out->writeUint16LE(effectiveResistance);
+	out->writeUint16LE(effectiveImmunity);
+	out->writeSint16LE(recPointsPerUpdate);
+	out->writeUint16LE(currentRecoveryPoints);
+
+	int leaderID = (leader != NULL) ? leader->thisID() : Nothing;
+
+	out->writeUint16LE(leaderID);
+
+	int followersID = (followers != NULL) ? getBandID(followers) : NoBand;
+
+	out->writeSint16LE(followersID);
+	out->write(armorObjects, ARMOR_COUNT * 2);
+
+	int currentTargetID = currentTarget != NULL ? currentTarget->thisID() : Nothing;
+
+	out->writeUint16LE(currentTargetID);
+	out->write(scriptVar, sizeof(scriptVar));
 
 	if (flags & hasAssignment)
-		buf = archiveAssignment(this, buf);
+		writeAssignment(this, out);
 
-	return buf;
+	debugC(4, kDebugSaveload, "... faction = %d", faction);
+	debugC(4, kDebugSaveload, "... colorScheme = %d", colorScheme);
+	debugC(4, kDebugSaveload, "... appearanceID = %d", appearanceID);
+	debugC(4, kDebugSaveload, "... attitude = %d", attitude);
+	debugC(4, kDebugSaveload, "... mood = %d", mood);
+	debugC(4, kDebugSaveload, "... disposition = %d", disposition);
+	debugC(4, kDebugSaveload, "... currentFacing = %d", currentFacing);
+	debugC(4, kDebugSaveload, "... tetherLocU = %d", tetherLocU);
+	debugC(4, kDebugSaveload, "... tetherLocV = %d", tetherLocV);
+	debugC(4, kDebugSaveload, "... tetherDist = %d", tetherDist);
+	debugC(4, kDebugSaveload, "... leftHandObject = %d", leftHandObject);
+	debugC(4, kDebugSaveload, "... rightHandObject = %d", rightHandObject);
+//	debugC(4, kDebugSaveload, "... knowledge = %d", knowledge);
+	debugC(4, kDebugSaveload, "... schedule = %d", schedule);
+//	debugC(4, kDebugSaveload, "... conversationMemory = %d", conversationMemory);
+	debugC(4, kDebugSaveload, "... currentAnimation = %d", currentAnimation);
+	debugC(4, kDebugSaveload, "... currentPose = %d", currentPose);
+	debugC(4, kDebugSaveload, "... animationFlags = %d", animationFlags);
+	debugC(4, kDebugSaveload, "... flags = %d", flags);
+//	debugC(4, kDebugSaveload, "... out = %d", out);
+	debugC(4, kDebugSaveload, "... cycleCount = %d", cycleCount);
+	debugC(4, kDebugSaveload, "... kludgeCount = %d", kludgeCount);
+	debugC(4, kDebugSaveload, "... enchantmentFlags = %d", enchantmentFlags);
+	debugC(4, kDebugSaveload, "... currentGoal = %d", currentGoal);
+	debugC(4, kDebugSaveload, "... deactivationCounter = %d", deactivationCounter);
+//	debugC(4, kDebugSaveload, "... out = %d", out);
+	debugC(4, kDebugSaveload, "... actionCounter = %d", actionCounter);
+	debugC(4, kDebugSaveload, "... effectiveResistance = %d", effectiveResistance);
+	debugC(4, kDebugSaveload, "... effectiveImmunity = %d", effectiveImmunity);
+	debugC(4, kDebugSaveload, "... recPointsPerUpdate = %d", recPointsPerUpdate);
+	debugC(4, kDebugSaveload, "... currentRecoveryPoints = %d", currentRecoveryPoints);
+	debugC(4, kDebugSaveload, "... leaderID = %d", leader != NULL ? leader->thisID() : Nothing);
+	debugC(4, kDebugSaveload, "... followersID = %d", followers != NULL ? getBandID(followers) : NoBand);
+//	debugC(4, kDebugSaveload, "... armorObjects = %d", armorObjects);
+	debugC(4, kDebugSaveload, "... currentTargetID = %d", currentTarget != NULL ? currentTarget->thisID() : Nothing);
+//	debugC(4, kDebugSaveload, "... scriptVar = %d", scriptVar);
 }
 
 //-----------------------------------------------------------------------
@@ -1377,7 +1460,7 @@ Actor *Actor::newActor(
 		int16       i;
 
 		//  Search actor list for first scavangable actor
-		for (i = playerActors; i < actorCount; i++) {
+		for (i = playerActors; i < kActorCount; i++) {
 			a = &actorList[i];
 
 			if ((a->flags & temporary)
@@ -1389,7 +1472,7 @@ Actor *Actor::newActor(
 		//  REM: If things start getting really tight, we can
 		//  start recycling common objects...
 
-		if (i >= actorCount)
+		if (i >= kActorCount)
 			return nullptr;
 	} else {
 		actorLimboCount--;
@@ -2107,7 +2190,7 @@ bool Actor::nextAnimationFrame(void) {
 
 	if (animationFlags & animateRandom) {
 		//  Select a random frame from the series.
-		currentPose = rand() % numPoses;
+		currentPose = g_vm->_rnd->getRandomNumber(numPoses - 1);
 	} else if (animationFlags & animateReverse) {
 		//  Note that the logic for forward repeats is slightly
 		//  different for reverse repeats. Specifically, the
@@ -2188,7 +2271,9 @@ void Actor::holdInRightHand(ObjectID objID) {
 	assert(isObject(objID));
 	rightHandObject = objID;
 
-	if (isPlayerActor(this)) globalContainerList.setUpdate(thisID());
+	if (isPlayerActor(this))
+		g_vm->_containerList->setUpdate(thisID());
+
 	evalActorEnchantments(this);
 }
 
@@ -2196,7 +2281,9 @@ void Actor::holdInLeftHand(ObjectID objID) {
 	assert(isObject(objID));
 	leftHandObject = objID;
 
-	if (isPlayerActor(this)) globalContainerList.setUpdate(thisID());
+	if (isPlayerActor(this))
+		g_vm->_containerList->setUpdate(thisID());
+
 	evalActorEnchantments(this);
 }
 
@@ -2220,7 +2307,9 @@ void Actor::wear(ObjectID objID, uint8 where) {
 
 	armorObjects[where] = objID;
 
-	if (isPlayerActor(this)) globalContainerList.setUpdate(thisID());
+	if (isPlayerActor(this))
+		g_vm->_containerList->setUpdate(thisID());
+
 	evalActorEnchantments(this);
 
 	if (actorToPlayerID(this, playerID)) {
@@ -2304,7 +2393,7 @@ void Actor::updateAppearance(int32) {
 						}
 					} else //Assume -1
 						if (nextAnimationFrame())//If Last Frame In Wait Animation
-							cycleCount = rand() % 20;
+							cycleCount = g_vm->_rnd->getRandomNumber(19);
 				}
 			}
 		} else {
@@ -2707,7 +2796,7 @@ void Actor::handleDamageTaken(uint8 damage) {
 	        &&  !hasEffect(actorRepelUndead)) {
 		if (flags & afraid) {
 			//  Let's give monsters a small chance of regaining their courage
-			if ((uint16)rand() <= 0x3fff)
+			if ((uint16)g_vm->_rnd->getRandomNumber(65534) <= 0x3fff)
 				flags &= ~afraid;
 		} else {
 			int16       i,
@@ -2743,7 +2832,7 @@ void Actor::handleDamageTaken(uint8 damage) {
 			moraleBase -= bonus * moraleBase >> 16;
 
 			//  Test this actor's morale
-			if ((uint16)rand() <= moraleBase)
+			if ((uint16)g_vm->_rnd->getRandomNumber(65534) <= moraleBase)
 				flags |= afraid;
 		}
 	}
@@ -2862,7 +2951,7 @@ void Actor::evaluateMeleeAttack(Actor *attacker) {
 			if (canBlockWithSecondary) {
 				//  If we can block with either primary or secondary
 				//  there is a 25% chance of using the secondary
-				defenseObj = ((rand() & 0x3) != 0) ? primary : secondary;
+				defenseObj = (g_vm->_rnd->getRandomNumber(3) != 0) ? primary : secondary;
 			} else {
 				//  The primary defensive object will be used
 				defenseObj = primary;
@@ -3013,7 +3102,7 @@ void Actor::removeFollower(Actor *bandMember) {
 
 				moraleBase -= moraleBase * moraleBonus >> 16;
 
-				if ((uint16)rand() <= moraleBase)
+				if ((uint16)g_vm->_rnd->getRandomNumber(65534) <= moraleBase)
 					follower->flags |= afraid;
 			}
 		}
@@ -3141,7 +3230,7 @@ void Actor::useKnowledge(scriptCallFrame &scf) {
 				if (pri > 0) {
 					//  Add a bit of jitter to response
 
-					pri += rand() & 3;
+					pri += g_vm->_rnd->getRandomNumber(3);
 
 					if (pri > bestResponsePri) {
 						bestResponsePri = pri;
@@ -3315,11 +3404,7 @@ bool areActorsInitialized(void) {
 }
 
 int16 GetRandomBetween(int start, int end) {
-	//  Here's a more efficient way to express this.
-
-	if (start == end) return start;
-	else return (rand() % abs(end - start)) + start;
-
+	return g_vm->_rnd->getRandomNumberRng(start, end);
 }
 
 void updateActorStates(void) {
@@ -3329,12 +3414,11 @@ void updateActorStates(void) {
 	static const int32  evalRateMask = evalRate - 1;
 	static int32        baseActorIndex = evalRateMask;
 	extern Actor        *actorList;
-	extern int16        actorCount;
 
 	int32               actorIndex;
 
 	actorIndex = baseActorIndex = (baseActorIndex + 1) & evalRateMask;
-	while (actorIndex < actorCount) {
+	while (actorIndex < kActorCount) {
 		Actor   *a = &actorList[actorIndex];
 
 		if (isWorld(a->IDParent()))
@@ -3344,7 +3428,7 @@ void updateActorStates(void) {
 	}
 
 	updatesViaScript = 0;
-	for (actorIndex = 0; actorIndex < actorCount; actorIndex++) {
+	for (actorIndex = 0; actorIndex < kActorCount; actorIndex++) {
 		Actor   *a = &actorList[actorIndex];
 
 		if (isWorld(a->IDParent()) && a->isActivated())
@@ -3419,12 +3503,9 @@ void initActors(void) {
 	if (resourceActorCount < 1)
 		error("Unable to load Actors");
 
-	//  Add extra space for alias actors
-	actorCount = resourceActorCount + extraActors;
-
 	//  Allocate memory for the actor list
-	actorListSize = actorCount * sizeof(Actor);
-	actorList = new Actor[actorCount]();
+	actorListSize = kActorCount * sizeof(Actor);
+	actorList = new Actor[kActorCount]();
 
 	if (!actorList)
 		error("Unable to load Actors");
@@ -3448,7 +3529,7 @@ void initActors(void) {
 	}
 
 	//  Place all of the extra actors in actor limbo
-	for (; i < actorCount; i++) {
+	for (; i < kActorCount; i++) {
 		Actor       *a = &actorList[i];
 
 		new (a) Actor;
@@ -3459,81 +3540,47 @@ void initActors(void) {
 	actorList[2].disposition = dispositionPlayer + 2;
 }
 
-//-------------------------------------------------------------------
-//	Save actor list to a save file
+void saveActors(Common::OutSaveFile *out) {
+	debugC(2, kDebugSaveload, "Saving actors");
 
-void saveActors(SaveFileConstructor &saveGame) {
-	int16   i;
 	int32   archiveBufSize = 0;
-	void    *archiveBuffer;
-	int16   *bufferPtr;
 
 	//  Accumulate size of archive buffer
 
 	//  Add size of actor count
 	archiveBufSize += sizeof(int16);
 
-	for (i = 0; i < actorCount; i++)
+	for (int i = 0; i < kActorCount; i++)
 		archiveBufSize += actorList[i].archiveSize();
 
-	archiveBuffer = malloc(archiveBufSize);
-	if (archiveBuffer == NULL)
-		error("Unable to allocate actor archive buffer");
+	out->write("ACTR", 4);
+	out->writeUint32LE(archiveBufSize);
+	out->writeSint16LE(kActorCount);
 
-	bufferPtr = (int16 *)archiveBuffer;
+	debugC(3, kDebugSaveload, "... kActorCount = %d", kActorCount);
 
-	//  Store the number of actors in the archive buffer
-	*bufferPtr++ = actorCount;
-
-	//  Store the actor data in the archive buffer
-	for (i = 0; i < actorCount; i++)
-		bufferPtr = (int16 *)actorList[i].archive(bufferPtr);
-
-	//  Write the archive buffer to the save file
-	saveGame.writeChunk(
-	    MakeID('A', 'C', 'T', 'R'),
-	    archiveBuffer,
-	    archiveBufSize);
-
-	free(archiveBuffer);
+	for (int i = 0; i < kActorCount; ++i)
+		actorList[i].write(out);
 }
 
-//-------------------------------------------------------------------
-//	Load the actor list from a save file
-
-void loadActors(SaveFileReader &saveGame) {
-	int16   i;
-	int32   archiveBufSize;
-	void    *archiveBuffer;
-	void    *bufferPtr;
+void loadActors(Common::InSaveFile *in) {
+	debugC(2, kDebugSaveload, "Loading actors");
 
 	//  Read in the actor count
-	saveGame.read(&actorCount, sizeof(actorCount));
+	in->readSint16LE();
+
+	debugC(3, kDebugSaveload, "... kActorCount = %d", kActorCount);
 
 	//  Allocate the actor array
-	actorListSize = actorCount * sizeof(Actor);
-	actorList = new Actor[actorCount]();
+	actorListSize = kActorCount * sizeof(Actor);
+	actorList = new Actor[kActorCount]();
 	if (actorList == NULL)
 		error("Unable to load Actors");
 
-	//  Allocate memory for the archive buffer
-	archiveBufSize = saveGame.bytesLeftInChunk();
-	archiveBuffer = malloc(archiveBufSize);
-	if (archiveBuffer == NULL)
-		error("Unable to load Actors");
-
-	saveGame.read(archiveBuffer, archiveBufSize);
-
-	for (i = 0, bufferPtr = archiveBuffer;
-	        i < actorCount;
-	        i++)
+	for (int i = 0; i < kActorCount; i++)
 		//  Initilize actors with archive data
-		new (&actorList[i]) Actor(&bufferPtr);
+		new (&actorList[i]) Actor(in);
 
-	assert(bufferPtr == &((char *)archiveBuffer)[archiveBufSize]);
-
-	//  Deallocate the archive buffer
-	free(archiveBuffer);
 }
 
 //-------------------------------------------------------------------
@@ -3543,7 +3590,7 @@ void cleanupActors(void) {
 	if (actorList != NULL) {
 		int16       i;
 
-		for (i = 0; i < actorCount; i++)
+		for (i = 0; i < kActorCount; i++)
 			actorList[i].~Actor();
 
 		delete[] actorList;
@@ -3605,21 +3652,25 @@ void initFactionTallies(void) {
 	memset(&factionTable, 0, sizeof(factionTable));
 }
 
-//-------------------------------------------------------------------
-//	Save the faction tallies to a save file
+void saveFactionTallies(Common::OutSaveFile *out) {
+	debugC(2, kDebugSaveload, "Saving Faction Tallies");
 
-void saveFactionTallies(SaveFileConstructor &saveGame) {
-	saveGame.writeChunk(
-	    MakeID('F', 'A', 'C', 'T'),
-	    &factionTable,
-	    sizeof(factionTable));
+	out->write("FACT", 4);
+	out->writeUint32LE(maxFactions * factionNumColumns * sizeof(int16));
+
+	for (int i = 0; i < maxFactions; ++i) {
+		for (int j = 0; j < factionNumColumns; ++j)
+			out->writeSint16LE(factionTable[i][j]);
+	}
 }
 
-//-------------------------------------------------------------------
-//	Load the faction tallies from a save file
+void loadFactionTallies(Common::InSaveFile *in) {
+	debugC(2, kDebugSaveload, "Loading Faction Tallies");
 
-void loadFactionTallies(SaveFileReader &saveGame) {
-	saveGame.read(&factionTable, sizeof(factionTable));
+	for (int i = 0; i < maxFactions; ++i) {
+		for (int j = 0; j < factionNumColumns; ++j)
+			factionTable[i][j] = in->readSint16LE();
+	}
 }
 
 }

@@ -54,11 +54,13 @@ public:
 	virtual ProcId playEndgameMovie(bool fade) = 0;
 	virtual void playCredits() = 0;
 	virtual void playQuotes() = 0;
+	virtual void playDemoScreen() = 0;
 
 	static Game *createGame(const GameInfo *info);
 
 	INTRINSIC(I_playEndgame);
 	INTRINSIC(I_playCredits);
+	INTRINSIC(I_playDemoScreen);
 
 protected:
 	static Game *_game;

@@ -26,7 +26,7 @@
 #define SAGA2_MUSIC_H
 
 #include "audio/mididrv.h"
-#include "audio/midiplayer.h"
+#include "audio/mididrv_ms.h"
 #include "audio/midiparser.h"
 #include "audio/mixer.h"
 
@@ -37,32 +37,10 @@ enum MusicFlags {
 	MUSIC_LOOP = 0x0001
 };
 
-class MusicDriver : public Audio::MidiPlayer {
-public:
-	MusicDriver();
-
-	void play(byte *data, uint32 size, bool loop);
-	void pause() override;
-	void resume() override;
-
-	bool isAdlib() const { return _driverType == MT_ADLIB; }
-
-	// FIXME
-	bool isPlaying() const { return _parser && _parser->isPlaying(); }
-
-	// MidiDriver_BASE interface implementation
-	void send(uint32 b) override;
-	void metaEvent(byte type, byte *data, uint16 length) override;
-
-protected:
-	MusicType _driverType;
-	bool _milesAudioMode;
-};
-
 class Music {
 public:
 
-	Music(hResContext *musicRes, Audio::Mixer *mixer);
+	Music(hResContext *musicRes);
 	~Music();
 	bool isPlaying();
 
@@ -71,24 +49,29 @@ public:
 	void resume();
 	void stop();
 
-	void setVolume(int volume, int time = 1);
+	void setVolume(int volume);
 	int getVolume() { return _currentVolume; }
 
-	bool isAdlib() const { return _player->isAdlib(); }
+	bool isAdlib() const { return _driverType == MT_ADLIB; }
+
+	void syncSoundSettings();
 
 private:
-	Saga2Engine *_vm;
-	Audio::Mixer *_mixer;
-
-	MusicDriver *_player;
+	MidiParser *_parser;
+	MidiDriver_Multisource *_driver;
 	Audio::SoundHandle _musicHandle;
 	uint32 _trackNumber;
 
 	int _currentVolume;
+	MusicType _musicType;
+	MusicType _driverType;
 
 	hResContext *_musicContext;
 
 	byte *_currentMusicBuffer;
+
+	static void timerCallback(void *refCon);
+	void onTimer();
 };
 
 } // End of namespace Saga2

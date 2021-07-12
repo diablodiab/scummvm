@@ -50,14 +50,6 @@
 */
 
 #include "ags/shared/core/platform.h"
-
-//include <sys/types.h>
-//include <sys/stat.h>
-#if !AGS_PLATFORM_OS_WINDOWS
-//include <dirent.h>
-//include <unistd.h>
-#endif
-
 #include "ags/lib/allegro.h" // file path functions
 #include "ags/shared/util/file.h"
 #include "ags/shared/util/stream.h"
@@ -70,8 +62,7 @@ using namespace AGS::Shared;
 // TODO: rewrite all this in a cleaner way perhaps, and move to our file or path utilities unit
 //
 
-#if !defined (AGS_CASE_SENSITIVE_FILESYSTEM)
-//include <string.h>
+#if !defined(AGS_CASE_SENSITIVE_FILESYSTEM)
 /* File Name Concatenator basically on Windows / DOS */
 char *ci_find_file(const char *dir_name, const char *file_name) {
 	char *diamond = NULL;
@@ -92,12 +83,11 @@ char *ci_find_file(const char *dir_name, const char *file_name) {
 }
 
 #else
-/* Case Insensitive File Find */
+/* Case Sensitive File Find - only used on UNIX platforms */
 char *ci_find_file(const char *dir_name, const char *file_name) {
 	struct stat   statbuf;
 	struct dirent *entry = nullptr;
 	DIR *rough = nullptr;
-	DIR *prevdir = nullptr;
 	char *diamond = nullptr;
 	char *directory = nullptr;
 	char *filename = nullptr;
@@ -121,6 +111,26 @@ char *ci_find_file(const char *dir_name, const char *file_name) {
 		fix_filename_slashes(filename);
 	}
 
+	// the ".." check here prevents file system traversal -
+	// since only in this fast-path it's possible a potentially evil
+	// script could try to break out of the directories it's restricted
+	// to, whereas the latter chdir/opendir approach checks file by file
+	// in the directory. it's theoretically possible a valid filename
+	// could contain "..", but in that case it will just fallback to the
+	// slower method later on and succeed.
+	if (filename && !strstr(filename, "..")) {
+		char buf[1024];
+		if (!directory && filename[0] == '/')
+			snprintf(buf, sizeof buf, "%s", filename);
+		else
+			snprintf(buf, sizeof buf, "%s/%s", directory ? directory : ".", filename);
+
+		if (lstat(buf, &statbuf) == 0 &&
+			(S_ISREG(statbuf.st_mode) || S_ISLNK(statbuf.st_mode))) {
+			diamond = strdup(buf); goto out;
+		}
+	}
+
 	if (directory == nullptr) {
 		char *match = nullptr;
 		int   match_len = 0;
@@ -128,7 +138,7 @@ char *ci_find_file(const char *dir_name, const char *file_name) {
 
 		match = get_filename(filename);
 		if (match == nullptr)
-			return nullptr;
+			goto out;
 
 		match_len = strlen(match);
 		dir_len = (match - filename);
@@ -147,25 +157,15 @@ char *ci_find_file(const char *dir_name, const char *file_name) {
 		filename[match_len] = '\0';
 	}
 
-	if ((prevdir = opendir(".")) == nullptr) {
-		fprintf(stderr, "ci_find_file: cannot open current working directory\n");
-		return nullptr;
-	}
-
-	if (chdir(directory) == -1) {
-		fprintf(stderr, "ci_find_file: cannot change to directory: %s\n", directory);
-		return nullptr;
-	}
-
 	if ((rough = opendir(directory)) == nullptr) {
 		fprintf(stderr, "ci_find_file: cannot open directory: %s\n", directory);
-		return nullptr;
+		goto out;
 	}
 
 	while ((entry = readdir(rough)) != nullptr) {
-		lstat(entry->d_name, &statbuf);
-		if (S_ISREG(statbuf.st_mode) || S_ISLNK(statbuf.st_mode)) {
-			if (strcasecmp(filename, entry->d_name) == 0) {
+		if (strcasecmp(filename, entry->d_name) == 0) {
+			if (lstat(entry->d_name, &statbuf) == 0 &&
+				(S_ISREG(statbuf.st_mode) || S_ISLNK(statbuf.st_mode))) {
 #if AGS_PLATFORM_DEBUG
 				fprintf(stderr, "ci_find_file: Looked for %s in rough %s, found diamond %s.\n", filename, directory, entry->d_name);
 #endif // AGS_PLATFORM_DEBUG
@@ -177,16 +177,13 @@ char *ci_find_file(const char *dir_name, const char *file_name) {
 	}
 	closedir(rough);
 
-	fchdir(dirfd(prevdir));
-	closedir(prevdir);
-
-	free(directory);
-	free(filename);
+out:;
+	if (directory) free(directory);
+	if (filename) free(filename);
 
 	return diamond;
 }
 #endif
-
 
 /* Case Insensitive fopen */
 Stream *ci_fopen(const char *file_name, FileOpenMode open_mode, FileWorkMode work_mode) {
