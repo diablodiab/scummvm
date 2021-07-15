@@ -78,6 +78,8 @@ ifeq ($(platform), unix)
    DEFINES += -fPIC
    LDFLAGS += -shared -Wl,--version-script=../link.T -fPIC
    TARGET_64BIT := $(BUILD_64BIT)
+   CXXFLAGS := -std=c++11
+   DEFINES += -DUSE_CXX11
 # OS X
 else ifeq ($(platform), osx)
    TARGET  := $(TARGET_NAME)_libretro.dylib
